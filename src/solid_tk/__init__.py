@@ -7,6 +7,7 @@ from reaktiv import batch
 from reaktiv import untracked
 
 from .component import Component
+from .component import component
 from .control import For
 from .control import Show
 from .props import NodeProps
@@ -43,6 +44,7 @@ __all__ = [
     "Tk",
     "VStack",
     "batch",
+    "component",
     "create_root",
     "untracked",
 ]

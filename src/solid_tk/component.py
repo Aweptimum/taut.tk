@@ -1,15 +1,21 @@
 from __future__ import annotations
 
+from collections.abc import Callable
+from functools import wraps
 from typing import Any
+from typing import TypeVar
+from typing import cast
 
 from .props import Props
 from .runtime import MountedNode
 from .runtime import Node
 from .runtime import normalize_child
 
+TProps = TypeVar("TProps")
+
 
 class ComponentNode(MountedNode):
-    def __init__(self, component: "Component", rendered: Node) -> None:
+    def __init__(self, component: Any, rendered: Node) -> None:
         super().__init__()
         self.component = component
         self.rendered = rendered
@@ -22,6 +28,18 @@ class ComponentNode(MountedNode):
         self.owner.dispose()
         self.rendered.unmount()
         self.widget = None
+
+
+def component(fn: Callable[[TProps], Any]) -> Callable[..., ComponentNode]:
+    """Wrap a function component in a mountable node factory."""
+
+    @wraps(fn)
+    def factory(**props: Any) -> ComponentNode:
+        component_props = Props(props)
+        rendered = normalize_child(fn(cast(TProps, component_props)))
+        return ComponentNode(fn, rendered)
+
+    return factory
 
 
 class Component:

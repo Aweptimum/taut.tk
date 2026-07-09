@@ -6,8 +6,11 @@ from typing import Optional
 import pytest
 from reaktiv import Signal
 
+from solid_tk import Button
 from solid_tk import Entry
+from solid_tk import Label
 from solid_tk import VStack
+from solid_tk import component
 from solid_tk import create_root
 from solid_tk import widgets
 
@@ -136,3 +139,24 @@ def test_create_root_disposes_mounted_app_node():
     mount.dispose()
 
     assert app_frame.destroyed
+
+
+def test_function_component_keeps_local_reactive_state_alive():
+    @component
+    def Counter(props):
+        count = Signal(0)
+        return VStack(
+            Label(text=lambda: f"{props.title()}: {count()}"),
+            Button(text="Increment", command=lambda: count.set(count() + 1)),
+        )
+
+    mount = create_root(lambda: Counter(title="Count"), title="Demo")
+    frame = mount.widget.children[0]
+    label = frame.children[0]
+    button = frame.children[1]
+
+    assert label.props["text"] == "Count: 0"
+
+    button.props["command"]()
+
+    assert label.props["text"] == "Count: 1"
