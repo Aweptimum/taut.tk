@@ -58,6 +58,25 @@ def test_create_root_disposes_mounted_app_node():
     assert app_frame.destroyed
 
 
+def test_mount_dispose_is_idempotent():
+    events = []
+
+    @component
+    def App(props):
+        runtime.on_cleanup(lambda: events.append("cleanup"))
+        return widgets.Label(text="App")
+
+    mount = runtime.create_root(App, title="Demo")
+    app_label = mount.widget.children[0]
+
+    mount.dispose()
+    mount.dispose()
+
+    assert app_label.destroy_count == 1
+    assert mount.widget.destroy_count == 1
+    assert events == ["cleanup"]
+
+
 def test_root_window_close_disposes_mounted_app_node():
     events = []
 
@@ -71,9 +90,6 @@ def test_root_window_close_disposes_mounted_app_node():
 
     mount.widget.protocols["WM_DELETE_WINDOW"]()
 
-    # TODO: uncomment for native withdraw test
-    # assert mount.widget.withdrawn
-    # assert mount.widget.updated_idletasks
     assert app_label.destroyed
     assert mount.widget.destroyed
     assert events == ["cleanup"]

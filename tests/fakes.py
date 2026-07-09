@@ -34,6 +34,7 @@ class FakeWidget:
         self.props = dict(props)
         self.children = []
         self.destroyed = False
+        self.destroy_count = 0
         self.after_callbacks = {}
         self.after_cancelled = []
         self.next_after_id = 0
@@ -57,6 +58,7 @@ class FakeWidget:
         pass
 
     def destroy(self):
+        self.destroy_count += 1
         self.destroyed = True
 
     def title(self, value):
@@ -64,13 +66,6 @@ class FakeWidget:
 
     def quit(self):
         self.quit_called = True
-
-    # # TODO: uncomment for native withdraw test
-    # def withdraw(self):
-    #     self.withdrawn = True
-
-    # def update_idletasks(self):
-    #     self.updated_idletasks = True
 
     def protocol(self, name, callback):
         self.protocols[name] = callback

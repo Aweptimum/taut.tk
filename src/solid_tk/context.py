@@ -81,6 +81,8 @@ class ProviderNode(MountedNode):
         return self.widget
 
     def unmount(self) -> None:
+        if self.widget is None and self.child is None:
+            return
         self.owner.dispose()
         if self.child is not None:
             self.child.unmount()

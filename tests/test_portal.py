@@ -39,6 +39,28 @@ def test_portal_close_runs_callback_and_destroys_toplevel():
     assert portal.widget is None
 
 
+def test_portal_close_is_idempotent():
+    events = []
+    mount = runtime.create_root(
+        lambda: tk.Portal(
+            lambda: tk.Label(text="Dialog"),
+            title="Settings",
+            on_close=lambda: events.append("closed"),
+        ),
+        title="Demo",
+    )
+    portal = mount.node.children[0]
+    toplevel = portal.widget
+
+    portal.close()
+    portal.close()
+    portal.unmount()
+
+    assert events == ["closed"]
+    assert toplevel.destroy_count == 1
+    assert portal.widget is None
+
+
 def test_portal_title_tracks_signal():
     title, set_title = reactive.create_signal("Settings")
 

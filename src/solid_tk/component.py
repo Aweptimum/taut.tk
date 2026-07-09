@@ -31,6 +31,8 @@ class ComponentNode(MountedNode):
         return self.widget
 
     def unmount(self) -> None:
+        if self.widget is None:
+            return
         self.owner.dispose()
         self.rendered.unmount()
         self.widget = None

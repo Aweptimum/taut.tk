@@ -215,11 +215,16 @@ class PortalNode(MountedNode):
         return self.widget
 
     def close(self) -> None:
+        if self.widget is None and self.child is None:
+            return
         if self.on_close is not None:
             self.on_close()
-        self.unmount()
+        if self.widget is not None or self.child is not None:
+            self.unmount()
 
     def unmount(self) -> None:
+        if self.widget is None and self.child is None:
+            return
         if self.child is not None:
             self.child.unmount()
             self.child = None
