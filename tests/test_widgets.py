@@ -17,6 +17,7 @@ from solid_tk import VStack
 from solid_tk import component
 from solid_tk import create_context
 from solid_tk import create_effect
+from solid_tk import create_memo
 from solid_tk import create_root
 from solid_tk import on_cleanup
 from solid_tk import on_mount
@@ -189,6 +190,24 @@ def test_widget_binding_unwraps_forwarded_callable_prop_value():
     count.set(1)
 
     assert label.props["text"] == "Count: 1"
+
+
+def test_create_memo_derives_reactive_values():
+    count = Signal(1)
+
+    @component
+    def Counter(props):
+        doubled = create_memo(lambda: count() * 2)
+        return Label(text=lambda: f"Double: {doubled()}")
+
+    mount = create_root(Counter, title="Demo")
+    label = mount.widget.children[0]
+
+    assert label.props["text"] == "Double: 2"
+
+    count.set(3)
+
+    assert label.props["text"] == "Double: 6"
 
 
 def test_function_component_lifecycle_helpers_are_owned():

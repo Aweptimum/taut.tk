@@ -30,6 +30,10 @@ class SignalLike[T](WritableAccessor[T], Protocol):
     pass
 
 
+def create_memo[T](fn: Callable[[], T]) -> Accessor[T]:
+    return Computed(fn)
+
+
 def is_signal(value: object) -> TypeGuard[Accessor[Any]]:
     return callable(value) and hasattr(value, "get")
 

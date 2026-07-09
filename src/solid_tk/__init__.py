@@ -21,6 +21,7 @@ from .reactive import Setter
 from .reactive import SignalLike
 from .reactive import Updater
 from .reactive import WritableAccessor
+from .reactive import create_memo
 from .runtime import Mount
 from .runtime import Node
 from .runtime import create_effect
@@ -67,6 +68,7 @@ __all__ = [
     "component",
     "create_context",
     "create_effect",
+    "create_memo",
     "create_root",
     "get_current_owner",
     "on_cleanup",
