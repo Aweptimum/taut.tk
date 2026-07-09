@@ -87,3 +87,10 @@ class FakeWidget:
 class FakeTk(FakeWidget):
     def __init__(self, **props):
         super().__init__(None, **props)
+
+
+class FakeStyle:
+    configured = {}
+
+    def configure(self, name, **props):
+        self.configured[name] = props

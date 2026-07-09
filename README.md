@@ -9,16 +9,13 @@ This is currently a prototype that I hope makes Tkinter more fun
 from typing import Protocol
 
 from solid_tk import component
+from solid_tk import tk
 from solid_tk.reactive import Accessor
 from solid_tk.reactive import Mutator
 from solid_tk.reactive import create_signal
 from solid_tk.runtime import create_root
 from solid_tk.control import For
 from solid_tk.control import Show
-from solid_tk.widgets import Button
-from solid_tk.widgets import Label
-from solid_tk.widgets import HStack
-from solid_tk.widgets import VStack
 
 
 class CounterProps(Protocol):
@@ -31,17 +28,17 @@ class CounterProps(Protocol):
 def counter(props: CounterProps):
     todos, set_todos = create_signal(["wire props", "own effects", "dispose cleanly"])
 
-    return VStack(
-        Label(text=lambda: f"{props.label()}: {props.count()}"),
-        Button(text="Increment", on_click=lambda: props.set_count(lambda n: n + 1)),
+    return tk.VStack(
+        tk.Label(text=lambda: f"{props.label()}: {props.count()}"),
+        tk.Button(text="Increment", on_click=lambda: props.set_count(lambda n: n + 1)),
         Show(
             lambda: props.count() % 2 == 0,
-            lambda: Label(text="Even"),
-            fallback=lambda: Label(text="Odd"),
+            lambda: tk.Label(text="Even"),
+            fallback=lambda: tk.Label(text="Odd"),
         ),
-        For(todos, lambda item: Label(text=item), key=lambda item: item),
-        HStack(
-            Button(text="-", on_click=lambda: set_todos(lambda items: items[:-1])),
+        For(todos, lambda item: tk.Label(text=item), key=lambda item: item),
+        tk.HStack(
+            tk.Button(text="-", on_click=lambda: set_todos(lambda items: items[:-1])),
             gap=6,
         ),
         padding=12,
@@ -81,7 +78,7 @@ set_count(lambda value: value + 1)
 ```
 
 The accessor is still compatible with `reaktiv` signals, so widgets can bind to
-it directly. Writable widgets such as `Entry(value=..., on_input=...)` receive
+it directly. Writable widgets such as `tk.Entry(value=..., on_input=...)` receive
 the accessor and mutator separately.
 
 `Component.__new__` returns a renderable node to keep the class API simple
@@ -99,21 +96,21 @@ props are treated as reactive bindings, and event props such as `on_click` /
 `command` are passed through as callbacks.
 
 ```python
-Label(text=f"{count()}")                  # snapshot now
-Label(text=count)                         # reactive signal value
-Label(text=lambda: f"{count()}")          # reactive derived expression
+tk.Label(text=f"{count()}")                  # snapshot now
+tk.Label(text=count)                         # reactive signal value
+tk.Label(text=lambda: f"{count()}")          # reactive derived expression
 ```
 
 That means a component prop can be read inside a derived expression:
 
 ```python
-Label(text=lambda: f"Hello {self.props.name()}")
+tk.Label(text=lambda: f"Hello {self.props.name()}")
 ```
 
 or forwarded directly to a widget prop:
 
 ```python
-Label(text=self.props.name)
+tk.Label(text=self.props.name)
 ```
 
 
@@ -122,7 +119,7 @@ Label(text=self.props.name)
 - Functional components using `@component` decorator
 - `Component` with `__init__()/setup()` and `render()`
 - `Props`, where every attribute is an accessor
-- widgets: `Tk`, `Frame`, `Label`, `Button`, `Entry`, `Checkbutton`
+- widget namespaces: `tk` for classic Tk widgets and `ttk` for themed widgets
 - stack layout helpers: `VStack`, `HStack`, `Item`
 - StyleX-ish style objects with `style.define()`, `style.merge()`, and
   `style.component()`
@@ -134,12 +131,12 @@ Label(text=self.props.name)
 
 ```python
 Switch(
-    Match(lambda: status() == "ready", lambda: Label(text="Ready")),
-    Match(lambda: status() == "busy", lambda: Label(text="Working")),
-    fallback=lambda: Label(text="Idle"),
+    Match(lambda: status() == "ready", lambda: tk.Label(text="Ready")),
+    Match(lambda: status() == "busy", lambda: tk.Label(text="Working")),
+    fallback=lambda: tk.Label(text="Idle"),
 )
 
-Index(items, lambda item, index: Label(text=lambda: f"{index}: {item()}"))
+Index(items, lambda item, index: tk.Label(text=lambda: f"{index}: {item()}"))
 Dynamic(selected_component, title="Hello")
 ```
 
@@ -151,6 +148,9 @@ python -m examples.layout_demo
 ```
 
 See `docs/style.md` for the style helper conventions.
+
+`solid_tk.widgets` remains available as a compatibility import for the classic
+Tk widget helpers; new code should prefer `solid_tk.tk` and `solid_tk.ttk`.
 
 See `examples/control_demo` for a runnable version:
 
@@ -194,8 +194,8 @@ cancelled.
 ```python
 image, (mutate, refetch) = create_resource(fetch_image, None, image_url)
 
-Label(text=lambda: "Loading..." if image.loading() else image.state())
-Button(text="Retry", on_click=lambda: refetch("button"))
+tk.Label(text=lambda: "Loading..." if image.loading() else image.state())
+tk.Button(text="Retry", on_click=lambda: refetch("button"))
 ```
 
 See `docs/resources.md` for the API reference and `examples/resource_demo` for

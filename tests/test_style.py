@@ -13,16 +13,14 @@ from solid_tk import style
 from solid_tk import widgets
 
 
-def test_create_exposes_named_styles():
-    styles = style.create(
-        {
-            "title": {"font": ("TkDefaultFont", 13, "bold")},
-            "panel": {"padding": 12, "gap": 8},
-        }
-    )
+def test_define_can_name_styles():
+    title = style.define("title", font=("TkDefaultFont", 13, "bold"))
+    panel = style.define("panel", padding=12, gap=8)
 
-    assert styles.title.props() == {"font": ("TkDefaultFont", 13, "bold")}
-    assert styles.panel.props() == {"padding": 12, "gap": 8}
+    assert title.props() == {"font": ("TkDefaultFont", 13, "bold")}
+    assert title.name == "Title"
+    assert panel.props() == {"padding": 12, "gap": 8}
+    assert panel.name == "Panel"
 
 
 def test_typed_style_helpers_create_styles():
@@ -36,37 +34,30 @@ def test_typed_style_helpers_create_styles():
 
 
 def test_merge_applies_styles_in_order_and_ignores_falsey_values():
-    styles = style.create(
-        {
-            "base": {"fg": "black", "padx": 4},
-            "muted": {"fg": "gray"},
-        }
-    )
+    base = style.define("base", fg="black", padx=4)
+    muted = style.define("muted", fg="gray")
 
     props = style.merge(
-        styles.base,
+        base,
         False,
         None,
-        styles.muted,
+        muted,
         {"pady": 2},
         fg="red",
     )
 
     assert props == {"fg": "red", "padx": 4, "pady": 2}
+    assert props.name == "Muted"
 
 
 def test_merged_styles_can_be_applied_to_widgets():
-    styles = style.create(
-        {
-            "page": {"padding": 8, "gap": 6},
-            "title": {"fg": "blue", "font": ("TkDefaultFont", 13, "bold")},
-        }
-    )
+    page_style = style.define("page", padding=8, gap=6)
+    title_style = style.define("title", fg="blue", font=("TkDefaultFont", 13, "bold"))
 
     mount = runtime.create_root(
         lambda: widgets.VStack(
-            widgets.Label(text="Styled", **style.merge(styles.title)),
-            **style.merge(styles.page),
+            widgets.Label(text="Styled", **style.merge(title_style)),
+            **style.merge(page_style),
         ),
         title="Demo",
     )
@@ -117,10 +108,10 @@ def test_component_preserves_children():
 
 def test_style_values_can_be_reactive():
     color, set_color = reactive.create_signal("blue")
-    styles = style.create({"accent": {"fg": color}})
+    accent = style.define("accent", fg=color)
 
     mount = runtime.create_root(
-        lambda: widgets.Label(text="Accent", **style.merge(styles.accent)),
+        lambda: widgets.Label(text="Accent", **style.merge(accent)),
         title="Demo",
     )
     label = mount.widget.children[0]
@@ -203,4 +194,51 @@ def test_define_keeps_mixed_style_dicts_typed(tmp_path: Path):
     messages = [diagnostic["message"] for diagnostic in output["generalDiagnostics"]]
 
     assert any("Style[StyleProps]" in msg for msg in messages)
-    assert any('No parameter named "not_a_style_prop"' in msg for msg in messages)
+    assert any('No overloads for "define" match the provided arguments' in msg for msg in messages)
+
+
+def test_named_module_styles_keep_static_attributes_visible(tmp_path: Path):
+    styles_module = tmp_path / "styles.py"
+    styles_module.write_text(
+        dedent(
+            """
+            from solid_tk import style
+
+            page = style.define("page", gap=8)
+            title = style.define("title", text="Title")
+            """
+        ),
+        encoding="utf-8",
+    )
+    sample = tmp_path / "component.py"
+    sample.write_text(
+        dedent(
+            """
+            import styles
+
+            reveal_type(styles.page)
+            missing = styles.missing
+            """
+        ),
+        encoding="utf-8",
+    )
+    env = {**os.environ, "PYTHONPATH": f"{Path.cwd() / 'src'}:{tmp_path}"}
+
+    result = pyright.run(
+        "--outputjson",
+        str(sample),
+        check=False,
+        cwd=Path.cwd(),
+        env=env,
+        text=True,
+        capture_output=True,
+    )
+
+    stdout = result.stdout if isinstance(result.stdout, str) else result.stdout.decode()
+    stderr = result.stderr if isinstance(result.stderr, str) else result.stderr.decode()
+    assert result.returncode == 1, stdout + stderr
+    output = json.loads(stdout)
+    messages = [diagnostic["message"] for diagnostic in output["generalDiagnostics"]]
+
+    assert any("Style[StyleProps]" in msg for msg in messages)
+    assert any('"missing" is not a known attribute of module "styles"' in msg for msg in messages)

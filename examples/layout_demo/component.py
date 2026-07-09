@@ -1,35 +1,31 @@
 from __future__ import annotations
 
-from examples.layout_demo.styles import styles
+from examples.layout_demo import styles
 from solid_tk import component
 from solid_tk import style
-from solid_tk.widgets import Button
-from solid_tk.widgets import Frame
-from solid_tk.widgets import HStack
-from solid_tk.widgets import Item
-from solid_tk.widgets import Label
-from solid_tk.widgets import VStack
+from solid_tk import tk
+from solid_tk import ttk
 
-Page = style.component(VStack, styles["page"])
-PanelStack = style.component(VStack, styles["panel"])
-PanelTitle = style.component(Label, styles["panel_title"])
-TitleLabel = style.component(Label, styles["title"])
-SwatchLabel = style.component(Label, styles["swatch"])
-GrowLabel = style.component(Label, styles["grow_label"])
-GrowFrame = style.component(Frame, styles["grow_frame"])
-CenteredItem = style.component(Item, styles["center_item"])
-StartItem = style.component(Item, styles["start_item"])
-GrowItem = style.component(Item, styles["grow_item"])
-StartRow = style.component(HStack, styles["start_row"])
-LooseRow = style.component(HStack, styles["loose_row"])
-SampleRow = style.component(HStack, styles["sample_row"])
-GrowRow = style.component(HStack, styles["grow_row"])
-CenterFill = style.component(HStack, styles["center_fill"])
-ButtonRow = style.component(HStack, styles["button_row"])
+Page = style.component(tk.VStack, styles.page)
+PanelStack = style.component(tk.VStack, styles.panel)
+PanelTitle = style.component(tk.Label, styles.panel_title)
+TitleLabel = style.component(tk.Label, styles.title)
+SwatchLabel = style.component(tk.Label, styles.swatch)
+GrowLabel = style.component(tk.Label, styles.grow_label)
+GrowFrame = style.component(tk.Frame, styles.grow_frame)
+CenteredItem = style.component(tk.Item, styles.center_item)
+StartItem = style.component(tk.Item, styles.start_item)
+GrowItem = style.component(tk.Item, styles.grow_item)
+StartRow = style.component(tk.HStack, styles.start_row)
+LooseRow = style.component(tk.HStack, styles.loose_row)
+SampleRow = style.component(tk.HStack, styles.sample_row)
+GrowRow = style.component(tk.HStack, styles.grow_row)
+CenterFill = style.component(tk.HStack, styles.center_fill)
+ButtonRow = style.component(tk.HStack, styles.button_row)
 
 
 def swatch(text: str, color: str, *, swatch_style=None, width: int | None = None):
-    swatch_props = style.merge(swatch_style, {"bg": color})
+    swatch_props = style.merge(swatch_style, {"bg": color}).props()
     if width is not None:
         swatch_props["width"] = width
     return SwatchLabel(text=text, **swatch_props)
@@ -71,27 +67,27 @@ def padding_example():
     return panel(
         "padding is frame padx/pady sugar",
         SampleRow(
-            VStack(
-                Label(text="padding=8"),
+            tk.VStack(
+                tk.Label(text="padding=8"),
                 swatch("same x/y", "#c7d2fe"),
-                **style.merge(styles["sample_box"], styles["soft_blue"]),
+                **style.merge(styles.sample_box, styles.soft_blue),
             ),
-            VStack(
-                Label(text="padding=(18, 6)"),
+            tk.VStack(
+                tk.Label(text="padding=(18, 6)"),
                 swatch("wide x", "#fed7aa"),
                 **style.merge(
-                    styles["sample_box"],
-                    styles["wide_sample_box"],
-                    styles["soft_orange"],
+                    styles.sample_box,
+                    styles.wide_sample_box,
+                    styles.soft_orange,
                 ),
             ),
-            VStack(
-                Label(text="padding=8, padx=24"),
+            tk.VStack(
+                tk.Label(text="padding=8, padx=24"),
                 swatch("padx wins", "#a7f3d0"),
                 **style.merge(
-                    styles["sample_box"],
-                    styles["wide_x_sample_box"],
-                    styles["soft_green"],
+                    styles.sample_box,
+                    styles.wide_x_sample_box,
+                    styles.soft_green,
                 ),
             ),
         ),
@@ -108,9 +104,9 @@ def grow_label():
 
 def grow_example_row():
     return GrowRow(
-        swatch("fixed", "#fde68a", swatch_style=styles["compact_swatch"]),
+        swatch("fixed", "#fde68a", swatch_style=styles.compact_swatch),
         GrowItem(grow_label()),
-        swatch("fixed", "#fecaca", swatch_style=styles["compact_swatch"]),
+        swatch("fixed", "#fecaca", swatch_style=styles.compact_swatch),
     )
 
 
@@ -126,8 +122,8 @@ def grow_example():
 
 def actions():
     return ButtonRow(
-        Button(text="OK"),
-        Button(text="Cancel"),
+        ttk.Button(text="OK"),
+        ttk.Button(text="Cancel"),
     )
 
 

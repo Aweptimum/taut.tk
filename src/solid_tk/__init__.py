@@ -8,7 +8,9 @@ from . import resource
 from . import runtime
 from . import stores
 from . import style
+from . import tk
 from . import tk_props
+from . import ttk
 from . import widgets
 from .component import Component
 from .component import component
@@ -24,6 +26,8 @@ __all__ = [
     "runtime",
     "style",
     "stores",
+    "tk",
     "tk_props",
+    "ttk",
     "widgets",
 ]

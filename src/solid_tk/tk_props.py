@@ -82,6 +82,7 @@ class LayoutProps(TypedDict, total=False):
 
 
 class BaseWidgetProps(LayoutProps, total=False):
+    style: Any
     background: Reactive[str]
     bg: Reactive[str]
     borderwidth: Reactive[int]
@@ -172,7 +173,93 @@ class CheckbuttonProps(ButtonProps, total=False):
     variable: Reactive[Any]
 
 
+class TtkBaseProps(LayoutProps, total=False):
+    class_: Reactive[str]
+    cursor: Reactive[str]
+    style: Any
+    takefocus: Reactive[bool | str]
+
+
+class TtkFrameProps(TtkBaseProps, total=False):
+    borderwidth: Reactive[int]
+    height: Reactive[int]
+    padding: Reactive[int | tuple[int, ...] | str]
+    relief: Reactive[Relief]
+    width: Reactive[int]
+
+
+class TtkTextProps(TtkBaseProps, total=False):
+    compound: Reactive[str]
+    image: Reactive[Any]
+    text: Reactive[str]
+    textvariable: Reactive[Any]
+    underline: Reactive[int]
+    width: Reactive[int]
+
+
+class TtkLabelProps(TtkTextProps, total=False):
+    anchor: Reactive[Anchor]
+    background: Reactive[str]
+    font: Reactive[str | tuple[Any, ...]]
+    foreground: Reactive[str]
+    justify: Reactive[Justify]
+    padding: Reactive[int | tuple[int, ...] | str]
+    relief: Reactive[Relief]
+    wraplength: Reactive[int]
+
+
+class TtkButtonProps(TtkTextProps, total=False):
+    command: Command
+    default: Reactive[Literal["normal", "active", "disabled"]]
+    on_click: Command
+    state: Reactive[State]
+
+
+class TtkEntryProps(TtkBaseProps, total=False):
+    exportselection: Reactive[bool]
+    font: Reactive[str | tuple[Any, ...]]
+    invalidcommand: Command
+    justify: Reactive[Justify]
+    show: Reactive[str]
+    state: Reactive[State | Literal["readonly"]]
+    textvariable: Reactive[Any]
+    validate: Reactive[str]
+    validatecommand: Command
+    value: Reactive[str]
+    on_input: Mutator[str]
+    width: Reactive[int]
+    xscrollcommand: Command
+
+
+class TtkCheckbuttonProps(TtkButtonProps, total=False):
+    offvalue: Reactive[Any]
+    onvalue: Reactive[Any]
+    variable: Reactive[Any]
+
+
+class TtkComboboxProps(TtkEntryProps, total=False):
+    exportselection: Reactive[bool]
+    height: Reactive[int]
+    postcommand: Command
+    values: Reactive[tuple[Any, ...] | list[Any]]
+
+
+class TtkSeparatorProps(TtkBaseProps, total=False):
+    orient: Reactive[Literal["horizontal", "vertical"]]
+
+
+class TtkProgressbarProps(TtkBaseProps, total=False):
+    length: Reactive[int]
+    maximum: Reactive[float]
+    mode: Reactive[Literal["determinate", "indeterminate"]]
+    orient: Reactive[Literal["horizontal", "vertical"]]
+    phase: Reactive[int]
+    value: Reactive[float]
+    variable: Reactive[Any]
+
+
 class TkProps(TypedDict, total=False):
+    style: Any
     title: Reactive[str]
 
 
@@ -185,6 +272,7 @@ class StackProps(FrameProps, total=False):
 
 
 class StackItemProps(TypedDict, total=False):
+    style: Any
     align: StackAlign
     fill: Fill
     grow: bool
@@ -192,6 +280,7 @@ class StackItemProps(TypedDict, total=False):
 
 
 class StyleProps(StackProps, total=False):
+    style: Reactive[str]
     title: Reactive[str]
     anchor: Reactive[Anchor]
     font: Reactive[str | tuple[Any, ...]]
@@ -237,3 +326,9 @@ class StyleProps(StackProps, total=False):
     selectcolor: Reactive[str]
     selectimage: Reactive[Any]
     variable: Reactive[Any]
+    length: Reactive[int]
+    maximum: Reactive[float]
+    mode: Reactive[Literal["determinate", "indeterminate"]]
+    orient: Reactive[Literal["horizontal", "vertical"]]
+    phase: Reactive[int]
+    values: Reactive[tuple[Any, ...] | list[Any]]

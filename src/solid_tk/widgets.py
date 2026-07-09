@@ -5,6 +5,7 @@ from collections.abc import Iterable
 from typing import Any
 from typing import Unpack
 
+from . import style as style_api
 from .props import NodeProps
 from .runtime import MountedNode
 from .runtime import normalize_child
@@ -174,41 +175,49 @@ def is_event_prop(name: str) -> bool:
 
 
 def Tk(*children: Any, **props: Unpack[TkProps]) -> RootNode:
+    apply_style(props)
     return RootNode(tk.Tk, children=children, layout={}, **props)
 
 
 def Frame(*children: Any, **props: Unpack[FrameProps]) -> WidgetNode:
+    apply_style(props)
     layout = consume_layout(props)
     return WidgetNode(tk.Frame, children=children, layout=layout, **props)
 
 
 def Label(*children: Any, **props: Unpack[LabelProps]) -> WidgetNode:
+    apply_style(props)
     layout = consume_layout(props)
     return WidgetNode(tk.Label, children=children, layout=layout, **props)
 
 
 def Button(*children: Any, **props: Unpack[ButtonProps]) -> WidgetNode:
+    apply_style(props)
     layout = consume_layout(props)
     return WidgetNode(tk.Button, children=children, layout=layout, **props)
 
 
 def Entry(*children: Any, **props: Unpack[EntryProps]) -> WidgetNode:
+    apply_style(props)
     layout = consume_layout(props)
     return ValueWidgetNode(tk.Entry, children=children, layout=layout, **props)
 
 
 def Checkbutton(*children: Any, **props: Unpack[CheckbuttonProps]) -> WidgetNode:
+    apply_style(props)
     layout = consume_layout(props)
     return WidgetNode(tk.Checkbutton, children=children, layout=layout, **props)
 
 
 def Item(child: Any, **props: Unpack[StackItemProps]) -> Any:
+    apply_style(props)
     node = normalize_child(child)
     setattr(node, "_stack_layout", dict(props))
     return node
 
 
 def VStack(*children: Any, **props: Unpack[StackProps]) -> WidgetNode:
+    apply_style(props)
     stack = consume_stack(props, axis="vertical")
     layout = consume_layout(props)
     node = WidgetNode(tk.Frame, children=children, layout=layout, **props)
@@ -217,11 +226,21 @@ def VStack(*children: Any, **props: Unpack[StackProps]) -> WidgetNode:
 
 
 def HStack(*children: Any, **props: Unpack[StackProps]) -> WidgetNode:
+    apply_style(props)
     stack = consume_stack(props, axis="horizontal")
     layout = consume_layout(props)
     node = WidgetNode(tk.Frame, children=children, layout=layout, **props)
     apply_stack_layout(node.children, stack)
     return node
+
+
+def apply_style(props: Any) -> None:
+    if "style" not in props:
+        return
+    styled = props.pop("style")
+    overrides = dict(props)
+    props.clear()
+    props.update(style_api.merge(styled, overrides))
 
 
 def consume_layout(props: LayoutProps) -> dict[str, Any]:
