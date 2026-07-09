@@ -113,8 +113,9 @@ def test_main_preserves_mutator_prop_types(monkeypatch, tmp_path):
         "from __future__ import annotations\n"
         "\n"
         "from typing import Any\n"
-        "from solid_tk import runtime\n"
+        "\n"
         "from solid_tk import reactive\n"
+        "from solid_tk import runtime\n"
         "\n"
         "def Counter(\n"
         "    *child_nodes: Any,\n"
@@ -132,7 +133,7 @@ def test_main_writes_unannotated_component_as_no_prop_component(monkeypatch, tmp
         "\n".join(
             [
                 "from solid_tk import component",
-                "from examples.layout_demo import styles",
+                "from . import styles",
                 "",
                 "@component",
                 "def layout_demo(props):",
@@ -152,9 +153,74 @@ def test_main_writes_unannotated_component_as_no_prop_component(monkeypatch, tmp
         "from __future__ import annotations\n"
         "\n"
         "from typing import Any\n"
+        "\n"
         "from solid_tk import runtime\n"
         "\n"
-        "styles: Any\n"
+        "def layout_demo(*child_nodes: Any, children: Any = ...) -> runtime.Node: ...\n"
+    )
+    assert (
+        tmp_path / "typings" / "examples" / "layout_demo" / "__init__.pyi"
+    ).read_text(encoding="utf-8") == (
+        "from __future__ import annotations\n"
+    )
+
+
+def test_main_does_not_generate_imported_source_module_stubs(monkeypatch, tmp_path):
+    component = tmp_path / "examples" / "layout_demo" / "component.py"
+    styles = tmp_path / "examples" / "layout_demo" / "styles.py"
+    examples_init = tmp_path / "examples" / "__init__.py"
+    source_init = tmp_path / "examples" / "layout_demo" / "__init__.py"
+    component.parent.mkdir(parents=True)
+    examples_init.write_text("", encoding="utf-8")
+    component.write_text(
+        "\n".join(
+            [
+                "from solid_tk import component",
+                "from . import styles",
+                "",
+                "@component",
+                "def layout_demo(props):",
+                "    ...",
+            ]
+        ),
+        encoding="utf-8",
+    )
+    styles.write_text(
+        "\n".join(
+            [
+                "from solid_tk import style",
+                "",
+                "page = style.define('page', gap=8)",
+                "grid = style.grid(columns=2)",
+                "wide = style.grid_item(columnspan=2)",
+            ]
+        ),
+        encoding="utf-8",
+    )
+    source_init.write_text(
+        "\n".join(
+            [
+                "from examples.layout_demo.component import layout_demo",
+                "",
+                "def main() -> None:",
+                "    ...",
+            ]
+        ),
+        encoding="utf-8",
+    )
+    monkeypatch.chdir(tmp_path)
+
+    stubs.main([tmp_path / "examples"], out_dir=tmp_path / "typings")
+
+    assert not (tmp_path / "typings" / "examples" / "layout_demo" / "styles.pyi").exists()
+    assert (
+        tmp_path / "typings" / "examples" / "layout_demo" / "component.pyi"
+    ).read_text(encoding="utf-8") == (
+        "from __future__ import annotations\n"
+        "\n"
+        "from typing import Any\n"
+        "\n"
+        "from solid_tk import runtime\n"
         "\n"
         "def layout_demo(*child_nodes: Any, children: Any = ...) -> runtime.Node: ...\n"
     )
@@ -163,9 +229,103 @@ def test_main_writes_unannotated_component_as_no_prop_component(monkeypatch, tmp
     ).read_text(encoding="utf-8") == (
         "from __future__ import annotations\n"
         "\n"
+        "from .component import layout_demo as layout_demo\n"
+        "\n"
+        "def main() -> None: ...\n"
+    )
+
+
+def test_main_preserves_existing_non_component_stubs(monkeypatch, tmp_path):
+    component = tmp_path / "examples" / "layout_demo" / "component.py"
+    styles = tmp_path / "examples" / "layout_demo" / "styles.py"
+    component.parent.mkdir(parents=True)
+    component.write_text(
+        "\n".join(
+            [
+                "from solid_tk import component",
+                "from . import styles",
+                "",
+                "@component",
+                "def layout_demo(props):",
+                "    ...",
+            ]
+        ),
+        encoding="utf-8",
+    )
+    styles.write_text(
+        "\n".join(
+            [
+                "from solid_tk import style",
+                "",
+                "page = style.define('page', gap=8)",
+            ]
+        ),
+        encoding="utf-8",
+    )
+    existing_styles_stub = (
+        tmp_path / "typings" / "examples" / "layout_demo" / "styles.pyi"
+    )
+    existing_styles_stub.parent.mkdir(parents=True, exist_ok=True)
+    existing_styles_stub.write_text("page: object\n", encoding="utf-8")
+
+    monkeypatch.chdir(tmp_path)
+
+    stubs.main([tmp_path / "examples"], out_dir=tmp_path / "typings")
+
+    assert existing_styles_stub.read_text(encoding="utf-8") == "page: object\n"
+
+
+def test_main_does_not_stub_non_component_imported_source_modules(
+    monkeypatch,
+    tmp_path,
+):
+    component = tmp_path / "examples" / "demo" / "component.py"
+    helpers = tmp_path / "examples" / "demo" / "helpers.py"
+    examples_init = tmp_path / "examples" / "__init__.py"
+    source_init = tmp_path / "examples" / "demo" / "__init__.py"
+    component.parent.mkdir(parents=True)
+    examples_init.write_text("", encoding="utf-8")
+    component.write_text(
+        "\n".join(
+            [
+                "from solid_tk import component",
+                "from examples.demo import helpers",
+                "",
+                "@component",
+                "def demo(props):",
+                "    ...",
+            ]
+        ),
+        encoding="utf-8",
+    )
+    helpers.write_text(
+        "\n".join(
+            [
+                "ANSWER: int = 42",
+                "",
+                "def label() -> str:",
+                "    return 'ok'",
+            ]
+        ),
+        encoding="utf-8",
+    )
+    source_init.write_text("", encoding="utf-8")
+
+    monkeypatch.chdir(tmp_path)
+
+    stubs.main([tmp_path / "examples"], out_dir=tmp_path / "typings")
+
+    assert not (tmp_path / "typings" / "examples" / "demo" / "helpers.pyi").exists()
+    assert (tmp_path / "typings" / "examples" / "demo" / "component.pyi").read_text(
+        encoding="utf-8"
+    ) == (
+        "from __future__ import annotations\n"
+        "\n"
         "from typing import Any\n"
         "\n"
-        "styles: Any\n"
+        "from solid_tk import runtime\n"
+        "\n"
+        "def demo(*child_nodes: Any, children: Any = ...) -> runtime.Node: ...\n"
     )
 
 

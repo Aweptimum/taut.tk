@@ -98,11 +98,13 @@ In JS/TS land, there's tons of tooling around jsx/tsx. Python doesn't have that.
 
 The beginning of solving that problem is the `@component` decorator. In addition to transforming functions into rendered nodes, is also a syntax marker that can be inspected. 
 
-The next bit stub-genning; basically a build step. Files in the working directory are scanned for component declarations and a corresponding `.pyi` file is generated, unrolling the typed prop object into a function signature.
+The next bit is stub-genning; basically a build step. Files in the working directory are scanned for component declarations and a corresponding `.pyi` file is generated, unrolling the typed prop object into a function signature.
 
 This process can be manual with `uv run solid-tk stubs .`, or you can run a watcher to do it live with `uv run solid-tk watch` (it might be brittle though).
 
-This bit is honestly harder and more involved than the actual framework.
+There are some caveats though, as this bit is honestly harder and more involved than the actual framework to get right. It imposes some limitations on import patterns.
+
+When a component module imports sibling modules, prefer `from . import <module>` or a direct submodule import like `import examples.todo.module`. Relying on imports that use `__init__.py`, like `from examples.todo import module`, can route through generated package stubs instead of the source module. This is a limitation imposed by the current state of type checkers, and the only real work around that preserves usage of `__init__.py` is stubbing *everything*. Not really a feasible thing to develop or maintain right now.
 
 ## Design Notes
 

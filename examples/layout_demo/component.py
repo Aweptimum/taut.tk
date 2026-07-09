@@ -1,12 +1,13 @@
 from __future__ import annotations
 
-from examples.layout_demo import styles
 from solid_tk import component
 from solid_tk import layout
 from solid_tk import style
 from solid_tk import tk
 from solid_tk import ttk
 from solid_tk.control import For
+
+from . import styles
 
 Page = style.component(layout.VStack, styles.page)
 PanelStack = style.component(layout.VStack, styles.panel)

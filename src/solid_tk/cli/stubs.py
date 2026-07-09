@@ -46,6 +46,7 @@ def main(paths: list[Path], out_dir: Path = DEFAULT_OUT_DIR, in_place=False) -> 
         for path in all_source_paths
         if (module := generate_module(path, out_dir, in_place=in_place)) is not None
     ]
+    generated_import_paths = {module.import_path for module in modules}
 
     for module in modules:
         module.output_path.parent.mkdir(parents=True, exist_ok=True)
@@ -53,6 +54,7 @@ def main(paths: list[Path], out_dir: Path = DEFAULT_OUT_DIR, in_place=False) -> 
             render_stub(
                 module.components,
                 module.public_imports,
+                generated_import_paths=generated_import_paths,
             ),
             encoding="utf-8",
         )
@@ -166,23 +168,58 @@ def module_import_path(path: Path) -> str:
 def render_stub(
     components: list[ComponentStub],
     public_imports: list[ImportStub] | None = None,
+    generated_import_paths: set[str] | None = None,
 ) -> str:
     imports = collect_stub_imports(components)
     public_imports = public_imports or []
-    public_import_lines = render_public_imports(public_imports)
-    if public_import_lines and "from typing import Any" not in imports:
-        imports.insert(0, "from typing import Any")
-    lines = ["from __future__ import annotations", "", *imports, ""]
-    if public_import_lines:
-        lines.extend([*public_import_lines, ""])
+    generated_import_paths = generated_import_paths or set()
+    public_import_lines = render_public_imports(public_imports, generated_import_paths)
+    lines = ["from __future__ import annotations", ""]
+    import_lines = format_imports([*imports, *public_import_lines])
+    if import_lines:
+        lines.extend([*import_lines, ""])
     for component in components:
         lines.extend(render_component(component))
         lines.append("")
     return "\n".join(lines).rstrip() + "\n"
 
 
-def render_public_imports(public_imports: list[ImportStub]) -> list[str]:
-    return [f"{import_stub.export_name}: Any" for import_stub in public_imports]
+def render_public_imports(
+    public_imports: list[ImportStub],
+    generated_import_paths: set[str],
+) -> list[str]:
+    lines: list[str] = []
+    for import_stub in public_imports:
+        import_path = f"{import_stub.module}.{import_stub.name}"
+        if import_path in generated_import_paths:
+            lines.append(
+                f"from {import_stub.module} import {import_stub.name} "
+                f"as {import_stub.export_name}"
+            )
+    return lines
+
+
+def format_imports(imports: list[str]) -> list[str]:
+    stdlib = sorted(line for line in imports if is_stdlib_import(line))
+    relative = sorted(line for line in imports if line.startswith("from ."))
+    absolute = sorted(
+        line
+        for line in imports
+        if line not in stdlib and line not in relative
+    )
+    sections = [stdlib, absolute, relative]
+    lines: list[str] = []
+    for section in sections:
+        if not section:
+            continue
+        if lines:
+            lines.append("")
+        lines.extend(section)
+    return lines
+
+
+def is_stdlib_import(line: str) -> bool:
+    return line.startswith("from collections.") or line.startswith("from typing ")
 
 
 def collect_stub_imports(components: list[ComponentStub]) -> list[str]:
@@ -194,7 +231,8 @@ def collect_stub_imports(components: list[ComponentStub]) -> list[str]:
         imports.append("from collections.abc import Callable")
     if components or "Any" in external_types:
         imports.append("from typing import Any")
-    imports.append("from solid_tk import runtime")
+    if components:
+        imports.append("from solid_tk import runtime")
     if any("reactive." in external_type for external_type in external_types):
         imports.append("from solid_tk import reactive")
     return imports
@@ -210,6 +248,7 @@ def write_package_exports(
         module.import_path: {component.name for component in module.components}
         for module in modules
     }
+    generated_modules = {module.import_path for module in modules}
     attrs_by_package = public_attrs_by_package(modules)
 
     for package_dir in sorted(packages):
@@ -220,6 +259,7 @@ def write_package_exports(
             render_init_stub(
                 source_init_path,
                 components_by_module,
+                generated_modules,
                 attrs_by_package.get(module_import_path(source_init_path.parent), set()),
             ),
             encoding="utf-8",
@@ -269,6 +309,7 @@ def source_init_for_marker(package_dir: Path, out_dir: Path) -> Path:
 def render_init_stub(
     source_init_path: Path,
     components_by_module: dict[str, set[str]],
+    generated_modules: set[str],
     package_attrs: set[str] | None = None,
 ) -> str:
     reexports: list[str] = []
@@ -282,20 +323,32 @@ def render_init_stub(
             if isinstance(node, ast.ImportFrom) and node.module is not None:
                 import_path = resolve_import_from(source_init_path, node)
                 component_names = components_by_module.get(import_path)
-                if not component_names:
-                    continue
                 module_ref = marker_import_ref(package_import_path, import_path)
                 for alias in node.names:
-                    if alias.name not in component_names:
-                        continue
                     export_name = alias.asname or alias.name
-                    reexports.append(f"from {module_ref} import {alias.name} as {export_name}")
+                    if component_names and alias.name in component_names:
+                        reexports.append(
+                            f"from {module_ref} import {alias.name} as {export_name}"
+                        )
+                    elif f"{import_path}.{alias.name}" in generated_modules:
+                        reexports.append(
+                            f"from {module_ref} import {alias.name} as {export_name}"
+                        )
             elif isinstance(node, ast.FunctionDef) and is_public_name(node.name):
                 functions.append(render_function_stub(node))
 
-    imports = ["from typing import Any"] if attrs or any_function_uses_any(functions) else []
-    attr_lines = [f"{name}: Any" for name in attrs]
-    sections = [["from __future__ import annotations"], imports, reexports, attr_lines, functions]
+    reexports.extend(
+        f"from . import {name} as {name}"
+        for name in attrs
+        if f"{package_import_path}.{name}" in generated_modules
+    )
+    imports = (
+        ["from typing import Any"]
+        if any_function_uses_any(functions)
+        else []
+    )
+    import_lines = format_imports([*imports, *reexports])
+    sections = [["from __future__ import annotations"], import_lines, functions]
     lines = [line for section in sections if section for line in (*section, "")]
     return "\n".join(lines).rstrip() + "\n"
 
