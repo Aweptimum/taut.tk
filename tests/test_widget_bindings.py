@@ -118,6 +118,56 @@ def test_widget_binding_unwraps_forwarded_callable_prop_value():
     assert label.props["text"] == "Count: 1"
 
 
+def test_button_on_click_uses_native_command_activation():
+    events = []
+
+    mount = runtime.create_root(
+        lambda: tk.Button(text="Save", on_click=lambda: events.append("clicked")),
+        title="Demo",
+    )
+    button = mount.widget.children[0]
+
+    assert "command" in button.props
+    assert button.bindings == {}
+
+    button.props["command"]()
+
+    assert events == ["clicked"]
+
+
+def test_widget_on_click_binds_mouse_event():
+    events = []
+    event = object()
+
+    mount = runtime.create_root(
+        lambda: tk.Frame(on_click=lambda tk_event: events.append(tk_event)),
+        title="Demo",
+    )
+    frame = mount.widget.children[0]
+
+    bind_id = next(bind_id for sequence, bind_id in frame.bindings if sequence == "<Button-1>")
+    frame.run_binding("<Button-1>", bind_id, event)
+
+    assert events == [event]
+
+
+def test_widget_on_auxclick_binds_middle_mouse_event_and_unbinds_on_dispose():
+    events = []
+
+    mount = runtime.create_root(
+        lambda: tk.Frame(on_auxclick=lambda: events.append("aux")),
+        title="Demo",
+    )
+    frame = mount.widget.children[0]
+    bind_id = next(bind_id for sequence, bind_id in frame.bindings if sequence == "<Button-2>")
+
+    frame.run_binding("<Button-2>", bind_id, object())
+    mount.dispose()
+
+    assert events == ["aux"]
+    assert ("<Button-2>", bind_id) in frame.unbound
+
+
 def test_create_root_expands_default_app_layout():
     mount = runtime.create_root(
         lambda: layout.VStack(tk.Label(text="Hello")),

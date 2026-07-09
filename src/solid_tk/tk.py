@@ -5,6 +5,7 @@ from collections.abc import Callable
 from typing import Any
 from typing import Unpack
 
+from .nodes import CommandWidgetNode
 from .nodes import NumericValueWidgetNode
 from .nodes import ValueWidgetNode
 from .nodes import WidgetNode
@@ -162,7 +163,7 @@ def Label(*children: Any, **props: Unpack[LabelProps]) -> WidgetNode:
 def Button(*children: Any, **props: Unpack[ButtonProps]) -> WidgetNode:
     apply_style(props)
     layout = consume_layout(props)
-    return WidgetNode(tk.Button, children=children, layout=layout, **props)
+    return CommandWidgetNode(tk.Button, children=children, layout=layout, **props)
 
 
 def Entry(*children: Any, **props: Unpack[EntryProps]) -> WidgetNode:
@@ -174,13 +175,13 @@ def Entry(*children: Any, **props: Unpack[EntryProps]) -> WidgetNode:
 def Checkbutton(*children: Any, **props: Unpack[CheckbuttonProps]) -> WidgetNode:
     apply_style(props)
     layout = consume_layout(props)
-    return WidgetNode(tk.Checkbutton, children=children, layout=layout, **props)
+    return CommandWidgetNode(tk.Checkbutton, children=children, layout=layout, **props)
 
 
 def Radiobutton(*children: Any, **props: Unpack[RadiobuttonProps]) -> WidgetNode:
     apply_style(props)
     layout = consume_layout(props)
-    return WidgetNode(tk.Radiobutton, children=children, layout=layout, **props)
+    return CommandWidgetNode(tk.Radiobutton, children=children, layout=layout, **props)
 
 
 def Scale(*children: Any, **props: Unpack[ScaleProps]) -> WidgetNode:

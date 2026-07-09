@@ -51,6 +51,9 @@ class FakeWidget:
         self.after_cancelled = []
         self.next_after_id = 0
         self.protocols = {}
+        self.bindings = {}
+        self.unbound = []
+        self.next_bind_id = 0
         self.column_weights = {}
         self.row_weights = {}
         if parent is not None:
@@ -89,6 +92,26 @@ class FakeWidget:
 
     def protocol(self, name, callback):
         self.protocols[name] = callback
+
+    def bind(self, sequence, callback):
+        self.next_bind_id += 1
+        bind_id = f"bind-{self.next_bind_id}"
+        self.bindings[(sequence, bind_id)] = callback
+        return bind_id
+
+    def unbind(self, sequence, bind_id=None):
+        self.unbound.append((sequence, bind_id))
+        if bind_id is not None:
+            self.bindings.pop((sequence, bind_id), None)
+
+    def run_binding(self, sequence, bind_id=None, event=None):
+        if bind_id is None:
+            bind_id = next(
+                key_bind_id
+                for key_sequence, key_bind_id in self.bindings
+                if key_sequence == sequence
+            )
+        return self.bindings[(sequence, bind_id)](event)
 
     def after(self, ms, callback):
         self.next_after_id += 1

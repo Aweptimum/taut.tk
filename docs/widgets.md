@@ -139,10 +139,18 @@ Event props are passed as callbacks:
 
 ```python
 tk.Button(text="Increment", on_click=lambda: set_count(lambda n: n + 1))
+tk.Frame(on_click=lambda event: print(event.x, event.y))
 tk.Button(text="Save", command=save)
 ```
 
-`on_click` is an alias for Tk's `command`.
+`on_click` is agnostic for left-lick. Button-like widgets use Tk's native
+`command` option for `on_click`, while other widgets use Tk event bindings (<Button-1>).
+Use `command=` when you want the underlying Tk command option explicitly.
+
+Supported widget event props include `on_click`, `on_auxclick`,
+`on_context_menu`, `on_double_click`, `on_mouse_down`, `on_mouse_up`,
+`on_mouse_move`, `on_mouse_enter`, `on_mouse_leave`, `on_key_down`,
+`on_key_up`, `on_focus`, `on_blur`, and `on_resize`.
 
 ## Writable Inputs
 

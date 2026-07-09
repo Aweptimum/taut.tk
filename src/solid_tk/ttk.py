@@ -5,6 +5,7 @@ from typing import Any
 from typing import Unpack
 
 from . import style as style_api
+from .nodes import CommandWidgetNode
 from .nodes import NumericValueWidgetNode
 from .nodes import ValueWidgetNode
 from .nodes import WidgetNode
@@ -76,7 +77,7 @@ def Label(*children: Any, **props: Unpack[TtkLabelProps]) -> WidgetNode:
 def Button(*children: Any, **props: Unpack[TtkButtonProps]) -> WidgetNode:
     apply_style(props, widget="Button")
     layout = consume_layout(props)
-    return WidgetNode(ttk.Button, children=children, layout=layout, **props)
+    return CommandWidgetNode(ttk.Button, children=children, layout=layout, **props)
 
 
 def Entry(*children: Any, **props: Unpack[TtkEntryProps]) -> WidgetNode:
@@ -88,13 +89,13 @@ def Entry(*children: Any, **props: Unpack[TtkEntryProps]) -> WidgetNode:
 def Checkbutton(*children: Any, **props: Unpack[TtkCheckbuttonProps]) -> WidgetNode:
     apply_style(props, widget="Checkbutton")
     layout = consume_layout(props)
-    return WidgetNode(ttk.Checkbutton, children=children, layout=layout, **props)
+    return CommandWidgetNode(ttk.Checkbutton, children=children, layout=layout, **props)
 
 
 def Radiobutton(*children: Any, **props: Unpack[TtkRadiobuttonProps]) -> WidgetNode:
     apply_style(props, widget="Radiobutton")
     layout = consume_layout(props)
-    return WidgetNode(ttk.Radiobutton, children=children, layout=layout, **props)
+    return CommandWidgetNode(ttk.Radiobutton, children=children, layout=layout, **props)
 
 
 def Scale(*children: Any, **props: Unpack[TtkScaleProps]) -> WidgetNode:

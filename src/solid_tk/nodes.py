@@ -3,6 +3,7 @@ from __future__ import annotations
 import tkinter as tk
 from collections.abc import Callable
 from collections.abc import Iterable
+from inspect import signature
 from typing import Any
 
 from . import style as style_api
@@ -16,10 +17,27 @@ from .tk_props import LayoutProps
 
 LAYOUT_KEYS = {"pack", "grid", "place"}
 INTERNAL_KEYS = {"children", "layout"}
+EVENT_BINDINGS = {
+    "on_click": "<Button-1>",
+    "on_auxclick": "<Button-2>",
+    "on_context_menu": "<Button-3>",
+    "on_double_click": "<Double-Button-1>",
+    "on_mouse_down": "<ButtonPress-1>",
+    "on_mouse_up": "<ButtonRelease-1>",
+    "on_mouse_move": "<Motion>",
+    "on_mouse_enter": "<Enter>",
+    "on_mouse_leave": "<Leave>",
+    "on_key_down": "<KeyPress>",
+    "on_key_up": "<KeyRelease>",
+    "on_focus": "<FocusIn>",
+    "on_blur": "<FocusOut>",
+    "on_resize": "<Configure>",
+}
 
 
 class WidgetNode(MountedNode):
     skipped_props: set[str] = set()
+    command_event_props: dict[str, str] = {}
 
     def __init__(
         self,
@@ -38,16 +56,20 @@ class WidgetNode(MountedNode):
     def mount(self, parent: Any | None) -> Any:
         ctor_props: dict[str, Any] = {}
         reactive_props: dict[str, Any] = {}
+        event_props: dict[str, Any] = {}
 
         skipped_props = self.skipped_props | INTERNAL_KEYS | LAYOUT_KEYS
         for name in self.props.names(skip=skipped_props):
-            tk_name = event_name(name)
-            if self.props.is_binding(name, event=is_event_prop(name)):
-                reactive_props[tk_name] = self.props.widget_prop_accessor(name)
-            elif is_event_prop(name):
-                ctor_props[tk_name] = self.props.read(name)
+            if name in self.command_event_props:
+                ctor_props[self.command_event_props[name]] = self.props.read(name)
+            elif name in EVENT_BINDINGS:
+                event_props[EVENT_BINDINGS[name]] = self.props.read(name)
+            elif self.props.is_binding(name, event=is_command_prop(name)):
+                reactive_props[name] = self.props.widget_prop_accessor(name)
+            elif is_command_prop(name):
+                ctor_props[name] = self.props.read(name)
             else:
-                ctor_props[tk_name] = self.props.read(name)
+                ctor_props[name] = self.props.read(name)
 
         self.prepare_ctor_props(parent, ctor_props)
         self.widget = (
@@ -58,6 +80,7 @@ class WidgetNode(MountedNode):
         self.owner.scheduler = TkScheduler(self.widget)
         self.apply_layout()
         self.bind_reactive_props(reactive_props)
+        self.bind_events(event_props)
 
         self.owner.effect(self.reconcile_children, accepts_cleanup=False)
         self.owner.run_mounts()
@@ -94,6 +117,29 @@ class WidgetNode(MountedNode):
 
             self.owner.effect(make_apply(name, accessor), accepts_cleanup=False)
 
+    def bind_events(self, props: dict[str, Any]) -> None:
+        if self.widget is None:
+            return
+        bind = getattr(self.widget, "bind", None)
+        if not callable(bind):
+            return
+        for sequence, callback in props.items():
+            bind_id = bind(sequence, event_callback(callback))
+            if bind_id is None:
+                continue
+
+            def make_cleanup(seq: str, callback_id: Any):
+                def cleanup() -> None:
+                    if self.widget is None:
+                        return
+                    unbind = getattr(self.widget, "unbind", None)
+                    if callable(unbind):
+                        unbind(seq, callback_id)
+
+                return cleanup
+
+            self.owner.cleanup(make_cleanup(sequence, bind_id))
+
     def reconcile_children(self) -> None:
         if self.widget is None:
             return
@@ -128,6 +174,10 @@ class WidgetNode(MountedNode):
                 child.apply_layout(reset=True)
 
         self.mounted_children = visible
+
+
+class CommandWidgetNode(WidgetNode):
+    command_event_props = {"on_click": "command"}
 
 
 class ValueWidgetNode(WidgetNode):
@@ -204,14 +254,20 @@ class NumericValueWidgetNode(WidgetNode):
         self.owner.effect(sync_from_signal)
 
 
-def event_name(name: str) -> str:
-    if name.startswith("on_"):
-        return "command" if name == "on_click" else name[3:]
-    return name
+def event_callback(callback: Callable[..., Any]) -> Callable[[Any], Any]:
+    try:
+        wants_event = len(signature(callback).parameters) != 0
+    except (TypeError, ValueError):
+        wants_event = True
+
+    def run(event: Any) -> Any:
+        return callback(event) if wants_event else callback()
+
+    return run
 
 
-def is_event_prop(name: str) -> bool:
-    return name == "command" or name.startswith("on_")
+def is_command_prop(name: str) -> bool:
+    return name == "command"
 
 
 def apply_style(props: Any) -> None:
@@ -240,6 +296,8 @@ def forget_layout(widget: Any) -> None:
 
 
 __all__ = [
+    "CommandWidgetNode",
+    "EVENT_BINDINGS",
     "NumericValueWidgetNode",
     "ValueWidgetNode",
     "WidgetNode",
@@ -247,3 +305,4 @@ __all__ = [
     "consume_layout",
     "forget_layout",
 ]
+

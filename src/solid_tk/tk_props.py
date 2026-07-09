@@ -15,6 +15,7 @@ T = TypeVar("T")
 
 Reactive: TypeAlias = T | Accessor[T] | Callable[[], T]
 Command: TypeAlias = Callable[[], Any]
+EventCommand: TypeAlias = Callable[..., Any]
 ValueCommand: TypeAlias = Callable[[Any], Any]
 Side: TypeAlias = Literal["left", "right", "top", "bottom"]
 Anchor: TypeAlias = Literal[
@@ -102,6 +103,20 @@ class BaseWidgetProps(LayoutProps, total=False):
     relief: Reactive[Relief]
     takefocus: Reactive[bool | str]
     width: Reactive[int]
+    on_auxclick: EventCommand
+    on_blur: EventCommand
+    on_click: EventCommand
+    on_context_menu: EventCommand
+    on_double_click: EventCommand
+    on_focus: EventCommand
+    on_key_down: EventCommand
+    on_key_up: EventCommand
+    on_mouse_down: EventCommand
+    on_mouse_enter: EventCommand
+    on_mouse_leave: EventCommand
+    on_mouse_move: EventCommand
+    on_mouse_up: EventCommand
+    on_resize: EventCommand
 
 
 class TextWidgetProps(BaseWidgetProps, total=False):
@@ -134,7 +149,6 @@ class ButtonProps(TextWidgetProps, total=False):
     compound: Reactive[str]
     default: Reactive[Literal["normal", "active", "disabled"]]
     disabledforeground: Reactive[str]
-    on_click: Command
     overrelief: Reactive[Relief]
     repeatdelay: Reactive[int]
     repeatinterval: Reactive[int]
@@ -384,6 +398,20 @@ class TtkBaseProps(LayoutProps, total=False):
     cursor: Reactive[str]
     style: Any
     takefocus: Reactive[bool | str]
+    on_auxclick: EventCommand
+    on_blur: EventCommand
+    on_click: EventCommand
+    on_context_menu: EventCommand
+    on_double_click: EventCommand
+    on_focus: EventCommand
+    on_key_down: EventCommand
+    on_key_up: EventCommand
+    on_mouse_down: EventCommand
+    on_mouse_enter: EventCommand
+    on_mouse_leave: EventCommand
+    on_mouse_move: EventCommand
+    on_mouse_up: EventCommand
+    on_resize: EventCommand
 
 
 class TtkFrameProps(TtkBaseProps, total=False):
@@ -417,7 +445,6 @@ class TtkLabelProps(TtkTextProps, total=False):
 class TtkButtonProps(TtkTextProps, total=False):
     command: Command
     default: Reactive[Literal["normal", "active", "disabled"]]
-    on_click: Command
     state: Reactive[State]
 
 
@@ -607,7 +634,6 @@ class StyleProps(GridProps, StackProps, total=False):
     command: Command
     default: Reactive[Literal["normal", "active", "disabled"]]
     disabledforeground: Reactive[str]
-    on_click: Command
     overrelief: Reactive[Relief]
     repeatdelay: Reactive[int]
     repeatinterval: Reactive[int]
@@ -628,7 +654,6 @@ class StyleProps(GridProps, StackProps, total=False):
     validate: Reactive[str]
     validatecommand: Command
     value: Reactive[Any]
-    on_input: Mutator[Any]
     xscrollcommand: Command
     indicatoron: Reactive[bool]
     offvalue: Reactive[Any]
