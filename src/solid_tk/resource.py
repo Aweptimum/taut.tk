@@ -11,13 +11,13 @@ from typing import TypeVar
 from typing import cast
 from typing import overload
 
-from reaktiv import untracked
-
 from . import runtime
 from .reactive import Accessor
 from .reactive import Mutator
 from .reactive import create_signal
+from .reactive import on
 from .reactive import to_accessor
+from .reactive import untrack
 
 T = TypeVar("T")
 S = TypeVar("S")
@@ -148,7 +148,7 @@ class Resource(Generic[S, T, R]):
             return
 
         fetcher = self._fetcher
-        current_value = untracked(lambda: self.latest())
+        current_value = untrack(lambda: self.latest())
         self._request_id += 1
         request_id = self._request_id
 
@@ -224,7 +224,7 @@ def create_resource(
         cast(Accessor[ResourceSourceValue[Any]], to_accessor(source)),
     )
 
-    runtime.create_effect(lambda: resource._run(refetching=False))
+    runtime.create_effect(on(resource._source, lambda _source: resource._run(refetching=False)))
 
     def mutate(value: ResourceMutation[T]) -> T | None:
         return resource._mutate(value)

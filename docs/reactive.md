@@ -97,6 +97,46 @@ is_selected = create_selector(
 This currently provides the ergonomic API, not Solid's per-key subscription
 optimization.
 
+## `on`
+
+Use `on(source, fn)` when an effect should track one explicit source but ignore
+other reactive reads inside the callback:
+
+```python
+create_effect(
+    on(
+        selected_id,
+        lambda selected: print("selected", selected, "while count is", count()),
+    )
+)
+```
+
+Changing `selected_id` reruns the effect. Changing `count` alone does not.
+
+Use `defer=True` to skip the initial callback:
+
+```python
+create_effect(on(selected_id, lambda selected: load(selected), defer=True))
+```
+
+## `untrack`
+
+Use `untrack(fn)` for one-off reads that should not subscribe the current
+effect:
+
+```python
+create_effect(
+    lambda: print(
+        "tracked",
+        selected_id(),
+        "untracked",
+        untrack(count),
+    )
+)
+```
+
+Changing `selected_id` reruns the effect. Changing `count` alone does not.
+
 ## `to_accessor` And `read`
 
 `to_accessor(value)` normalizes values into accessors:

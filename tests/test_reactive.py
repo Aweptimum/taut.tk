@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from reaktiv import Effect
+
 from solid_tk import reactive
 
 
@@ -42,3 +44,55 @@ def test_create_selector_accepts_custom_equality():
 
     assert is_selected(1) is False
     assert is_selected(2) is True
+
+
+def test_on_tracks_only_explicit_source():
+    source, set_source = reactive.create_signal("a")
+    incidental, set_incidental = reactive.create_signal(0)
+    events = []
+    effect = Effect(reactive.on(source, lambda value: events.append((value, incidental()))))
+
+    assert events == [("a", 0)]
+
+    set_incidental(1)
+
+    assert events == [("a", 0)]
+
+    set_source("b")
+
+    assert events == [("a", 0), ("b", 1)]
+
+    effect.dispose()
+
+
+def test_on_can_defer_initial_run():
+    source, set_source = reactive.create_signal("a")
+    events = []
+    effect = Effect(reactive.on(source, lambda value: events.append(value), defer=True))
+
+    assert events == []
+
+    set_source("b")
+
+    assert events == ["b"]
+
+    effect.dispose()
+
+
+def test_untrack_reads_without_subscribing_effect():
+    tracked, set_tracked = reactive.create_signal("a")
+    incidental, set_incidental = reactive.create_signal(0)
+    events = []
+    effect = Effect(lambda: events.append((tracked(), reactive.untrack(incidental))))
+
+    assert events == [("a", 0)]
+
+    set_incidental(1)
+
+    assert events == [("a", 0)]
+
+    set_tracked("b")
+
+    assert events == [("a", 0), ("b", 1)]
+
+    effect.dispose()

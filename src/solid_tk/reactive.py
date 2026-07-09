@@ -10,6 +10,7 @@ from typing import overload
 
 from reaktiv import Computed
 from reaktiv import Signal
+from reaktiv import untracked
 
 T = TypeVar("T")
 
@@ -73,6 +74,34 @@ def create_selector[T, U](
         return compare(key, current())
 
     return selected
+
+
+def untrack[T](fn: Callable[[], T]) -> T:
+    """Read reactive values inside ``fn`` without subscribing the current effect."""
+
+    return untracked(fn)
+
+
+def on[T, U](
+    source: Callable[[], T],
+    fn: Callable[[T], U],
+    *,
+    defer: bool = False,
+) -> Callable[[], U | None]:
+    """Run ``fn`` when ``source`` changes, without tracking reads inside ``fn``."""
+
+    initialized = False
+
+    def effect() -> U | None:
+        nonlocal initialized
+        value = source()
+        if defer and not initialized:
+            initialized = True
+            return None
+        initialized = True
+        return untrack(lambda: fn(value))
+
+    return effect
 
 
 def is_signal(value: object) -> TypeGuard[Accessor[Any]]:
