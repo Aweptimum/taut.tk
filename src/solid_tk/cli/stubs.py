@@ -168,12 +168,9 @@ def collect_stub_imports(components: list[ComponentStub]) -> list[str]:
         imports.append("from collections.abc import Callable")
     if "Any" in external_types:
         imports.append("from typing import Any")
-    solid_tk_imports = ["Node"]
-    if any("Accessor" in external_type for external_type in external_types):
-        solid_tk_imports.append("Accessor")
-    if any("Mutator" in external_type for external_type in external_types):
-        solid_tk_imports.append("Mutator")
-    imports.extend(f"from solid_tk import {name}" for name in solid_tk_imports)
+    imports.append("from solid_tk import runtime")
+    if any("reactive." in external_type for external_type in external_types):
+        imports.append("from solid_tk import reactive")
     return imports
 
 

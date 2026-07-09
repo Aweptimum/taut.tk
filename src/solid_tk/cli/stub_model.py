@@ -58,11 +58,11 @@ def collect_components(
 
 def render_component(component: ComponentStub) -> list[str]:
     if not component.fields:
-        return [f"def {component.name}() -> Node: ..."]
+        return [f"def {component.name}() -> runtime.Node: ..."]
 
     lines = [f"def {component.name}(", "    *,"]
     lines.extend(f"    {field.name}: {field.external_type}," for field in component.fields)
-    lines.append(") -> Node: ...")
+    lines.append(") -> runtime.Node: ...")
     return lines
 
 
@@ -95,8 +95,14 @@ def init_props_annotation(node: ast.ClassDef) -> str | None:
 def external_prop_type(internal_type: str) -> str:
     if internal_type.startswith("Accessor[") and internal_type.endswith("]"):
         inner = internal_type.removeprefix("Accessor[").removesuffix("]")
-        return f"{inner} | Accessor[{inner}]"
+        return f"{inner} | reactive.Accessor[{inner}]"
+    if internal_type.startswith("reactive.Accessor[") and internal_type.endswith("]"):
+        inner = internal_type.removeprefix("reactive.Accessor[").removesuffix("]")
+        return f"{inner} | reactive.Accessor[{inner}]"
     if internal_type.startswith("Mutator[") and internal_type.endswith("]"):
+        inner = internal_type.removeprefix("Mutator[").removesuffix("]")
+        return f"reactive.Mutator[{inner}]"
+    if internal_type.startswith("reactive.Mutator[") and internal_type.endswith("]"):
         return internal_type
     return "Any"
 

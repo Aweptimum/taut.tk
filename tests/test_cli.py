@@ -45,10 +45,11 @@ def test_main_refreshes_stale_parent_package_markers(monkeypatch, tmp_path):
         "\n".join(
             [
                 "from typing import Protocol",
-                "from solid_tk import Accessor, component",
+                "from solid_tk import component",
+                "from solid_tk import reactive",
                 "",
                 "class CounterProps(Protocol):",
-                "    title: Accessor[str]",
+                "    title: reactive.Accessor[str]",
                 "",
                 "@component",
                 "def Counter(props: CounterProps):",
@@ -81,11 +82,12 @@ def test_main_preserves_mutator_prop_types(monkeypatch, tmp_path):
         "\n".join(
             [
                 "from typing import Protocol",
-                "from solid_tk import Accessor, Mutator, component",
+                "from solid_tk import component",
+                "from solid_tk import reactive",
                 "",
                 "class CounterProps(Protocol):",
-                "    count: Accessor[int]",
-                "    set_count: Mutator[int]",
+                "    count: reactive.Accessor[int]",
+                "    set_count: reactive.Mutator[int]",
                 "",
                 "@component",
                 "def Counter(props: CounterProps):",
@@ -104,15 +106,14 @@ def test_main_preserves_mutator_prop_types(monkeypatch, tmp_path):
     ) == (
         "from __future__ import annotations\n"
         "\n"
-        "from solid_tk import Node\n"
-        "from solid_tk import Accessor\n"
-        "from solid_tk import Mutator\n"
+        "from solid_tk import runtime\n"
+        "from solid_tk import reactive\n"
         "\n"
         "def Counter(\n"
         "    *,\n"
-        "    count: int | Accessor[int],\n"
-        "    set_count: Mutator[int],\n"
-        ") -> Node: ...\n"
+        "    count: int | reactive.Accessor[int],\n"
+        "    set_count: reactive.Mutator[int],\n"
+        ") -> runtime.Node: ...\n"
     )
 
 
@@ -124,10 +125,11 @@ def test_main_writes_init_reexports_from_source_init(monkeypatch, tmp_path):
         "\n".join(
             [
                 "from typing import Protocol",
-                "from solid_tk import Accessor, component",
+                "from solid_tk import component",
+                "from solid_tk import reactive",
                 "",
                 "class CounterProps(Protocol):",
-                "    title: Accessor[str]",
+                "    title: reactive.Accessor[str]",
                 "",
                 "class Other:",
                 "    pass",
@@ -173,10 +175,11 @@ def test_main_writes_public_functions_from_source_init(monkeypatch, tmp_path):
         "\n".join(
             [
                 "from typing import Protocol",
-                "from solid_tk import Accessor, component",
+                "from solid_tk import component",
+                "from solid_tk import reactive",
                 "",
                 "class CounterProps(Protocol):",
-                "    title: Accessor[str]",
+                "    title: reactive.Accessor[str]",
                 "",
                 "@component",
                 "def counter(props: CounterProps):",
@@ -223,10 +226,11 @@ def test_main_writes_relative_reexports_from_nested_source_init(monkeypatch, tmp
         "\n".join(
             [
                 "from typing import Protocol",
-                "from solid_tk import Accessor, component",
+                "from solid_tk import component",
+                "from solid_tk import reactive",
                 "",
                 "class CounterProps(Protocol):",
-                "    title: Accessor[str]",
+                "    title: reactive.Accessor[str]",
                 "",
                 "@component",
                 "def Counter(props: CounterProps):",
@@ -284,10 +288,11 @@ def test_watch_modified_init_file_with_component_reexports_regenerates_all(
         "\n".join(
             [
                 "from typing import Protocol",
-                "from solid_tk import Accessor, component",
+                "from solid_tk import component",
+                "from solid_tk import reactive",
                 "",
                 "class CounterProps(Protocol):",
-                "    title: Accessor[str]",
+                "    title: reactive.Accessor[str]",
                 "",
                 "@component",
                 "def Counter(props: CounterProps):",
@@ -416,10 +421,11 @@ def test_watch_moved_init_file_removes_old_stub_and_regenerates_all(
         "\n".join(
             [
                 "from typing import Protocol",
-                "from solid_tk import Accessor, component",
+                "from solid_tk import component",
+                "from solid_tk import reactive",
                 "",
                 "class CounterProps(Protocol):",
-                "    title: Accessor[str]",
+                "    title: reactive.Accessor[str]",
                 "",
                 "@component",
                 "def Counter(props: CounterProps):",

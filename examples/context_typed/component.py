@@ -2,17 +2,17 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from solid_tk import Accessor
-from solid_tk import Button
-from solid_tk import HStack
-from solid_tk import Label
-from solid_tk import Mutator
-from solid_tk import Provider
-from solid_tk import VStack
 from solid_tk import component
-from solid_tk import create_context
-from solid_tk import create_signal
-from solid_tk import use_context
+from solid_tk.context import Provider
+from solid_tk.context import create_context
+from solid_tk.context import use_context
+from solid_tk.reactive import Accessor
+from solid_tk.reactive import Mutator
+from solid_tk.reactive import create_signal
+from solid_tk.widgets import Button
+from solid_tk.widgets import HStack
+from solid_tk.widgets import Label
+from solid_tk.widgets import VStack
 
 """
 Inspired by this:
@@ -41,10 +41,10 @@ def DarkProvider(props):
 
 
 def use_dark() -> DarkContextValue:
-    context = use_context(dark_context)
-    if context is None:
+    value = use_context(dark_context)
+    if value is None:
         raise RuntimeError("use_dark must be used within a DarkProvider")
-    return context
+    return value
 
 
 def use_is_dark() -> Accessor[bool]:

@@ -1,7 +1,7 @@
 """Scheduler example application."""
 
 from examples.scheduler_demo.component import scheduler_demo
-from solid_tk import create_root
+from solid_tk.runtime import create_root
 
 
 def main() -> None:

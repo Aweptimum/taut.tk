@@ -1,7 +1,7 @@
 """Store example application."""
 
 from examples.store_demo.component import store_demo
-from solid_tk import create_root
+from solid_tk.runtime import create_root
 
 
 def main() -> None:

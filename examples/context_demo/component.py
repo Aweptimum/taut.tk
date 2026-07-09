@@ -2,15 +2,15 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from solid_tk import Button
-from solid_tk import HStack
-from solid_tk import Label
-from solid_tk import Provider
-from solid_tk import VStack
 from solid_tk import component
-from solid_tk import create_context
-from solid_tk import create_signal
-from solid_tk import use_context
+from solid_tk.context import Provider
+from solid_tk.context import create_context
+from solid_tk.context import use_context
+from solid_tk.reactive import create_signal
+from solid_tk.widgets import Button
+from solid_tk.widgets import HStack
+from solid_tk.widgets import Label
+from solid_tk.widgets import VStack
 
 
 @dataclass(frozen=True)
