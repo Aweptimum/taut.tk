@@ -52,3 +52,22 @@ center_fill = style.define(
     pack={"fill": "both", "expand": True},
 )
 button_row = style.define("button_row", gap=6, align="center")
+
+image_grid = style.define(
+    "image_grid",
+    columns=2,
+    gap=4,
+    sticky="nsew",
+    bg="#f8fafc",
+    pack={"fill": "x"},
+)
+image_tile = style.define(
+    "image_tile",
+    bg="#ffffff",
+    relief="solid",
+    bd=1,
+    padx=8,
+    pady=8,
+)
+image_title = style.define("image_title", bg="#ffffff", font=("TkDefaultFont", 9, "bold"))
+image_meta = style.define("image_meta", bg="#ffffff", fg="#475569")

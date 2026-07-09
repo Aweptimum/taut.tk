@@ -17,6 +17,7 @@ from solid_tk import ttk
 ```python
 tk.Tk
 tk.Frame
+tk.Grid
 tk.Label
 tk.Button
 tk.Entry
@@ -182,6 +183,31 @@ wrapper widget.
 
 Children with explicit `grid` or `place` layout are not rewritten by stack
 layout.
+
+## Grid
+
+`Grid` is a convenience `Frame` node that assigns grid options to its visible
+children. It works well with transparent control flow:
+
+```python
+tk.Grid(
+    For(images, lambda image: ImageTile(image), key=lambda image: image["id"]),
+    columns=2,
+    gap=6,
+    sticky="nsew",
+)
+```
+
+Grid props:
+
+- `columns`: number of columns before wrapping to the next row
+- `gap`: integer padding applied as `padx` and `pady` to each child
+- `sticky`: Tk grid sticky value for each child, defaulting to `"nsew"`
+- `padding`: integer or `(padx, pady)` tuple applied to the grid frame
+
+Child widgets can still provide explicit `grid={...}` options. Those options
+override the row, column, sticky, or padding computed by the parent grid.
+Children with explicit `place` layout are not rewritten by grid layout.
 
 ## Transparent Layout
 

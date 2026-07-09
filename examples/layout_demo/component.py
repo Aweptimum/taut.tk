@@ -5,6 +5,7 @@ from solid_tk import component
 from solid_tk import style
 from solid_tk import tk
 from solid_tk import ttk
+from solid_tk.control import For
 
 Page = style.component(tk.VStack, styles.page)
 PanelStack = style.component(tk.VStack, styles.panel)
@@ -22,6 +23,13 @@ SampleRow = style.component(tk.HStack, styles.sample_row)
 GrowRow = style.component(tk.HStack, styles.grow_row)
 CenterFill = style.component(tk.HStack, styles.center_fill)
 ButtonRow = style.component(tk.HStack, styles.button_row)
+
+IMAGE_TILES = (
+    {"id": "north", "title": "North ridge", "tone": "#bfdbfe"},
+    {"id": "east", "title": "East window", "tone": "#bbf7d0"},
+    {"id": "south", "title": "South field", "tone": "#fed7aa"},
+    {"id": "west", "title": "West desk", "tone": "#ddd6fe"},
+)
 
 
 def swatch(text: str, color: str, *, swatch_style=None, width: int | None = None):
@@ -120,6 +128,25 @@ def grow_example():
     )
 
 
+def grid_tile(tile):
+    return tk.VStack(
+        swatch("", tile["tone"], width=18),
+        tk.Label(text=tile["title"], style=styles.image_title),
+        tk.Label(text="placed by tk.Grid", style=styles.image_meta),
+        style=styles.image_tile,
+    )
+
+
+def grid_style_example():
+    return panel(
+        "For children with grid styles",
+        tk.Grid(
+            For(IMAGE_TILES, grid_tile, key=lambda tile: tile["id"]),
+            style=styles.image_grid,
+        ),
+    )
+
+
 def actions():
     return ButtonRow(
         ttk.Button(text="OK"),
@@ -134,5 +161,6 @@ def layout_demo(props):
         gap_align_example(),
         padding_example(),
         grow_example(),
+        grid_style_example(),
         actions(),
     )

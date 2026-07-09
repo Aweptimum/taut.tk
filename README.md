@@ -64,7 +64,7 @@ I keep reaching for it every time I want a small UI at work and I keep getting b
 - first-class component children through `props.children`
 - transparent `Fragment(...)` nodes for returning multiple children
 - widget namespaces: `tk` for classic Tk widgets and `ttk` for themed widgets
-- stack layout helpers: `VStack`, `HStack`, `Item`
+- layout helpers: `VStack`, `HStack`, `Grid`, `Item`
 - StyleX-ish style objects agnostic to tk/ttk widgets with `style.define()`, `style.merge()`, and `style.component()`.
 - some control flow: `Show`, `For`, `Switch` / `Match`, `Index`, `Dynamic`
 - context: `create_context()`, `Provider`, `use_context()`
@@ -197,4 +197,3 @@ It compares raw Tk-style widget creation with solid-tk mounting for static
 labels, reactive label props, and a component wrapper. The most useful line is
 the reported extra microseconds per widget, because native Tk/Tcl startup and
 platform display behavior are intentionally excluded.
-

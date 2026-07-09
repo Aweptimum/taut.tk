@@ -55,6 +55,17 @@ tk.VStack(
 )
 ```
 
+Grid helpers consume grid layout props from styles too:
+
+```python
+image_grid = style.define("image_grid", columns=2, gap=6, sticky="nsew")
+
+tk.Grid(
+    For(images, lambda image: ImageTile(image), key=lambda image: image["id"]),
+    style=image_grid,
+)
+```
+
 Use `style.merge()` when composing styles or adding conditional props. Later
 styles win, and the generated style name comes from the last named style.
 

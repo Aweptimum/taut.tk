@@ -21,6 +21,7 @@ from .tk_props import ButtonProps
 from .tk_props import CheckbuttonProps
 from .tk_props import EntryProps
 from .tk_props import FrameProps
+from .tk_props import GridProps
 from .tk_props import LabelProps
 from .tk_props import LayoutProps
 from .tk_props import Padding
@@ -33,6 +34,7 @@ from .tk_props import TkProps
 LAYOUT_KEYS = {"pack", "grid", "place"}
 INTERNAL_KEYS = {"children", "layout"}
 STACK_KEYS = {"align", "fill", "gap", "grow", "padding"}
+GRID_KEYS = {"columns", "gap", "padding", "sticky"}
 STACK_ITEM_KEYS = {"align", "fill", "grow", "pack"}
 
 
@@ -125,13 +127,18 @@ class WidgetNode(MountedNode):
                 child.unmount()
 
         stack = getattr(self, "_stack", None)
+        grid = getattr(self, "_grid", None)
         if stack is not None:
             apply_stack_layout(visible, stack)
+        elif grid is not None:
+            apply_grid_layout(visible, grid)
 
         for child in visible:
             if child.widget is None:
                 child.mount(self.widget)
-            elif stack is not None and isinstance(child, WidgetNode):
+            elif (stack is not None or grid is not None) and isinstance(
+                child, WidgetNode
+            ):
                 child.apply_layout(reset=True)
 
         self.mounted_children = visible
@@ -346,6 +353,16 @@ def HStack(*children: Any, **props: Unpack[StackProps]) -> WidgetNode:
     return node
 
 
+def Grid(*children: Any, **props: Unpack[GridProps]) -> WidgetNode:
+    apply_style(props)
+    grid = consume_grid(props)
+    layout = consume_layout(props)
+    node = WidgetNode(tk.Frame, children=children, layout=layout, **props)
+    setattr(node, "_grid", grid)
+    apply_grid_layout(list(node.children), grid)
+    return node
+
+
 def resolve_portal_child(child: Callable[[], Any] | Any) -> Any:
     while callable(child) and not (hasattr(child, "mount") and hasattr(child, "unmount")):
         child = child()
@@ -384,6 +401,20 @@ def consume_stack(props: Any, *, axis: str) -> dict[str, Any]:
     return stack
 
 
+def consume_grid(props: Any) -> dict[str, Any]:
+    grid = {key: props.pop(key) for key in GRID_KEYS if key in props}
+
+    if "padding" in grid:
+        padx, pady = resolve_padding(grid["padding"])
+        props.setdefault("padx", padx)
+        props.setdefault("pady", pady)
+
+    grid.setdefault("columns", 1)
+    grid.setdefault("gap", 0)
+    grid.setdefault("sticky", "nsew")
+    return grid
+
+
 def resolve_padding(padding: Padding) -> tuple[int, int]:
     if isinstance(padding, tuple):
         return padding
@@ -403,6 +434,31 @@ def apply_stack_layout(children: list[Any], stack: dict[str, Any]) -> None:
         pack.update(child.layout.get("pack", {}))
         pack.update(item.get("pack", {}))
         child.layout = {"pack": pack}
+
+
+def apply_grid_layout(children: list[Any], grid: dict[str, Any]) -> None:
+    columns = max(1, grid["columns"])
+    gap = grid["gap"]
+    for index, child in enumerate(children):
+        if not isinstance(child, WidgetNode):
+            continue
+        if "place" in child.layout:
+            continue
+        item = getattr(child, "_grid_layout", None)
+        if item is None:
+            item = child.layout.get("grid", {})
+            setattr(child, "_grid_layout", item)
+
+        options = {
+            "row": index // columns,
+            "column": index % columns,
+            "sticky": grid["sticky"],
+        }
+        if gap:
+            options["padx"] = gap
+            options["pady"] = gap
+        options.update(item)
+        child.layout = {"grid": options}
 
 
 def forget_layout(widget: Any) -> None:

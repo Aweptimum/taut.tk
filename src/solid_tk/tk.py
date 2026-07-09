@@ -5,6 +5,7 @@ from .widgets import Button
 from .widgets import Checkbutton
 from .widgets import Entry
 from .widgets import Frame
+from .widgets import Grid
 from .widgets import HStack
 from .widgets import Item
 from .widgets import Label
@@ -18,6 +19,7 @@ __all__ = [
     "Entry",
     "Frame",
     "Fragment",
+    "Grid",
     "HStack",
     "Item",
     "Label",

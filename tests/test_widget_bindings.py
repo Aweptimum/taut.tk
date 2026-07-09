@@ -4,8 +4,10 @@ import pytest
 from fakes import FakeStringVar
 
 from solid_tk import component
+from solid_tk import control
 from solid_tk import reactive
 from solid_tk import runtime
+from solid_tk import style
 from solid_tk import widgets
 
 
@@ -229,3 +231,67 @@ def test_stack_preserves_explicit_grid_and_place_layouts():
 
     assert grid_child.grid_kwargs == {"row": 0, "column": 1}
     assert place_child.place_kwargs == {"x": 10, "y": 20}
+
+
+def test_grid_tiles_for_children_by_visible_order():
+    items, set_items = reactive.create_signal(["a", "b", "c", "d"])
+
+    mount = runtime.create_root(
+        lambda: widgets.Grid(
+            control.For(items, lambda item: widgets.Label(text=item), key=lambda item: item),
+            columns=2,
+            gap=4,
+            sticky="ew",
+        ),
+        title="Demo",
+    )
+    first, second, third, fourth = mount.widget.children[0].children
+
+    assert first.grid_kwargs == {
+        "row": 0,
+        "column": 0,
+        "sticky": "ew",
+        "padx": 4,
+        "pady": 4,
+    }
+    assert second.grid_kwargs["row"] == 0
+    assert second.grid_kwargs["column"] == 1
+    assert third.grid_kwargs["row"] == 1
+    assert third.grid_kwargs["column"] == 0
+    assert fourth.grid_kwargs["row"] == 1
+    assert fourth.grid_kwargs["column"] == 1
+
+    set_items(["b", "d"])
+
+    assert first.destroyed
+    assert third.destroyed
+    assert second.grid_kwargs["row"] == 0
+    assert second.grid_kwargs["column"] == 0
+    assert fourth.grid_kwargs["row"] == 0
+    assert fourth.grid_kwargs["column"] == 1
+
+
+def test_grid_accepts_layout_from_style():
+    grid_style = style.grid(columns=2, gap=3, sticky="nsew", padding=8)
+
+    mount = runtime.create_root(
+        lambda: widgets.Grid(
+            widgets.Label(text="One"),
+            widgets.Label(text="Two"),
+            style=grid_style,
+        ),
+        title="Demo",
+    )
+    grid = mount.widget.children[0]
+    first, second = grid.children
+
+    assert grid.props["padx"] == 8
+    assert grid.props["pady"] == 8
+    assert first.grid_kwargs == {
+        "row": 0,
+        "column": 0,
+        "sticky": "nsew",
+        "padx": 3,
+        "pady": 3,
+    }
+    assert second.grid_kwargs["column"] == 1

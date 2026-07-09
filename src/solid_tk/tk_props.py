@@ -276,6 +276,13 @@ class StackProps(FrameProps, total=False):
     padding: Padding
 
 
+class GridProps(FrameProps, total=False):
+    columns: int
+    gap: int
+    padding: Padding
+    sticky: str
+
+
 class StackItemProps(TypedDict, total=False):
     style: Any
     align: StackAlign
@@ -284,7 +291,7 @@ class StackItemProps(TypedDict, total=False):
     pack: PackOptions
 
 
-class StyleProps(StackProps, total=False):
+class StyleProps(GridProps, StackProps, total=False):
     style: Reactive[str]
     title: Reactive[str]
     anchor: Reactive[Anchor]
