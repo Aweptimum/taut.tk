@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+import threading
 from pathlib import Path
 from textwrap import dedent
 from types import SimpleNamespace
@@ -487,6 +488,41 @@ def test_to_ui_can_capture_dispatcher_for_later_thread_callbacks():
 
     handle.cancel()
     assert events == ["worker result"]
+
+
+def test_to_ui_dispatcher_cancels_callbacks_dispatched_during_disposal():
+    events = []
+    errors = []
+    dispatchers = []
+
+    @component
+    def App(props):
+        dispatchers.append(to_ui())
+        return Label(text="App")
+
+    mount = create_root(App, title="Demo")
+    dispatch = dispatchers[0]
+    started = threading.Barrier(2)
+
+    def worker():
+        try:
+            started.wait()
+            for _ in range(20):
+                dispatch(lambda: events.append("worker result"))
+        except Exception as exc:  # pragma: no cover - surfaced by assertion
+            errors.append(exc)
+
+    thread = threading.Thread(target=worker)
+    thread.start()
+    started.wait()
+    mount.dispose()
+    thread.join()
+
+    while mount.widget.after_callbacks:
+        mount.widget.run_next_after()
+
+    assert errors == []
+    assert events == []
 
 
 def test_root_callback_lifecycle_helpers_are_owned():

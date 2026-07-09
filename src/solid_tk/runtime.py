@@ -7,6 +7,7 @@ from contextlib import contextmanager
 from contextvars import ContextVar
 from dataclasses import dataclass
 from dataclasses import field
+from threading import Lock
 from typing import Any
 from typing import Protocol
 
@@ -228,26 +229,36 @@ def to_ui() -> ThreadDispatcher:
     scheduler = current_scheduler()
     cancelled = False
     handles: list[CancelHandle] = []
+    lock = Lock()
 
     def cleanup() -> None:
         nonlocal cancelled
-        cancelled = True
-        for handle in handles:
+        with lock:
+            cancelled = True
+            pending = list(handles)
+            handles.clear()
+        for handle in pending:
             handle.cancel()
 
     def dispatch(callback: Callable[[], Any]) -> CancelHandle:
-        if cancelled:
-            return NoopCancelHandle()
+        with lock:
+            if cancelled:
+                return NoopCancelHandle()
 
         def run() -> Any:
-            if cancelled:
-                return None
+            with lock:
+                if cancelled:
+                    return None
             with use_owner(owner):
                 return callback()
 
         handle = scheduler.to_ui(run)
-        handles.append(handle)
-        return handle
+        with lock:
+            if cancelled:
+                handle.cancel()
+                return NoopCancelHandle()
+            handles.append(handle)
+            return handle
 
     owner.cleanup(cleanup)
     return dispatch
