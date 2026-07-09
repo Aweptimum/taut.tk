@@ -44,7 +44,7 @@ class WidgetNode(MountedNode):
         for name in self.props.names(skip=skipped_props):
             tk_name = event_name(name)
             if self.props.is_binding(name, event=is_event_prop(name)):
-                reactive_props[tk_name] = self.props.widget_binding(name)
+                reactive_props[tk_name] = self.props.widget_prop_accessor(name)
             elif is_event_prop(name):
                 ctor_props[tk_name] = self.props.read(name)
             else:
@@ -106,7 +106,7 @@ class ValueWidgetNode(WidgetNode):
 
         variable = tk.StringVar(master=parent)
         props["textvariable"] = variable
-        accessor = self.props.binding("value")
+        accessor = self.props.prop_accessor("value")
         raw_value = self.props.raw("value")
         writable = raw_value if hasattr(raw_value, "set") else None
         syncing = False
@@ -137,7 +137,7 @@ class RootNode(WidgetNode):
     def mount(self, parent: Any | None = None) -> Any:
         widget = super().mount(None)
         if "title" in self.props:
-            accessor = self.props.binding("title")
+            accessor = self.props.prop_accessor("title")
 
             def apply_title() -> None:
                 if self.widget is not None:
