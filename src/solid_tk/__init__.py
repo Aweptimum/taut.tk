@@ -29,6 +29,12 @@ from .runtime import create_root
 from .runtime import get_current_owner
 from .runtime import on_cleanup
 from .runtime import on_mount
+from .stores import StoreLens
+from .stores import StoreSetter
+from .stores import create_store
+from .stores import produce
+from .stores import reconcile
+from .stores import unwrap
 from .widgets import Button
 from .widgets import Checkbutton
 from .widgets import Entry
@@ -58,6 +64,8 @@ __all__ = [
     "Props",
     "Show",
     "Signal",
+    "StoreLens",
+    "StoreSetter",
     "Setter",
     "SignalLike",
     "Tk",
@@ -70,9 +78,13 @@ __all__ = [
     "create_effect",
     "create_memo",
     "create_root",
+    "create_store",
     "get_current_owner",
     "on_cleanup",
     "on_mount",
+    "produce",
+    "reconcile",
     "untracked",
+    "unwrap",
     "use_context",
 ]
