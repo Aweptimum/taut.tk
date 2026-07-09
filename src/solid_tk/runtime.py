@@ -33,6 +33,7 @@ class Mount:
 @dataclass
 class Owner:
     parent: Owner | None = None
+    context: Mapping[Any, Any] = field(default_factory=dict)
     cleanups: list[Callable[[], None]] = field(default_factory=list)
     effects: list[Effect] = field(default_factory=list)
     mounts: list[Callable[[], Any]] = field(default_factory=list)

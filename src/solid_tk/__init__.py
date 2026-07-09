@@ -8,6 +8,10 @@ from reaktiv import untracked
 
 from .component import Component
 from .component import component
+from .context import Context
+from .context import Provider
+from .context import create_context
+from .context import use_context
 from .control import For
 from .control import Show
 from .props import NodeProps
@@ -48,6 +52,8 @@ __all__ = [
     "Mount",
     "Node",
     "NodeProps",
+    "Context",
+    "Provider",
     "Props",
     "Show",
     "Signal",
@@ -59,10 +65,12 @@ __all__ = [
     "WritableAccessor",
     "batch",
     "component",
+    "create_context",
     "create_effect",
     "create_root",
     "get_current_owner",
     "on_cleanup",
     "on_mount",
     "untracked",
+    "use_context",
 ]

@@ -12,9 +12,15 @@ from solid_tk import Button
 from solid_tk import Component
 from solid_tk import Entry
 from solid_tk import Label
+from solid_tk import Provider
 from solid_tk import VStack
 from solid_tk import component
+from solid_tk import create_context
+from solid_tk import create_effect
 from solid_tk import create_root
+from solid_tk import on_cleanup
+from solid_tk import on_mount
+from solid_tk import use_context
 from solid_tk import widgets
 
 
@@ -225,6 +231,76 @@ def test_root_callback_lifecycle_helpers_are_owned():
     mount.dispose()
 
     assert events == ["mount", "cleanup"]
+
+
+def test_context_reads_default_value():
+    theme = create_context("light")
+
+    @component
+    def ThemedLabel(props):
+        return Label(text=use_context(theme))
+
+    mount = create_root(lambda: ThemedLabel(), title="Demo")
+    label = mount.widget.children[0]
+
+    assert label.props["text"] == "light"
+
+
+def test_provider_supplies_context_to_callable_child():
+    theme = create_context("light")
+
+    @component
+    def ThemedLabel(props):
+        return Label(text=use_context(theme))
+
+    mount = create_root(
+        lambda: Provider(theme, "dark", lambda: ThemedLabel()),
+        title="Demo",
+    )
+    label = mount.widget.children[0]
+
+    assert label.props["text"] == "dark"
+
+
+def test_provider_accepts_forwarded_component_children():
+    theme = create_context("light")
+
+    @component
+    def ThemeProvider(props):
+        return Provider(theme, "dark", props.children)
+
+    @component
+    def ThemedLabel(props):
+        return Label(text=use_context(theme))
+
+    mount = create_root(
+        lambda: ThemeProvider(children=lambda: ThemedLabel()),
+        title="Demo",
+    )
+    label = mount.widget.children[0]
+
+    assert label.props["text"] == "dark"
+
+
+def test_nested_provider_uses_nearest_context_value():
+    theme = create_context("light")
+
+    @component
+    def ThemedLabel(props):
+        return Label(text=use_context(theme))
+
+    mount = create_root(
+        lambda: Provider(
+            theme,
+            "outer",
+            lambda: Provider(theme, "inner", lambda: ThemedLabel()),
+        ),
+        title="Demo",
+    )
+    label = mount.widget.children[0]
+
+    assert label.props["text"] == "inner"
+
 
 def test_function_component_props_can_be_typed_with_protocol():
     class CounterProps(Protocol):
