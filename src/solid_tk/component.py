@@ -10,19 +10,23 @@ from typing import cast
 from .props import Props
 from .runtime import MountedNode
 from .runtime import Node
+from .runtime import Owner
+from .runtime import get_current_owner
 from .runtime import normalize_child
+from .runtime import use_owner
 
 TProps = TypeVar("TProps")
 
 
 class ComponentNode(MountedNode):
-    def __init__(self, component: Any, rendered: Node) -> None:
-        super().__init__()
+    def __init__(self, component: Any, rendered: Node, *, owner: Owner) -> None:
+        super().__init__(owner=owner)
         self.component = component
         self.rendered = rendered
 
     def mount(self, parent: Any | None) -> Any:
         self.widget = self.rendered.mount(parent)
+        self.owner.run_mounts()
         return self.widget
 
     def unmount(self) -> None:
@@ -36,9 +40,11 @@ def component(fn: Callable[[TProps], Any]) -> Callable[..., ComponentNode]:
 
     @wraps(fn)
     def factory(**props: Any) -> ComponentNode:
+        owner = Owner(parent=get_current_owner())
         component_props = Props(props)
-        rendered = normalize_child(fn(cast(TProps, component_props)))
-        return ComponentNode(fn, rendered)
+        with use_owner(owner):
+            rendered = normalize_child(fn(cast(TProps, component_props)))
+        return ComponentNode(fn, rendered, owner=owner)
 
     return factory
 
@@ -54,18 +60,20 @@ class Component:
     props: Props
 
     def __new__(cls, **props: Any) -> ComponentNode:  # type: ignore[override]
+        owner = Owner(parent=get_current_owner())
         instance = super().__new__(cls)
         instance.props = Props(props)
-        if _accepts_no_args(instance.__init__):
-            instance.__init__()
-        elif _accepts_props_object(instance.__init__):
-            instance.__init__(instance.props)
-        else:
-            raise TypeError(
-                f"{cls.__name__}.__init__ must accept no arguments or a props object"
-            )
-        rendered = normalize_child(instance.render())
-        return ComponentNode(instance, rendered)
+        with use_owner(owner):
+            if _accepts_no_args(instance.__init__):
+                instance.__init__()
+            elif _accepts_props_object(instance.__init__):
+                instance.__init__(instance.props)
+            else:
+                raise TypeError(
+                    f"{cls.__name__}.__init__ must accept no arguments or a props object"
+                )
+            rendered = normalize_child(instance.render())
+        return ComponentNode(instance, rendered, owner=owner)
 
     def __init__(self, props: Props | None = None) -> None:
         self.setup()

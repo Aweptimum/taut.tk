@@ -60,6 +60,7 @@ class WidgetNode(MountedNode):
         self.bind_reactive_props(reactive_props)
 
         self.mount_children()
+        self.owner.run_mounts()
 
         return self.widget
 

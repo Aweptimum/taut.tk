@@ -19,7 +19,11 @@ from .reactive import Updater
 from .reactive import WritableAccessor
 from .runtime import Mount
 from .runtime import Node
+from .runtime import create_effect
 from .runtime import create_root
+from .runtime import get_current_owner
+from .runtime import on_cleanup
+from .runtime import on_mount
 from .widgets import Button
 from .widgets import Checkbutton
 from .widgets import Entry
@@ -55,6 +59,10 @@ __all__ = [
     "WritableAccessor",
     "batch",
     "component",
+    "create_effect",
     "create_root",
+    "get_current_owner",
+    "on_cleanup",
+    "on_mount",
     "untracked",
 ]

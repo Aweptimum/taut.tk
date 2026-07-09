@@ -185,6 +185,47 @@ def test_widget_binding_unwraps_forwarded_callable_prop_value():
     assert label.props["text"] == "Count: 1"
 
 
+def test_function_component_lifecycle_helpers_are_owned():
+    value = Signal("hello")
+    events = []
+
+    @component
+    def Tracker(props):
+        create_effect(lambda: events.append(f"effect:{props.value()}"))
+        on_mount(lambda: events.append("mount"))
+        on_cleanup(lambda: events.append("cleanup"))
+        return Label(text=props.value)
+
+    mount = create_root(lambda: Tracker(value=value), title="Demo")
+
+    assert events == ["effect:hello", "mount"]
+
+    value.set("world")
+
+    assert events == ["effect:hello", "mount", "effect:world"]
+
+    mount.dispose()
+    value.set("again")
+
+    assert events == ["effect:hello", "mount", "effect:world", "cleanup"]
+
+
+def test_root_callback_lifecycle_helpers_are_owned():
+    events = []
+
+    def App():
+        on_mount(lambda: events.append("mount"))
+        on_cleanup(lambda: events.append("cleanup"))
+        return Label(text="Root")
+
+    mount = create_root(App, title="Demo")
+
+    assert events == ["mount"]
+
+    mount.dispose()
+
+    assert events == ["mount", "cleanup"]
+
 def test_function_component_props_can_be_typed_with_protocol():
     class CounterProps(Protocol):
         title: Accessor[str]
