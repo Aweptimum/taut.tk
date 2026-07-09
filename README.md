@@ -53,6 +53,43 @@ mount = create_root(
 mount.widget.mainloop()
 ```
 
+## Why Tk?
+I keep reaching for it every time I want a small UI at work and I keep getting bogged down in abstractions I think are loose but turn out to be more tightly-coupled than I realize. Imperatively updating state is also a chore and makes for widgets with lots of clunky helpers, and I find widget vars unwieldy. My most recent attempt I threw `reaktiv` at the problem and was surprised at how streamlined it made my widgets. I felt it could be more. So here we are.
+
+## What's Here So Far
+
+- Functional components using `@component` decorator
+- Class `Component` with `__init__()/setup()` and `render()`
+- `Props`, where every attribute is an accessor
+- first-class component children through `props.children`
+- transparent `Fragment(...)` nodes for returning multiple children
+- widget namespaces: `tk` for classic Tk widgets and `ttk` for themed widgets
+- stack layout helpers: `VStack`, `HStack`, `Item`
+- StyleX-ish style objects agnostic to tk/ttk widgets with `style.define()`, `style.merge()`, and `style.component()`.
+- some control flow: `Show`, `For`, `Switch` / `Match`, `Index`, `Dynamic`
+- context: `create_context()`, `Provider`, `use_context()`
+- stores: `create_store()` for immutable updates and `create_mutable()` for
+  Solid-style mutable object state
+- resources: `create_resource()` with `loading`, `error`, `state`, `mutate`, `refetch`
+- lifecycle helpers: `create_effect()`, `on_mount()`, `on_cleanup()`
+- `create_root()` and explicit disposal through the returned `Mount`
+
+## Doc Topics
+
+- [Context](docs/context.md): providers, typed context helpers, and forwarded children.
+- [Control](docs/control.md): conditional rendering.
+- [Reactive primitives](docs/reactive.md): signals, memos, effects, and owner cleanup.
+- [Resources](docs/resources.md): worker-thread loading, refreshes, mutation, and status.
+- [Scheduling](docs/scheduling.md): queueing work
+- [Stores](docs/stores.md): state management
+- [Style](docs/style.md): StyleX-ish style objects, merging, and component styling.
+- [Widgets](docs/widgets.md): Tkinter primitives
+
+## Examples
+
+The runnable examples live in [examples](../examples/). Start with the
+[examples README](../examples/README.md) for a short path through them.
+
 ## Strong Typing
 To follow Solid's model of named args collected into reactive props, there is some brittle trickery.
 
@@ -147,110 +184,6 @@ tk.VStack(
 In that example, the repeated labels are laid out by `VStack` between
 `Before` and `After`; `For` and the component do not create wrapper frames.
 
-
-## What's Here So Far
-
-- Functional components using `@component` decorator
-- `Component` with `__init__()/setup()` and `render()`
-- `Props`, where every attribute is an accessor
-- first-class component children through `props.children`
-- transparent `Fragment(...)` nodes for returning multiple children
-- widget namespaces: `tk` for classic Tk widgets and `ttk` for themed widgets
-- stack layout helpers: `VStack`, `HStack`, `Item`
-- StyleX-ish style objects with `style.define()`, `style.merge()`, and
-  `style.component()`
-- some control flow: `Show`, `For`, `Switch` / `Match`, `Index`, `Dynamic`
-- context: `create_context()`, `Provider`, `use_context()`
-- stores: `create_store()` for immutable updates and `create_mutable()` for
-  Solid-style mutable list state
-- resources: `create_resource()` with `loading`, `error`, `state`, `mutate`, `refetch`
-- lifecycle helpers: `create_effect()`, `on_mount()`, `on_cleanup()`
-- `create_root()` and explicit disposal through the returned `Mount`
-
-```python
-Switch(
-    Match(lambda: status() == "ready", lambda: tk.Label(text="Ready")),
-    Match(lambda: status() == "busy", lambda: tk.Label(text="Working")),
-    fallback=lambda: tk.Label(text="Idle"),
-)
-
-Index(items, lambda item, index: tk.Label(text=lambda: f"{index}: {item()}"))
-Dynamic(selected_component, title="Hello")
-```
-
-`create_mutable()` returns the mutable object itself. List reads are reactive,
-and list writes notify dependents:
-
-```python
-items = create_mutable(["a"])
-create_effect(lambda: print(list(items)))
-items.append("b")
-items[0] = "A"
-```
-
-See `examples/layout_demo` for stack spacing, padding, alignment, per-child
-layout overrides, and importable style definitions:
-
-```sh
-python -m examples.layout_demo
-```
-
-See `docs/style.md` for the style helper conventions.
-
-`solid_tk.widgets` remains available as a compatibility import for the classic
-Tk widget helpers; new code should prefer `solid_tk.tk` and `solid_tk.ttk`.
-
-See `examples/control_demo` for a runnable version:
-
-```sh
-python -m examples.control_demo
-```
-
-`ErrorBoundary` catches render and reactive update errors in its child subtree
-and can retry from a fallback:
-
-```sh
-python -m examples.error_boundary_demo
-```
-
-- event-loop helpers: `after`, `interval`, `defer`, `to_ui`
-
-```python
-after(500, lambda: set_status("half a second later"))
-interval(1000, lambda: set_count(lambda value: value + 1))
-defer(lambda: print("runs on the next Tk event loop turn"))
-
-dispatch = to_ui()
-dispatch(lambda: set_status("called from another thread"))
-```
-
-Scheduled callbacks are owned and cancelled automatically when their component
-or root is disposed. Keep interval callbacks small; Tk runs UI work on one event
-loop, so slow callbacks still block the interface.
-
-See `examples/scheduler_demo` for moving labels and a worker-thread callback:
-
-```sh
-python -m examples.scheduler_demo
-```
-
-Resources run blocking work on a worker thread and publish the result back to
-Tk through the owner scheduler. If a newer request starts before an older one
-finishes, the older result is ignored; the worker thread itself is not forcibly
-cancelled.
-
-```python
-image, (mutate, refetch) = create_resource(fetch_image, None, image_url)
-
-tk.Label(text=lambda: "Loading..." if image.loading() else image.state())
-tk.Button(text="Retry", on_click=lambda: refetch("button"))
-```
-
-See `docs/resources.md` for the API reference and `examples/resource_demo` for
-a runnable image-loading demo with progress updates.
-
-This is not a full Tkinter framework yet; more goodies to implement!
-
 ## Benchmarks
 
 To estimate framework overhead without needing a display server, run the fake-Tk
@@ -265,5 +198,3 @@ labels, reactive label props, and a component wrapper. The most useful line is
 the reported extra microseconds per widget, because native Tk/Tcl startup and
 platform display behavior are intentionally excluded.
 
-## Why Tk?
-I keep reaching for it every time I want a small UI at work and I keep getting bogged down in abstractions I think are loose but turn out to be more tightly-coupled than I realize. Imperatively updating state is also a chore and makes for widgets with lots of clunky helpers, and I find widget vars unwieldy. My most recent attempt I threw `reaktiv` at the problem and was surprised at how streamlined it made my widgets. I felt it could be more. So here we are.

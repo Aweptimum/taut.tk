@@ -11,6 +11,33 @@ set_count(1)
 set_count(lambda value: value + 1)
 ```
 
+## API
+
+Import signal helpers from `solid_tk.reactive`:
+
+```python
+from solid_tk.reactive import Accessor
+from solid_tk.reactive import Mutator
+from solid_tk.reactive import create_memo
+from solid_tk.reactive import create_selector
+from solid_tk.reactive import create_signal
+from solid_tk.reactive import is_accessor
+from solid_tk.reactive import is_mutator
+from solid_tk.reactive import is_signal
+from solid_tk.reactive import on
+from solid_tk.reactive import read
+from solid_tk.reactive import to_accessor
+from solid_tk.reactive import untrack
+```
+
+Import owned effect and lifecycle helpers from `solid_tk.runtime`:
+
+```python
+from solid_tk.runtime import create_effect
+from solid_tk.runtime import on_cleanup
+from solid_tk.runtime import on_mount
+```
+
 ## Accessors And Mutators
 
 An `Accessor[T]` is a callable read handle:
@@ -69,6 +96,35 @@ Memos are accessors:
 ```python
 Label(text=full_name)
 ```
+
+## `create_effect`
+
+Create an owned effect with `create_effect(fn)`. The effect runs immediately,
+tracks reactive reads, and reruns when those reads change.
+
+```python
+create_effect(lambda: print("count", count()))
+```
+
+Effects are owned by the current component/root scope and are disposed when that
+owner is unmounted.
+
+## Lifecycle Helpers
+
+Use `on_mount(fn)` for work that should run after the owner mounts:
+
+```python
+on_mount(lambda: print("mounted"))
+```
+
+Use `on_cleanup(fn)` to register teardown:
+
+```python
+on_cleanup(lambda: print("disposed"))
+```
+
+Lifecycle helpers must be called inside a solid-tk owner, such as during
+component rendering or an owned effect.
 
 ## `create_selector`
 
@@ -157,3 +213,13 @@ read("plain")
 
 These helpers are mostly used by the framework, but they are useful when writing
 small abstractions.
+
+## Type Guards
+
+`is_signal`, `is_accessor`, and `is_mutator` are small type guards for utility
+code that accepts mixed reactive/plain values.
+
+```python
+if is_accessor(value):
+    value()
+```

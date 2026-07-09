@@ -90,3 +90,11 @@ compact = style.define(padx=4, pady=2)
 A `Style` is a mapping, so `**style.merge(...)` remains available when you
 explicitly need a plain kwargs-style spread. Prefer `style=...` for normal widget
 use so classic Tk and ttk can interpret the style appropriately.
+
+## Example
+See `examples/layout_demo` for stack spacing, padding, alignment, per-child
+layout overrides, and importable style definitions:
+
+```sh
+python -m examples.layout_demo
+```

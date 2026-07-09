@@ -1,0 +1,245 @@
+# Widgets
+
+Widgets are thin node wrappers around Tk and ttk widgets. They accept positional
+children, Tk-style keyword props, reactive prop values, and layout props.
+
+Import from:
+
+```python
+from solid_tk import tk
+from solid_tk import ttk
+```
+
+## Classic Tk Namespace
+
+`solid_tk.tk` exports:
+
+```python
+tk.Tk
+tk.Frame
+tk.Label
+tk.Button
+tk.Entry
+tk.Checkbutton
+tk.VStack
+tk.HStack
+tk.Item
+tk.Portal
+tk.Fragment
+```
+
+`tk.Tk` is normally created for you by `create_root()`:
+
+```python
+mount = create_root(lambda: App(), title="Solid TK")
+mount.widget.mainloop()
+```
+
+## Themed ttk Namespace
+
+`solid_tk.ttk` exports:
+
+```python
+ttk.Frame
+ttk.Label
+ttk.Button
+ttk.Entry
+ttk.Checkbutton
+ttk.Combobox
+ttk.Separator
+ttk.Progressbar
+```
+
+ttk widgets support ttk styling through `style=...`; see [Styles](style.md).
+
+## Children
+
+Children are passed positionally:
+
+```python
+tk.VStack(
+    tk.Label(text="Name"),
+    tk.Entry(value=name, on_input=set_name),
+)
+```
+
+Primitive children are rendered with the widget layer's text-child factory,
+which currently creates `tk.Label(text=str(child))`:
+
+```python
+tk.VStack("Hello", 42)
+```
+
+Use `Fragment(...)` to return multiple children without a wrapper widget:
+
+```python
+from solid_tk import Fragment
+
+@component
+def Actions(props):
+    return Fragment(
+        tk.Button(text="Save"),
+        tk.Button(text="Cancel"),
+    )
+```
+
+Components can also return transparent control-flow nodes such as `For(...)`.
+The parent widget owns layout in both cases.
+
+## Reactive Props
+
+Widget props can be plain values, accessors, or callables:
+
+```python
+tk.Label(text="Snapshot")
+tk.Label(text=name)
+tk.Label(text=lambda: f"Hello {name()}")
+```
+
+Non-event callable props are treated as reactive expressions. When the
+expression changes, the widget is configured with the new value.
+
+Event props are passed as callbacks:
+
+```python
+tk.Button(text="Increment", on_click=lambda: set_count(lambda n: n + 1))
+tk.Button(text="Save", command=save)
+```
+
+`on_click` is an alias for Tk's `command`.
+
+## Writable Inputs
+
+`tk.Entry` and `ttk.Entry` support `value` and `on_input`:
+
+```python
+text, set_text = create_signal("")
+
+tk.Entry(value=text, on_input=set_text)
+```
+
+`value` is synced into a Tk `StringVar`. User edits call `on_input` with the new
+string value.
+
+Do not pass both `value` and `textvariable` to the same entry. `value` owns the
+generated variable.
+
+## Layout Props
+
+Every widget can receive one layout prop:
+
+```python
+tk.Label(text="Packed", pack={"side": "left"})
+tk.Label(text="Gridded", grid={"row": 0, "column": 1, "sticky": "ew"})
+tk.Label(text="Placed", place={"x": 10, "y": 10})
+```
+
+If no layout prop is provided, classic widget helpers default to `pack={}`.
+`create_root()` expands the app's default-packed root child with:
+
+```python
+{"fill": "both", "expand": True}
+```
+
+Explicit root-child layout is preserved.
+
+Avoid mixing Tk geometry managers inside the same parent. If one child uses
+`grid`, its siblings in that parent should use `grid` too.
+
+## Stacks
+
+`VStack` and `HStack` are convenience `Frame` nodes that assign pack options to
+their visible children.
+
+```python
+tk.VStack(
+    tk.Label(text="One"),
+    tk.Label(text="Two"),
+    padding=12,
+    gap=6,
+)
+```
+
+Stack props:
+
+- `padding`: integer or `(padx, pady)` tuple applied to the frame
+- `gap`: spacing between children
+- `align`: `"start"`, `"center"`, `"end"`, or `"stretch"`
+- `fill`: `"none"`, `"x"`, `"y"`, or `"both"`
+- `grow`: whether children expand
+
+Use `Item(child, ...)` for per-child stack overrides:
+
+```python
+tk.VStack(
+    tk.Item(tk.Label(text="Title"), align="center"),
+    tk.Item(tk.Button(text="Save"), fill="none"),
+)
+```
+
+`Item` attaches stack layout metadata to a child node. It does not create a
+wrapper widget.
+
+Children with explicit `grid` or `place` layout are not rewritten by stack
+layout.
+
+## Transparent Layout
+
+`Fragment`, `Show`, `For`, `Switch`, `Index`, `Dynamic`, and components that
+return transparent nodes do not create wrapper frames. They expose their child
+nodes to the parent:
+
+```python
+tk.VStack(
+    tk.Label(text="Before"),
+    For(items, lambda item: tk.Label(text=item), key=lambda item: item),
+    tk.Label(text="After"),
+)
+```
+
+The parent `VStack` lays out the repeated labels between the two surrounding
+labels.
+
+## Portal
+
+`Portal(child, title=None, on_close=None)` mounts a child subtree into a
+`tk.Toplevel`.
+
+```python
+tk.Portal(
+    lambda: tk.VStack(tk.Label(text="Dialog")),
+    title="Dialog",
+    on_close=lambda: set_open(False),
+)
+```
+
+The child is usually callable so it is created under the portal owner. The
+portal owns its subtree and disposes it when closed.
+
+## Styles
+
+Pass `style=...` to classic Tk widgets, ttk widgets, and stack helpers:
+
+```python
+tk.Label(text="Classic", style=styles.title)
+ttk.Label(text="Themed", style=styles.title)
+tk.VStack(style=styles.panel)
+```
+
+Classic Tk widgets unpack style props directly. ttk widgets configure and use a
+generated ttk style name. See [Styles](style.md).
+
+## Example
+
+See `examples/layout_demo` for stacks, spacing, padding, alignment, per-child
+layout overrides, and styles:
+
+```sh
+python -m examples.layout_demo
+```
+
+See `examples/portal_demo` for `Portal`:
+
+```sh
+python -m examples.portal_demo
+```

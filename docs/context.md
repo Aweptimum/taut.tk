@@ -4,6 +4,17 @@
 child owner with a context value, and `use_context()` walks parent owners until
 it finds the nearest matching value.
 
+## API
+
+Import context helpers from `solid_tk.context`:
+
+```python
+from solid_tk.context import Context
+from solid_tk.context import Provider
+from solid_tk.context import create_context
+from solid_tk.context import use_context
+```
+
 ## `create_context()`
 
 Create a unique context key.
@@ -73,4 +84,16 @@ def use_settings() -> Settings:
     return settings
 ```
 
-See [context_typed](../examples/context_typed/) for more in that vein
+## Examples
+
+See `examples/context_demo` for basic context:
+
+```sh
+python -m examples.context_demo
+```
+
+See `examples/context_typed` for typed context helpers:
+
+```sh
+python -m examples.context_typed
+```
