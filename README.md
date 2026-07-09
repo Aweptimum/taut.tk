@@ -143,6 +143,13 @@ See `examples/control_demo` for a runnable version:
 python -m examples.control_demo
 ```
 
+`ErrorBoundary` catches render and reactive update errors in its child subtree
+and can retry from a fallback:
+
+```sh
+python -m examples.error_boundary_demo
+```
+
 - event-loop helpers: `after`, `interval`, `defer`, `to_ui`
 
 ```python

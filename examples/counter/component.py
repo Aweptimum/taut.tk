@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from typing import Protocol
 
-from solid_tk import component
 from solid_tk import Component
+from solid_tk import component
 from solid_tk.control import For
 from solid_tk.control import Show
 from solid_tk.reactive import Accessor

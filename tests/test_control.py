@@ -3,6 +3,8 @@ from __future__ import annotations
 from typing import Any
 from typing import cast
 
+import pytest
+
 from solid_tk import component
 from solid_tk import control
 from solid_tk import reactive
@@ -120,3 +122,152 @@ def test_dynamic_forwards_reactive_props_to_selected_component():
     set_item("second")
 
     assert dynamic.active.widget.props["text"] == "Detail: second"
+
+
+def test_error_boundary_renders_fallback_when_child_render_raises():
+    def Broken():
+        raise ValueError("boom")
+
+    mount = runtime.create_root(
+        lambda: control.ErrorBoundary(
+            Broken,
+            fallback=lambda error, reset: widgets.Label(text=f"Caught: {error}"),
+        ),
+        title="Demo",
+    )
+    boundary = mount.node.children[0]
+
+    assert boundary.active_kind == "fallback"
+    assert boundary.active.widget.props["text"] == "Caught: boom"
+
+
+def test_error_boundary_catches_child_reactive_update_errors():
+    value, set_value = reactive.create_signal("ok")
+
+    def text():
+        if value() == "bad":
+            raise ValueError("bad value")
+        return value()
+
+    mount = runtime.create_root(
+        lambda: control.ErrorBoundary(
+            lambda: widgets.Label(text=text),
+            fallback=lambda error, reset: widgets.Label(text=f"Caught: {error}"),
+        ),
+        title="Demo",
+    )
+    boundary = mount.node.children[0]
+    child_widget = boundary.active.widget
+
+    assert boundary.active_kind == "child"
+    assert child_widget.props["text"] == "ok"
+
+    set_value("bad")
+
+    assert child_widget.destroyed
+    assert boundary.active_kind == "fallback"
+    assert boundary.active.widget.props["text"] == "Caught: bad value"
+
+
+def test_error_boundary_can_replace_show_after_reactive_child_error():
+    value, set_value = reactive.create_signal("ok")
+
+    @component
+    def Risky(props):
+        def text():
+            if props.value() == "bad":
+                raise ValueError("bad value")
+            return props.value()
+
+        return widgets.Label(text=text)
+
+    mount = runtime.create_root(
+        lambda: control.ErrorBoundary(
+            lambda: control.Show(True, lambda: Risky(value=value)),
+            fallback=lambda error, reset: widgets.Label(text=f"Caught: {error}"),
+        ),
+        title="Demo",
+    )
+    boundary = mount.node.children[0]
+    show = boundary.active
+    show_widget = show.widget
+
+    set_value("bad")
+
+    assert show_widget.destroyed
+    assert boundary.active_kind == "fallback"
+    assert boundary.active.widget.props["text"] == "Caught: bad value"
+
+
+def test_error_boundary_reset_retries_child_rendering():
+    value, set_value = reactive.create_signal("ok")
+
+    def text():
+        if value() == "bad":
+            raise ValueError("bad value")
+        return value()
+
+    def fallback(error, reset):
+        return widgets.Button(
+            text=f"Reset from {error}",
+            command=lambda: (set_value("ok"), reset()),
+        )
+
+    mount = runtime.create_root(
+        lambda: control.ErrorBoundary(lambda: widgets.Label(text=text), fallback=fallback),
+        title="Demo",
+    )
+    boundary = mount.node.children[0]
+
+    set_value("bad")
+    assert boundary.active_kind == "fallback"
+
+    boundary.active.widget.props["command"]()
+
+    assert boundary.active_kind == "child"
+    assert boundary.active.widget.props["text"] == "ok"
+
+
+def test_error_boundary_fallback_errors_bubble_to_parent_boundary():
+    def Broken():
+        raise ValueError("child failed")
+
+    def BrokenFallback(error, reset):
+        raise RuntimeError("fallback failed")
+
+    mount = runtime.create_root(
+        lambda: control.ErrorBoundary(
+            lambda: control.ErrorBoundary(Broken, fallback=BrokenFallback),
+            fallback=lambda error, reset: widgets.Label(text=f"Outer: {error}"),
+        ),
+        title="Demo",
+    )
+    boundary = mount.node.children[0]
+
+    assert boundary.active_kind == "fallback"
+    assert boundary.active.widget.props["text"] == "Outer: fallback failed"
+
+
+def test_error_boundary_does_not_catch_deferred_callback_errors():
+    def boom():
+        raise RuntimeError("event failed")
+
+    @component
+    def App(props):
+        runtime.defer(boom)
+        return widgets.Label(text="Ready")
+
+    mount = runtime.create_root(
+        lambda: control.ErrorBoundary(
+            lambda: App(),
+            fallback=lambda error, reset: widgets.Label(text=f"Caught: {error}"),
+        ),
+        title="Demo",
+    )
+    boundary = mount.node.children[0]
+
+    with pytest.raises(RuntimeError, match="event failed"):
+        mount.widget.run_next_after()
+
+    assert boundary.active_kind == "child"
+    assert boundary.active.widget.props["text"] == "Ready"

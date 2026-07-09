@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from dataclasses import dataclass
+from inspect import Parameter
+from inspect import signature
 from typing import Any
 
 from .reactive import Accessor
@@ -12,7 +14,12 @@ from .reactive import read
 from .reactive import to_accessor
 from .runtime import MountedNode
 from .runtime import Node
+from .runtime import Owner
+from .runtime import get_current_owner
 from .runtime import normalize_child
+from .runtime import use_owner
+
+ErrorFallback = Callable[[Exception, Callable[[], None]], Any] | Callable[[], Any] | Any
 
 
 class ShowNode(MountedNode):
@@ -25,7 +32,7 @@ class ShowNode(MountedNode):
     ) -> None:
         super().__init__()
         self.when = to_accessor(when)
-        self.children = children
+        self.child_source = children
         self.fallback = fallback
         self.active: Node | None = None
         self.active_key: bool | None = None
@@ -48,7 +55,7 @@ class ShowNode(MountedNode):
             self.active.unmount()
             self.active = None
         self.active_key = key
-        source = self.children if key else self.fallback
+        source = self.child_source if key else self.fallback
         if source is None:
             return
         child = source() if callable(source) else source
@@ -260,7 +267,9 @@ class DynamicNode(MountedNode):
         if self.widget is None:
             return
 
-        component = self.component_accessor() if self.component_accessor else self.component
+        component = (
+            self.component_accessor() if self.component_accessor else self.component
+        )
         if component is self.active_key:
             return
 
@@ -277,6 +286,159 @@ class DynamicNode(MountedNode):
         if self.active is not None:
             self.active.unmount()
             self.active = None
+        super().unmount()
+
+
+def _call_error_fallback(
+    fallback: Callable[..., Any],
+    error: Exception,
+    reset: Callable[[], None],
+) -> Any:
+    try:
+        parameters = signature(fallback).parameters.values()
+    except (TypeError, ValueError):
+        return fallback(error, reset)
+
+    positional = [
+        parameter
+        for parameter in parameters
+        if parameter.kind
+        in (
+            Parameter.POSITIONAL_ONLY,
+            Parameter.POSITIONAL_OR_KEYWORD,
+        )
+    ]
+    has_varargs = any(
+        parameter.kind == Parameter.VAR_POSITIONAL for parameter in parameters
+    )
+    if has_varargs or len(positional) >= 2:
+        return fallback(error, reset)
+    return fallback()
+
+
+class ErrorBoundaryNode(MountedNode):
+    def __init__(
+        self,
+        children: Callable[[], Any] | Any,
+        *,
+        fallback: ErrorFallback = None,
+    ) -> None:
+        owner = Owner(parent=get_current_owner(), error_handler=self.handle_error)
+        super().__init__(owner=owner)
+        self.child_source = children
+        self.fallback = fallback
+        self.error, self.set_error = create_signal(None)
+        self.active: Node | None = None
+        self.active_kind: str | None = None
+        self.mounting_child = False
+
+    def mount(self, parent: Any | None) -> Any:
+        from .widgets import tk
+
+        self.widget = tk.Frame(parent)
+        self.widget.pack(fill="both", expand=True)
+        self.owner.effect(self.update)
+        return self.widget
+
+    def update(self) -> None:
+        if self.widget is None:
+            return
+
+        error = self.error()
+        if error is not None:
+            self.show_fallback(error)
+            return
+
+        if self.active_kind == "child":
+            return
+
+        self.unmount_active()
+        try:
+            self.mounting_child = True
+            self.active = self.mount_source(self.child_source, owner=self.owner)
+        except Exception as exc:
+            self.handle_error(exc)
+            self.show_fallback(exc)
+            return
+        finally:
+            self.mounting_child = False
+        error = self.error()
+        if error is not None:
+            self.show_fallback(error)
+            return
+        self.active_kind = "child"
+
+    def mount_source(self, source: Callable[[], Any] | Any, *, owner: Owner) -> Node:
+        if self.widget is None:
+            raise RuntimeError("cannot mount ErrorBoundary child before boundary")
+
+        node: Node | None = None
+        try:
+            with use_owner(owner):
+                child = source() if callable(source) else source
+                node = normalize_child(child)
+            node.mount(self.widget)
+            return node
+        except Exception:
+            if node is not None:
+                node.unmount()
+            raise
+
+    def show_fallback(self, error: Exception) -> None:
+        if self.active_kind == "fallback":
+            return
+
+        self.unmount_active()
+        try:
+            self.active = self.mount_fallback(error)
+        except Exception as exc:
+            self.handle_fallback_error(exc)
+            return
+        else:
+            self.active_kind = "fallback"
+
+    def mount_fallback(self, error: Exception) -> Node:
+        owner = self.owner.parent
+        if owner is None:
+            raise error
+
+        if self.fallback is None:
+            from .widgets import Label
+
+            return self.mount_source(Label(text=str(error)), owner=owner)
+
+        source = self.fallback
+        if callable(source):
+            fallback = source
+
+            def render_fallback() -> Any:
+                return _call_error_fallback(fallback, error, self.reset)
+
+            source = render_fallback
+        return self.mount_source(source, owner=owner)
+
+    def handle_fallback_error(self, error: Exception) -> None:
+        if self.owner.parent is None:
+            raise error
+        self.owner.parent.handle_error(error)
+
+    def handle_error(self, error: Exception) -> None:
+        self.set_error(error)
+        if self.widget is not None and not self.mounting_child:
+            self.show_fallback(error)
+
+    def reset(self) -> None:
+        self.active_kind = None
+        self.set_error(None)
+
+    def unmount_active(self) -> None:
+        if self.active is not None:
+            self.active.unmount()
+            self.active = None
+        self.active_kind = None
+
+    def unmount(self) -> None:
+        self.unmount_active()
         super().unmount()
 
 
@@ -315,3 +477,11 @@ def Index(each: Any, render: Callable[[Any, int], Any]) -> IndexNode:
 
 def Dynamic(component: Any, **props: Any) -> DynamicNode:
     return DynamicNode(component, **props)
+
+
+def ErrorBoundary(
+    children: Callable[[], Any] | Any,
+    *,
+    fallback: ErrorFallback = None,
+) -> ErrorBoundaryNode:
+    return ErrorBoundaryNode(children, fallback=fallback)

@@ -7,6 +7,7 @@ from contextlib import contextmanager
 from contextvars import ContextVar
 from dataclasses import dataclass
 from dataclasses import field
+from inspect import signature
 from threading import Lock
 from typing import Any
 from typing import Protocol
@@ -41,15 +42,35 @@ class Owner:
     parent: Owner | None = None
     context: Mapping[Any, Any] = field(default_factory=dict)
     scheduler: EventScheduler | None = None
+    error_handler: Callable[[Exception], None] | None = None
     cleanups: list[Callable[[], None]] = field(default_factory=list)
     effects: list[Effect] = field(default_factory=list)
     mounts: list[Callable[[], Any]] = field(default_factory=list)
     mounted: bool = False
 
     def effect(self, fn: Callable[..., Any]) -> Effect:
-        effect = Effect(fn)
+        accepts_cleanup = len(signature(fn).parameters) >= 1
+
+        def run(on_cleanup: Callable[[Callable[[], None]], None]) -> Any:
+            try:
+                with use_owner(self):
+                    return fn(on_cleanup) if accepts_cleanup else fn()
+            except Exception as exc:
+                self.handle_error(exc)
+                return None
+
+        effect = Effect(run)
         self.effects.append(effect)
         return effect
+
+    def handle_error(self, error: Exception) -> None:
+        owner: Owner | None = self
+        while owner is not None:
+            if owner.error_handler is not None:
+                owner.error_handler(error)
+                return
+            owner = owner.parent
+        raise error
 
     def cleanup(self, fn: Callable[[], None]) -> None:
         self.cleanups.append(fn)
@@ -68,8 +89,12 @@ class Owner:
             self._run_mount(fn)
 
     def _run_mount(self, fn: Callable[[], Any]) -> None:
-        with use_owner(self):
-            cleanup = fn()
+        try:
+            with use_owner(self):
+                cleanup = fn()
+        except Exception as exc:
+            self.handle_error(exc)
+            return
         if callable(cleanup):
             self.cleanup(cleanup)
 
@@ -268,7 +293,7 @@ class MountedNode:
     widget: Any | None = None
 
     def __init__(self, children: Iterable[Any] = (), *, owner: Owner | None = None) -> None:
-        self.owner = owner if owner is not None else Owner()
+        self.owner = owner if owner is not None else Owner(parent=get_current_owner())
         self.children = [normalize_child(child) for child in children]
 
     def mount_children(self) -> None:
