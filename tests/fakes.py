@@ -65,6 +65,13 @@ class FakeWidget:
     def quit(self):
         self.quit_called = True
 
+    # # TODO: uncomment for native withdraw test
+    # def withdraw(self):
+    #     self.withdrawn = True
+
+    # def update_idletasks(self):
+    #     self.updated_idletasks = True
+
     def protocol(self, name, callback):
         self.protocols[name] = callback
 

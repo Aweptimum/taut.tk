@@ -148,6 +148,7 @@ class RootNode(WidgetNode):
 
     def mount(self, parent: Any | None = None) -> Any:
         widget = super().mount(None)
+        widget.protocol("WM_DELETE_WINDOW", self.unmount)
         if "title" in self.props:
             accessor = self.props.prop_accessor("title")
 
@@ -159,6 +160,17 @@ class RootNode(WidgetNode):
         return widget
 
     def unmount(self) -> None:
+        # TODO: Test whether hiding the root before teardown improves close
+        # latency on native Tk. On WSL/X11, withdraw() followed by an update
+        # left a visible artifacted shell during close. Uncomment below:
+        # widget = self.widget
+        # if widget is not None:
+        #     withdraw = getattr(widget, "withdraw", None)
+        #     update = getattr(widget, "update", None)
+        #     if callable(withdraw):
+        #         withdraw()
+        #         if callable(update):
+        #             update()
         self.unmount_children()
         self.owner.dispose()
         widget = self.widget

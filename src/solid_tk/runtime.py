@@ -285,12 +285,20 @@ def to_ui() -> ThreadDispatcher:
             if cancelled:
                 return NoopCancelHandle()
 
+        handle: CancelHandle | None = None
+
         def run() -> Any:
-            with lock:
-                if cancelled:
-                    return None
-            with use_owner(owner):
-                return callback()
+            try:
+                with lock:
+                    if cancelled:
+                        return None
+                with use_owner(owner):
+                    return callback()
+            finally:
+                if handle is not None:
+                    with lock:
+                        if handle in handles:
+                            handles.remove(handle)
 
         handle = scheduler.to_ui(run)
         with lock:

@@ -116,6 +116,43 @@ def test_to_ui_can_capture_dispatcher_for_later_thread_callbacks():
     assert events == ["worker result"]
 
 
+def test_to_ui_forgets_callbacks_after_they_run():
+    events = []
+    cancelled = []
+    callbacks = []
+    owner = runtime.Owner()
+
+    class Handle:
+        def __init__(self, index):
+            self.index = index
+
+        def cancel(self):
+            cancelled.append(self.index)
+
+    class Scheduler:
+        def after(self, ms, fn):
+            return self.to_ui(fn)
+
+        def to_ui(self, fn):
+            callbacks.append(fn)
+            return Handle(len(callbacks))
+
+    owner.scheduler = Scheduler()
+    with runtime.use_owner(owner):
+        dispatch = runtime.to_ui()
+
+    dispatch(lambda: events.append("first"))
+    dispatch(lambda: events.append("second"))
+
+    for callback in list(callbacks):
+        callback()
+
+    owner.dispose()
+
+    assert events == ["first", "second"]
+    assert cancelled == []
+
+
 def test_to_ui_dispatcher_cancels_callbacks_dispatched_during_disposal():
     events = []
     errors = []
