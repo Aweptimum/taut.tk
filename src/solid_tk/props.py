@@ -4,13 +4,13 @@ from collections.abc import Iterable
 from collections.abc import Mapping
 from typing import Any
 
-from reaktiv import Computed
-
 from .reactive import Accessor
+from .reactive import create_memo
 from .reactive import create_signal
 from .reactive import is_mutator
 from .reactive import is_signal
 from .reactive import read
+from .reactive import to_accessor
 
 
 class NodeProps:
@@ -30,7 +30,7 @@ class NodeProps:
 
     def _wrap(self, value: Any) -> Accessor[Any]:
         if is_signal(value):
-            return value
+            return to_accessor(value)
         signal, _set_signal = create_signal(value)
         return signal
 
@@ -75,9 +75,9 @@ class NodeProps:
         """
         value = self._values[name]
         if is_signal(value):
-            return value
+            return to_accessor(value)
         if callable(value):
-            return Computed(value)
+            return create_memo(value)
         return self._signals[name]
 
     def widget_prop_accessor(self, name: str) -> Accessor[Any]:

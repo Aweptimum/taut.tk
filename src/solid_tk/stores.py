@@ -11,10 +11,9 @@ from typing import Generic
 from typing import TypeVar
 from typing import overload
 
-from reaktiv import Computed
-
 from .reactive import Accessor
 from .reactive import Mutator
+from .reactive import create_memo
 from .reactive import create_signal
 from .reactive import is_signal
 
@@ -49,7 +48,7 @@ class StoreLens(Generic[V]):
         self._accessor = accessor
         self._mutate = mutate
         self._path = path
-        self._path_accessor = Computed(lambda: read_path(self._accessor(), self._path))
+        self._path_accessor = create_memo(lambda: read_path(self._accessor(), self._path))
 
     def __call__(self) -> V:
         return self._path_accessor()

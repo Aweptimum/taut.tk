@@ -3,7 +3,6 @@ from __future__ import annotations
 from collections.abc import Callable
 from typing import Any
 from typing import Generic
-from typing import Protocol
 from typing import TypeGuard
 from typing import TypeVar
 from typing import cast
@@ -15,28 +14,34 @@ from reaktiv import Signal
 T = TypeVar("T")
 
 
-class Accessor[T](Protocol):
+class Accessor(Generic[T]):
     """Represents retrieving a signal's current value"""
 
-    def __call__(self) -> T: ...
+    __slots__ = ("_source",)
+
+    def __init__(self, source: Callable[[], T]) -> None:
+        self._source = source
+
+    def __call__(self) -> T:
+        return self._source()
 
 
 type Mutation[T] = T | Callable[[T], T]
 
 
-class Mutator[T](Protocol):
+class Mutator(Generic[T]):
     """Represents setting / updating a signal value"""
+
+    __slots__ = ("_signal",)
+
+    def __init__(self, signal: Signal[T]) -> None:
+        self._signal = signal
 
     @overload
     def __call__(self, value: T, /) -> None: ...
 
     @overload
     def __call__(self, update_fn: Callable[[T], T], /) -> None: ...
-
-
-class _SignalMutator(Generic[T]):
-    def __init__(self, signal: Signal[T]) -> None:
-        self._signal = signal
 
     def __call__(self, update: Mutation[T], /) -> None:
         if callable(update):
@@ -47,35 +52,40 @@ class _SignalMutator(Generic[T]):
 
 def create_signal[T](initial: T) -> tuple[Accessor[T], Mutator[T]]:
     signal = Signal(initial)
-    return signal, _SignalMutator(signal)
+    return Accessor(signal), Mutator(signal)
 
 
 def create_memo[T](fn: Callable[[], T]) -> Accessor[T]:
-    return Computed(fn)
+    computed = Computed(fn)
+    return Accessor(computed)
 
 
 def is_signal(value: object) -> TypeGuard[Accessor[Any]]:
-    return isinstance(value, Signal)
+    return isinstance(value, Accessor) or isinstance(value, Signal)
 
 
 def is_accessor(value: object) -> TypeGuard[Accessor[Any]]:
-    return callable(value)
+    return isinstance(value, Accessor)
 
 
 def is_mutator(value: object) -> TypeGuard[Mutator[Any]]:
-    return isinstance(value, _SignalMutator)
+    return isinstance(value, Mutator)
 
 
 def to_accessor(value: Any) -> Accessor[Any]:
-    if is_signal(value):
+    if isinstance(value, Accessor):
         return value
+    if isinstance(value, Signal):
+        return Accessor(value)
     if callable(value):
-        return Computed(value)
+        return create_memo(value)
     signal = Signal(value)
-    return signal
+    return Accessor(signal)
 
 
 def read(value: Any) -> Any:
-    if is_signal(value):
+    if isinstance(value, Accessor):
+        return value()
+    if isinstance(value, Signal):
         return value()
     return value() if callable(value) else value
