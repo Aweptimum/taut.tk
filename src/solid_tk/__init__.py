@@ -4,6 +4,7 @@ from . import context
 from . import control
 from . import props
 from . import reactive
+from . import resource
 from . import runtime
 from . import stores
 from . import tk_props
@@ -18,6 +19,7 @@ __all__ = [
     "control",
     "props",
     "reactive",
+    "resource",
     "runtime",
     "stores",
     "tk_props",

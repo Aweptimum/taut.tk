@@ -123,6 +123,7 @@ Label(text=self.props.name)
 - some layout helpers: `VStack`, `HStack`
 - some control flow: `Show`, `For`, `Switch` / `Match`, `Index`, `Dynamic`
 - context: `create_context()`, `Provider`, `use_context()`
+- resources: `create_resource()` with `loading`, `error`, `state`, `mutate`, `refetch`
 - lifecycle helpers: `create_effect()`, `on_mount()`, `on_cleanup()`
 - `create_root()` and explicit disposal through the returned `Mount`
 
@@ -170,6 +171,21 @@ See `examples/scheduler_demo` for moving labels and a worker-thread callback:
 ```sh
 python -m examples.scheduler_demo
 ```
+
+Resources run blocking work on a worker thread and publish the result back to
+Tk through the owner scheduler. If a newer request starts before an older one
+finishes, the older result is ignored; the worker thread itself is not forcibly
+cancelled.
+
+```python
+image, (mutate, refetch) = create_resource(fetch_image, None, image_url)
+
+Label(text=lambda: "Loading..." if image.loading() else image.state())
+Button(text="Retry", on_click=lambda: refetch("button"))
+```
+
+See `docs/resources.md` for the API reference and `examples/resource_demo` for
+a runnable image-loading demo with progress updates.
 
 This is not a full Tkinter framework yet; more goodies to implement!
 
