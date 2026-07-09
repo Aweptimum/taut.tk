@@ -7,7 +7,8 @@ from reaktiv import batch
 from reaktiv import untracked
 
 from .component import Component
-from .component import Props
+from .props import NodeProps
+from .props import Props
 from .runtime import Mount
 from .runtime import Node
 from .runtime import create_root
@@ -35,6 +36,7 @@ __all__ = [
     "Label",
     "Mount",
     "Node",
+    "NodeProps",
     "Props",
     "Show",
     "Signal",

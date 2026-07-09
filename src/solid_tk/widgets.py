@@ -4,8 +4,7 @@ import tkinter as tk
 from collections.abc import Iterable
 from typing import Any
 
-from .reactive import read
-from .reactive import to_accessor
+from .props import NodeProps
 from .runtime import MountedNode
 from .runtime import normalize_child
 
@@ -26,7 +25,7 @@ class WidgetNode(MountedNode):
     ) -> None:
         super().__init__()
         self.widget_type = widget_type
-        self.props = props
+        self.props = NodeProps(props)
         self.children = [normalize_child(child) for child in children]
         self.layout = layout if layout is not None else {"pack": {}}
 
@@ -34,20 +33,15 @@ class WidgetNode(MountedNode):
         ctor_props: dict[str, Any] = {}
         reactive_props: dict[str, Any] = {}
 
-        for name, value in self.props.items():
-            if (
-                name in self.skipped_props
-                or name in INTERNAL_KEYS
-                or name in LAYOUT_KEYS
-            ):
-                continue
+        skipped_props = self.skipped_props | INTERNAL_KEYS | LAYOUT_KEYS
+        for name in self.props.names(skip=skipped_props):
             tk_name = event_name(name)
-            if should_bind_reactively(name, value):
-                reactive_props[tk_name] = value
+            if self.props.is_binding(name, event=is_event_prop(name)):
+                reactive_props[tk_name] = self.props.binding(name)
             elif is_event_prop(name):
-                ctor_props[tk_name] = read(value) if hasattr(value, "get") else value
+                ctor_props[tk_name] = self.props.read(name)
             else:
-                ctor_props[tk_name] = read(value)
+                ctor_props[tk_name] = self.props.read(name)
 
         self.widget = (
             self.widget_type(parent, **ctor_props)
@@ -76,7 +70,7 @@ class WidgetNode(MountedNode):
         if self.widget is None:
             return
         for name, value in props.items():
-            accessor = to_accessor(value)
+            accessor = value
 
             def make_apply(prop_name: str, prop_accessor: Any):
                 def apply() -> None:
@@ -99,9 +93,8 @@ class RootNode(WidgetNode):
 
     def mount(self, parent: Any | None = None) -> Any:
         widget = super().mount(None)
-        title = self.props.get("title")
-        if title is not None:
-            accessor = to_accessor(title)
+        if "title" in self.props:
+            accessor = self.props.binding("title")
 
             def apply_title() -> None:
                 if self.widget is not None:
@@ -126,12 +119,6 @@ def event_name(name: str) -> str:
     if name.startswith("on_"):
         return "command" if name == "on_click" else name[3:]
     return name
-
-
-def should_bind_reactively(name: str, value: Any) -> bool:
-    if is_event_prop(name):
-        return False
-    return callable(value)
 
 
 def is_event_prop(name: str) -> bool:

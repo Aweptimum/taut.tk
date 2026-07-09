@@ -1,39 +1,11 @@
 from __future__ import annotations
 
-from collections.abc import Mapping
 from typing import Any
 
-from reaktiv import Signal
-
-from .reactive import is_signal
+from .props import Props
 from .runtime import MountedNode
 from .runtime import Node
 from .runtime import normalize_child
-
-
-class Props:
-    def __init__(self, values: Mapping[str, Any]) -> None:
-        self._values = dict(values)
-        self._signals: dict[str, Any] = {
-            key: self._wrap(value) for key, value in self._values.items()
-        }
-
-    def _wrap(self, value: Any) -> Any:
-        if is_signal(value):
-            return value
-        return Signal(value)
-
-    def __getattr__(self, name: str) -> Any:
-        try:
-            return self._signals[name]
-        except KeyError as exc:
-            raise AttributeError(name) from exc
-
-    def get(self, name: str, default: Any = None) -> Any:
-        return self._signals.get(name, Signal(default))
-
-    def raw(self, name: str, default: Any = None) -> Any:
-        return self._values.get(name, default)
 
 
 class ComponentNode(MountedNode):
