@@ -142,6 +142,8 @@ panel(tk.Label(text="Nested"), title="Details")
   `style.component()`
 - some control flow: `Show`, `For`, `Switch` / `Match`, `Index`, `Dynamic`
 - context: `create_context()`, `Provider`, `use_context()`
+- stores: `create_store()` for immutable updates and `create_mutable()` for
+  Solid-style mutable list state
 - resources: `create_resource()` with `loading`, `error`, `state`, `mutate`, `refetch`
 - lifecycle helpers: `create_effect()`, `on_mount()`, `on_cleanup()`
 - `create_root()` and explicit disposal through the returned `Mount`
@@ -155,6 +157,16 @@ Switch(
 
 Index(items, lambda item, index: tk.Label(text=lambda: f"{index}: {item()}"))
 Dynamic(selected_component, title="Hello")
+```
+
+`create_mutable()` returns the mutable object itself. List reads are reactive,
+and list writes notify dependents:
+
+```python
+items = create_mutable(["a"])
+create_effect(lambda: print(list(items)))
+items.append("b")
+items[0] = "A"
 ```
 
 See `examples/layout_demo` for stack spacing, padding, alignment, per-child

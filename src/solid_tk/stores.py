@@ -1,7 +1,11 @@
 from __future__ import annotations
 
 from collections.abc import Callable
+from collections.abc import Iterable
+from collections.abc import Iterator
 from collections.abc import Mapping
+from collections.abc import MutableMapping
+from collections.abc import MutableSequence
 from copy import copy
 from copy import deepcopy
 from dataclasses import fields
@@ -10,6 +14,7 @@ from dataclasses import replace
 from typing import Any
 from typing import Generic
 from typing import TypeVar
+from typing import cast
 from typing import overload
 
 from .reactive import Accessor
@@ -23,6 +28,203 @@ V = TypeVar("V")
 
 PathKey = str | int
 type StoreUpdate[T] = T | Callable[[T], T]
+
+
+class MutableBase:
+    def __init__(self) -> None:
+        self._version, self._set_version = create_signal(0)
+
+    def _track(self) -> None:
+        self._version()
+
+    def _notify(self) -> None:
+        self._set_version(lambda version: version + 1)
+
+
+class MutableList(MutableBase, MutableSequence[T]):
+    """Reactive mutable list proxy.
+
+    Reads track a private version signal; writes mutate the backing list in
+    place and bump the version so effects/memos that read the list re-run.
+    """
+
+    def __init__(self, initial: Iterable[T] = (), *, wrap: bool = True) -> None:
+        super().__init__()
+        self._wrap_items = wrap
+        self._items = [self._wrap(item) for item in initial]
+
+    def _wrap(self, item: T) -> T:
+        if not self._wrap_items:
+            return item
+        return _wrap_mutable(item)
+
+    def __len__(self) -> int:
+        self._track()
+        return len(self._items)
+
+    @overload
+    def __getitem__(self, index: int) -> T: ...
+
+    @overload
+    def __getitem__(self, index: slice) -> list[T]: ...
+
+    def __getitem__(self, index: int | slice) -> T | list[T]:
+        self._track()
+        return self._items[index]
+
+    @overload
+    def __setitem__(self, index: int, value: T) -> None: ...
+
+    @overload
+    def __setitem__(self, index: slice, value: Iterable[T]) -> None: ...
+
+    def __setitem__(self, index: int | slice, value: T | Iterable[T]) -> None:
+        if isinstance(index, slice):
+            self._items[index] = [self._wrap(item) for item in cast(Iterable[T], value)]
+        else:
+            self._items[index] = self._wrap(cast(T, value))
+        self._notify()
+
+    @overload
+    def __delitem__(self, index: int) -> None: ...
+
+    @overload
+    def __delitem__(self, index: slice) -> None: ...
+
+    def __delitem__(self, index: int | slice) -> None:
+        del self._items[index]
+        self._notify()
+
+    def __iter__(self) -> Iterator[T]:
+        self._track()
+        return iter(self._items)
+
+    def __repr__(self) -> str:
+        return repr(self.snapshot())
+
+    def __eq__(self, other: object) -> bool:
+        if isinstance(other, MutableList):
+            return self.snapshot() == other.snapshot()
+        return self.snapshot() == other
+
+    def insert(self, index: int, value: T) -> None:
+        self._items.insert(index, self._wrap(value))
+        self._notify()
+
+    def replace(self, values: Iterable[T]) -> None:
+        self._items[:] = [self._wrap(item) for item in values]
+        self._notify()
+
+    def snapshot(self) -> list[T]:
+        self._track()
+        return list(self._items)
+
+
+class MutableDict(MutableBase, MutableMapping[Any, Any]):
+    """Reactive mutable mapping proxy."""
+
+    def __init__(self, initial: Mapping[Any, Any] = {}) -> None:
+        super().__init__()
+        self._items = {
+            key: _wrap_mutable(value) for key, value in initial.items()
+        }
+
+    def __getitem__(self, key: Any) -> Any:
+        self._track()
+        return self._items[key]
+
+    def __setitem__(self, key: Any, value: Any) -> None:
+        self._items[key] = _wrap_mutable(value)
+        self._notify()
+
+    def __delitem__(self, key: Any) -> None:
+        del self._items[key]
+        self._notify()
+
+    def __iter__(self) -> Iterator[Any]:
+        self._track()
+        return iter(self._items)
+
+    def __len__(self) -> int:
+        self._track()
+        return len(self._items)
+
+    def __repr__(self) -> str:
+        return repr(self.snapshot())
+
+    def __eq__(self, other: object) -> bool:
+        if isinstance(other, MutableDict):
+            return self.snapshot() == other.snapshot()
+        return self.snapshot() == other
+
+    def replace(self, values: Mapping[Any, Any]) -> None:
+        self._items.clear()
+        self._items.update(
+            {key: _wrap_mutable(value) for key, value in values.items()}
+        )
+        self._notify()
+
+    def snapshot(self) -> dict[Any, Any]:
+        self._track()
+        return dict(self._items)
+
+
+class MutableObject(MutableBase):
+    """Reactive mutable object proxy."""
+
+    def __init__(self, initial: Any) -> None:
+        object.__setattr__(self, "_values", {})
+        super().__init__()
+        object.__getattribute__(self, "_values").update(
+            {
+                key: _wrap_mutable(value)
+                for key, value in vars(initial).items()
+                if not key.startswith("_")
+            }
+        )
+
+    def __getattr__(self, name: str) -> Any:
+        values = object.__getattribute__(self, "_values")
+        try:
+            self._track()
+            return values[name]
+        except KeyError as exc:
+            raise AttributeError(name) from exc
+
+    def __setattr__(self, name: str, value: Any) -> None:
+        if name.startswith("_"):
+            object.__setattr__(self, name, value)
+            return
+        values = object.__getattribute__(self, "_values")
+        values[name] = _wrap_mutable(value)
+        self._notify()
+
+    def __delattr__(self, name: str) -> None:
+        values = object.__getattribute__(self, "_values")
+        try:
+            del values[name]
+        except KeyError as exc:
+            raise AttributeError(name) from exc
+        self._notify()
+
+    def __repr__(self) -> str:
+        return repr(self.snapshot())
+
+    def replace(self, value: Any) -> None:
+        values = object.__getattribute__(self, "_values")
+        values.clear()
+        values.update(
+            {
+                key: _wrap_mutable(item)
+                for key, item in vars(value).items()
+                if not key.startswith("_")
+            }
+        )
+        self._notify()
+
+    def snapshot(self) -> dict[str, Any]:
+        self._track()
+        return dict(object.__getattribute__(self, "_values"))
 
 
 class StoreSetter(Generic[T]):
@@ -73,6 +275,22 @@ def create_store(initial: T, /) -> tuple[Accessor[T], StoreSetter[T]]:
     return signal, StoreSetter(signal, set_signal)
 
 
+@overload
+def create_mutable[T](initial: list[T], /) -> MutableList[T]: ...
+
+
+@overload
+def create_mutable(initial: Mapping[Any, Any], /) -> MutableDict: ...
+
+
+@overload
+def create_mutable[T](initial: T, /) -> T: ...
+
+
+def create_mutable(initial: Any, /) -> Any:
+    return _wrap_mutable(initial)
+
+
 def produce[T](recipe: Callable[[T], T | None]) -> Callable[[T], T]:
     """Create an updater that mutates a deep-copied draft."""
 
@@ -98,8 +316,17 @@ def unwrap(value: Any) -> Any:
 
     if isinstance(value, StoreLens) or is_signal(value):
         return unwrap(value())
+    if isinstance(value, MutableDict):
+        return {key: unwrap(item) for key, item in value.items()}
+    if isinstance(value, MutableObject):
+        return {
+            key: unwrap(item)
+            for key, item in object.__getattribute__(value, "_values").items()
+        }
     if isinstance(value, Mapping):
         return {key: unwrap(item) for key, item in value.items()}
+    if isinstance(value, MutableList):
+        return [unwrap(item) for item in value]
     if isinstance(value, list):
         return [unwrap(item) for item in value]
     if isinstance(value, tuple):
@@ -110,6 +337,26 @@ def unwrap(value: Any) -> Any:
         }
         return replace(value, **updates)
     return value
+
+
+def _wrap_mutable(value: T) -> T:
+    if isinstance(value, MutableBase):
+        return value
+    if isinstance(value, Mapping):
+        return cast(T, MutableDict(value))
+    if isinstance(value, list):
+        return cast(T, MutableList(value))
+    if is_mutable_object(value):
+        return cast(T, MutableObject(value))
+    return value
+
+
+def is_mutable_object(value: Any) -> bool:
+    if isinstance(value, type):
+        return False
+    if is_dataclass(value):
+        return False
+    return hasattr(value, "__dict__")
 
 
 def read_path(value: Any, path: tuple[PathKey, ...]) -> Any:

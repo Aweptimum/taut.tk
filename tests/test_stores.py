@@ -2,7 +2,9 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from solid_tk import runtime
 from solid_tk import stores
+from solid_tk import widgets
 
 
 @dataclass(frozen=True)
@@ -15,6 +17,12 @@ class User:
 class AppState:
     user: User
     todos: list[str]
+
+
+class MutableUser:
+    def __init__(self, name: str, todos: list[str]) -> None:
+        self.name = name
+        self.todos = todos
 
 
 def test_store_setter_replaces_state():
@@ -112,3 +120,99 @@ def test_unwrap_reads_store_accessors_lenses_and_nested_values():
 
     assert stores.unwrap(state) == {"user": {"name": "Ada"}}
     assert stores.unwrap({"name": name}) == {"name": "Ada"}
+
+
+def test_create_mutable_list_mutates_in_place_and_snapshots():
+    items = stores.create_mutable(["a"])
+
+    items.append("b")
+    items[0] = "A"
+    del items[1]
+    items.extend(["c", "d"])
+    items.replace(["x", "y"])
+
+    assert items.snapshot() == ["x", "y"]
+    assert list(items) == ["x", "y"]
+    assert items == ["x", "y"]
+
+
+def test_create_mutable_list_notifies_reactive_reads():
+    items = stores.create_mutable(["a"])
+    seen = []
+
+    def App():
+        runtime.create_effect(lambda: seen.append(tuple(items)))
+        return widgets.Label(text="Mutable")
+
+    mount = runtime.create_root(
+        App,
+        title="Demo",
+    )
+
+    assert seen == [("a",)]
+
+    items.append("b")
+    items[0] = "A"
+    items.replace(["x"])
+
+    assert seen == [("a",), ("a", "b"), ("A", "b"), ("x",)]
+
+    mount.dispose()
+
+
+def test_create_mutable_wraps_nested_mapping_and_list_values():
+    state = stores.create_mutable({"user": {"name": "Ada"}, "todos": ["wire props"]})
+    seen = []
+
+    def App():
+        runtime.create_effect(
+            lambda: seen.append((state["user"]["name"], tuple(state["todos"])))
+        )
+        return widgets.Label(text="Mutable")
+
+    mount = runtime.create_root(App, title="Demo")
+
+    assert seen == [("Ada", ("wire props",))]
+
+    state["user"]["name"] = "Grace"
+    state["todos"].append("own effects")
+
+    assert seen == [
+        ("Ada", ("wire props",)),
+        ("Grace", ("wire props",)),
+        ("Grace", ("wire props", "own effects")),
+    ]
+    assert stores.unwrap(state) == {
+        "user": {"name": "Grace"},
+        "todos": ["wire props", "own effects"],
+    }
+
+    mount.dispose()
+
+
+def test_create_mutable_wraps_attribute_objects():
+    user = stores.create_mutable(MutableUser("Ada", ["wire props"]))
+    seen = []
+
+    def App():
+        runtime.create_effect(lambda: seen.append((user.name, tuple(user.todos))))
+        return widgets.Label(text="Mutable")
+
+    mount = runtime.create_root(App, title="Demo")
+
+    assert seen == [("Ada", ("wire props",))]
+
+    user.name = "Grace"
+    user.todos.append("own effects")
+
+    assert seen == [
+        ("Ada", ("wire props",)),
+        ("Grace", ("wire props",)),
+        ("Grace", ("wire props", "own effects")),
+    ]
+    assert stores.unwrap(user) == {
+        "name": "Grace",
+        "todos": ["wire props", "own effects"],
+    }
+
+    mount.dispose()
