@@ -16,6 +16,7 @@ from .tk_props import ButtonProps
 from .tk_props import CheckbuttonProps
 from .tk_props import EntryProps
 from .tk_props import FrameProps
+from .tk_props import GridItemProps
 from .tk_props import GridProps
 from .tk_props import LabelProps
 from .tk_props import StackItemProps
@@ -122,6 +123,10 @@ def stack(**props: Unpack[StackProps]) -> Style[StackProps]:
 
 
 def grid(**props: Unpack[GridProps]) -> Style[GridProps]:
+    return Style(props)
+
+
+def grid_item(**props: Unpack[GridItemProps]) -> Style[GridItemProps]:
     return Style(props)
 
 

@@ -144,6 +144,10 @@ def grid_style_example():
         "For children with grid styles",
         layout.Grid(
             For(IMAGE_TILES, grid_tile, key=lambda tile: tile["id"]),
+            layout.GridItem(
+                tk.Label(text="weighted columns + GridItem span", style=styles.image_meta),
+                style=styles.wide_image_tile,
+            ),
             style=styles.image_grid,
             pack={"fill": "x"},
         ),

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable
+from collections.abc import Mapping
 from typing import Any
 from typing import Literal
 from typing import TypeAlias
@@ -32,6 +33,7 @@ Justify: TypeAlias = Literal["left", "center", "right"]
 State: TypeAlias = Literal["normal", "active", "disabled"]
 StackAlign: TypeAlias = Literal["start", "center", "end", "stretch"]
 Padding: TypeAlias = int | tuple[int, int]
+GridWeights: TypeAlias = tuple[int, ...] | list[int] | Mapping[int, int]
 
 
 class PackOptions(TypedDict, total=False):
@@ -278,8 +280,10 @@ class StackProps(FrameProps, total=False):
 
 class GridProps(FrameProps, total=False):
     columns: int
+    column_weights: GridWeights
     gap: int
     padding: Padding
+    row_weights: GridWeights
     sticky: str
 
 
@@ -289,6 +293,10 @@ class StackItemProps(TypedDict, total=False):
     fill: Fill
     grow: bool
     pack: PackOptions
+
+
+class GridItemProps(GridOptions, total=False):
+    style: Any
 
 
 class StyleProps(GridProps, StackProps, total=False):

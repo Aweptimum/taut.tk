@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import tkinter as tk
+from collections.abc import Mapping
 from typing import Any
 from typing import Unpack
 
@@ -8,14 +9,16 @@ from .nodes import WidgetNode
 from .nodes import apply_style
 from .nodes import consume_layout
 from .runtime import normalize_child
+from .tk_props import GridItemProps
 from .tk_props import GridProps
+from .tk_props import GridWeights
 from .tk_props import Padding
 from .tk_props import StackAlign
 from .tk_props import StackItemProps
 from .tk_props import StackProps
 
 STACK_KEYS = {"align", "fill", "gap", "grow", "padding"}
-GRID_KEYS = {"columns", "gap", "padding", "sticky"}
+GRID_KEYS = {"columns", "column_weights", "gap", "padding", "row_weights", "sticky"}
 STACK_ITEM_KEYS = {"align", "fill", "grow", "pack"}
 
 
@@ -23,6 +26,13 @@ def Item(child: Any, **props: Unpack[StackItemProps]) -> Any:
     apply_style(props)
     node = normalize_child(child)
     setattr(node, "_stack_layout", dict(props))
+    return node
+
+
+def GridItem(child: Any, **props: Unpack[GridItemProps]) -> Any:
+    apply_style(props)
+    node = normalize_child(child)
+    setattr(node, "_grid_layout", dict(props))
     return node
 
 
@@ -81,7 +91,9 @@ def consume_grid(props: Any) -> dict[str, Any]:
         props.setdefault("pady", pady)
 
     grid.setdefault("columns", 1)
+    grid.setdefault("column_weights", ())
     grid.setdefault("gap", 0)
+    grid.setdefault("row_weights", ())
     grid.setdefault("sticky", "nsew")
     return grid
 
@@ -132,6 +144,19 @@ def apply_grid_layout(children: list[Any], grid: dict[str, Any]) -> None:
         child.layout = {"grid": options}
 
 
+def apply_grid_container_layout(widget: Any, grid: dict[str, Any]) -> None:
+    for index, weight in grid_weights(grid["column_weights"]):
+        widget.columnconfigure(index, weight=weight)
+    for index, weight in grid_weights(grid["row_weights"]):
+        widget.rowconfigure(index, weight=weight)
+
+
+def grid_weights(weights: GridWeights) -> list[tuple[int, int]]:
+    if isinstance(weights, Mapping):
+        return sorted(weights.items())
+    return [(index, weight) for index, weight in enumerate(weights)]
+
+
 def stack_item_layout(child: WidgetNode) -> dict[str, Any]:
     layout = getattr(child, "_stack_layout", {})
     return {key: value for key, value in layout.items() if key in STACK_ITEM_KEYS}
@@ -173,6 +198,7 @@ def stack_anchor(axis: str, align: StackAlign) -> str:
 
 __all__ = [
     "Grid",
+    "GridItem",
     "HStack",
     "Item",
     "VStack",

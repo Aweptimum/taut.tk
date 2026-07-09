@@ -113,6 +113,9 @@ class WidgetNode(MountedNode):
         if stack is not None:
             apply_stack_layout(visible, stack)
         elif grid is not None:
+            from .layout import apply_grid_container_layout
+
+            apply_grid_container_layout(self.widget, grid)
             apply_grid_layout(visible, grid)
 
         for child in visible:

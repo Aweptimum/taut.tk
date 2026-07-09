@@ -7,9 +7,9 @@ title = style.define("title", font=("TkDefaultFont", 13, "bold"))
 panel = style.define("panel", bg="#f8fafc", relief="ridge", bd=1, padding=10, gap=8)
 panel_title = style.define("panel_title", font=("TkDefaultFont", 10, "bold"))
 
-center_item = style.define("center_item", fill="none", align="center")
-start_item = style.define("start_item", fill="none", align="start")
-grow_item = style.define("grow_item", grow=True, fill="both")
+center_item = style.item(fill="none", align="center")
+start_item = style.item(fill="none", align="start")
+grow_item = style.item(grow=True, fill="both")
 
 swatch = style.define(
     "swatch",
@@ -55,10 +55,13 @@ button_row = style.define("button_row", gap=6, align="center")
 image_grid = style.define(
     "image_grid",
     columns=2,
+    column_weights=(1, 1),
     gap=4,
+    row_weights={0: 1, 1: 1},
     sticky="nsew",
     bg="#f8fafc",
 )
+wide_image_tile = style.grid_item(columnspan=2, sticky="ew")
 image_tile = style.define(
     "image_tile",
     bg="#ffffff",

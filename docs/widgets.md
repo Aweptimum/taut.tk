@@ -30,6 +30,7 @@ tk.Fragment
 
 ```python
 layout.Grid
+layout.GridItem
 layout.VStack
 layout.HStack
 layout.Item
@@ -199,7 +200,9 @@ children. It works well with transparent control flow:
 layout.Grid(
     For(images, lambda image: ImageTile(image), key=lambda image: image["id"]),
     columns=2,
+    column_weights=(1, 1),
     gap=6,
+    row_weights={0: 1},
     sticky="nsew",
 )
 ```
@@ -207,13 +210,27 @@ layout.Grid(
 Grid props:
 
 - `columns`: number of columns before wrapping to the next row
+- `column_weights`: tuple/list by column index, or `{index: weight}` mapping
 - `gap`: integer padding applied as `padx` and `pady` to each child
+- `row_weights`: tuple/list by row index, or `{index: weight}` mapping
 - `sticky`: Tk grid sticky value for each child, defaulting to `"nsew"`
 - `padding`: integer or `(padx, pady)` tuple applied to the grid frame
 
-Child widgets can still provide explicit `grid={...}` options. Those options
-override the row, column, sticky, or padding computed by the parent grid.
-Children with explicit `place` layout are not rewritten by grid layout.
+Use `GridItem(child, ...)` for per-child grid overrides:
+
+```python
+layout.Grid(
+    layout.GridItem(tk.Label(text="Title"), columnspan=2, sticky="ew"),
+    tk.Label(text="Left"),
+    tk.Label(text="Right"),
+    columns=2,
+)
+```
+
+Child widgets can still provide explicit `grid={...}` options. `GridItem` and
+explicit `grid={...}` options override the row, column, sticky, or padding
+computed by the parent grid. Children with explicit `place` layout are not
+rewritten by grid layout.
 
 ## Transparent Layout
 

@@ -296,3 +296,61 @@ def test_grid_accepts_layout_from_style():
         "pady": 3,
     }
     assert second.grid_kwargs["column"] == 1
+
+
+def test_grid_configures_row_and_column_weights():
+    mount = runtime.create_root(
+        lambda: layout.Grid(
+            tk.Label(text="One"),
+            tk.Label(text="Two"),
+            columns=2,
+            column_weights=(1, 2),
+            row_weights={0: 1},
+        ),
+        title="Demo",
+    )
+    grid = mount.widget.children[0]
+
+    assert grid.column_weights == {0: {"weight": 1}, 1: {"weight": 2}}
+    assert grid.row_weights == {0: {"weight": 1}}
+
+
+def test_grid_item_applies_per_child_grid_options():
+    mount = runtime.create_root(
+        lambda: layout.Grid(
+            layout.GridItem(
+                tk.Label(text="Wide"),
+                columnspan=2,
+                sticky="ew",
+                padx=8,
+            ),
+            tk.Label(text="Next"),
+            columns=2,
+        ),
+        title="Demo",
+    )
+    wide, next_child = mount.widget.children[0].children
+
+    assert wide.grid_kwargs == {
+        "row": 0,
+        "column": 0,
+        "sticky": "ew",
+        "columnspan": 2,
+        "padx": 8,
+    }
+    assert next_child.grid_kwargs == {"row": 0, "column": 1, "sticky": "nsew"}
+
+
+def test_grid_item_accepts_style_props():
+    item_style = style.grid_item(row=2, column=3, sticky="w")
+
+    mount = runtime.create_root(
+        lambda: layout.Grid(
+            layout.GridItem(tk.Label(text="Styled"), style=item_style),
+            columns=2,
+        ),
+        title="Demo",
+    )
+    child = mount.widget.children[0].children[0]
+
+    assert child.grid_kwargs == {"row": 2, "column": 3, "sticky": "w"}

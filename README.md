@@ -65,7 +65,7 @@ I keep reaching for it every time I want a small UI at work and I keep getting b
 - first-class component children through `props.children`
 - transparent `Fragment(...)` nodes for returning multiple children
 - widget namespaces: `tk` for classic Tk widgets and `ttk` for themed widgets
-- layout namespace: `layout.VStack`, `layout.HStack`, `layout.Grid`, `layout.Item`
+- layout namespace: `layout.VStack`, `layout.HStack`, `layout.Grid`, `layout.Item`, `layout.GridItem`
 - StyleX-ish style objects agnostic to tk/ttk widgets with `style.define()`, `style.merge()`, and `style.component()`.
 - some control flow: `Show`, `For`, `Switch` / `Match`, `Index`, `Dynamic`
 - context: `create_context()`, `Provider`, `use_context()`

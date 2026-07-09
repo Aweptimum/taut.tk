@@ -39,6 +39,8 @@ class FakeWidget:
         self.after_cancelled = []
         self.next_after_id = 0
         self.protocols = {}
+        self.column_weights = {}
+        self.row_weights = {}
         if parent is not None:
             parent.children.append(self)
 
@@ -53,6 +55,12 @@ class FakeWidget:
 
     def place(self, **kwargs):
         self.place_kwargs = kwargs
+
+    def columnconfigure(self, index, **kwargs):
+        self.column_weights[index] = kwargs
+
+    def rowconfigure(self, index, **kwargs):
+        self.row_weights[index] = kwargs
 
     def pack_forget(self):
         pass
