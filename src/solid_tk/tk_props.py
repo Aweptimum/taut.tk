@@ -8,7 +8,7 @@ from typing import TypedDict
 from typing import TypeVar
 
 from .reactive import Accessor
-from .reactive import SignalLike
+from .reactive import Mutator
 
 T = TypeVar("T")
 
@@ -156,7 +156,8 @@ class EntryProps(BaseWidgetProps, total=False):
     textvariable: Reactive[Any]
     validate: Reactive[str]
     validatecommand: Command
-    value: SignalLike[str]
+    value: Reactive[str]
+    on_input: Mutator[str]
     xscrollcommand: Command
 
 

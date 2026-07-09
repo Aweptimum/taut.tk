@@ -74,6 +74,48 @@ def test_main_refreshes_stale_parent_package_markers(monkeypatch, tmp_path):
     )
 
 
+def test_main_preserves_mutator_prop_types(monkeypatch, tmp_path):
+    source = tmp_path / "examples" / "counter" / "component.py"
+    source.parent.mkdir(parents=True)
+    source.write_text(
+        "\n".join(
+            [
+                "from typing import Protocol",
+                "from solid_tk import Accessor, Mutator, component",
+                "",
+                "class CounterProps(Protocol):",
+                "    count: Accessor[int]",
+                "    set_count: Mutator[int]",
+                "",
+                "@component",
+                "def Counter(props: CounterProps):",
+                "    ...",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    monkeypatch.chdir(tmp_path)
+
+    stubs.main([tmp_path / "examples"], out_dir=tmp_path / "typings")
+
+    assert (tmp_path / "typings" / "examples" / "counter" / "component.pyi").read_text(
+        encoding="utf-8"
+    ) == (
+        "from __future__ import annotations\n"
+        "\n"
+        "from solid_tk import Node\n"
+        "from solid_tk import Accessor\n"
+        "from solid_tk import Mutator\n"
+        "\n"
+        "def Counter(\n"
+        "    *,\n"
+        "    count: int | Accessor[int],\n"
+        "    set_count: Mutator[int],\n"
+        ") -> Node: ...\n"
+    )
+
+
 def test_main_writes_init_reexports_from_source_init(monkeypatch, tmp_path):
     component = tmp_path / "examples" / "counter" / "component.py"
     source_init = tmp_path / "examples" / "__init__.py"

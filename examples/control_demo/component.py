@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from reaktiv import Signal
-
 from solid_tk import Button
 from solid_tk import Dynamic
 from solid_tk import HStack
@@ -12,6 +10,7 @@ from solid_tk import Switch
 from solid_tk import VStack
 from solid_tk import component
 from solid_tk import create_memo
+from solid_tk import create_signal
 
 STATUSES = ("ready", "busy", "done")
 
@@ -37,26 +36,27 @@ def full_detail(props):
 
 @component
 def control_demo(props):
-    status = Signal("ready")
-    detail_component = Signal(compact_detail)
-    items = Signal(["Alpha", "Beta", "Gamma"])
+    status, set_status = create_signal("ready")
+    detail_component, set_detail_component = create_signal(compact_detail)
+    items, set_items = create_signal(["Alpha", "Beta", "Gamma"])
     selected_item = create_memo(lambda: items()[0])
 
     def cycle_status() -> None:
         current = STATUSES.index(status())
-        status.set(STATUSES[(current + 1) % len(STATUSES)])
+        set_status(STATUSES[(current + 1) % len(STATUSES)])
 
     def rotate_items() -> None:
         current = items()
-        items.set([*current[1:], current[0]])
+        set_items([*current[1:], current[0]])
 
     def rename_second() -> None:
         current = items()
-        items.set([current[0], f"{current[1]}*", *current[2:]])
+        set_items([current[0], f"{current[1]}*", *current[2:]])
 
     def toggle_detail() -> None:
-        detail_component.set(
-            full_detail if detail_component() is compact_detail else compact_detail
+        next_detail = full_detail if detail_component() is compact_detail else compact_detail
+        set_detail_component(
+            lambda _: next_detail,
         )
 
     return VStack(

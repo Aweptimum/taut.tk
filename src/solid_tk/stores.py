@@ -12,9 +12,10 @@ from typing import TypeVar
 from typing import overload
 
 from reaktiv import Computed
-from reaktiv import Signal
 
 from .reactive import Accessor
+from .reactive import Mutator
+from .reactive import create_signal
 
 T = TypeVar("T")
 V = TypeVar("V")
@@ -24,40 +25,44 @@ type StoreUpdate[T] = T | Callable[[T], T]
 
 
 class StoreSetter(Generic[T]):
-    def __init__(self, signal: Signal[T]) -> None:
-        self._signal = signal
+    def __init__(self, accessor: Accessor[T], mutate: Mutator[T]) -> None:
+        self._accessor = accessor
+        self._mutate = mutate
 
     def __call__(self, update: StoreUpdate[T], /) -> None:
-        if callable(update):
-            self._signal.update(update)
-            return
-        self._signal.set(update)
+        self._mutate(update)
 
     def at(self, *path: PathKey) -> StoreLens[Any]:
         if not path:
             raise ValueError("store path cannot be empty")
-        return StoreLens(self._signal, path)
+        return StoreLens(self._accessor, self._mutate, path)
 
 
 class StoreLens(Generic[V]):
-    def __init__(self, signal: Signal[Any], path: tuple[PathKey, ...]) -> None:
-        self._signal = signal
+    def __init__(
+        self,
+        accessor: Accessor[Any],
+        mutate: Mutator[Any],
+        path: tuple[PathKey, ...],
+    ) -> None:
+        self._accessor = accessor
+        self._mutate = mutate
         self._path = path
-        self._accessor = Computed(lambda: read_path(self._signal(), self._path))
+        self._path_accessor = Computed(lambda: read_path(self._accessor(), self._path))
 
     def __call__(self) -> V:
-        return self._accessor()
+        return self._path_accessor()
 
     def set(self, value: V, /) -> None:
         self.update(lambda _: value)
 
     def update(self, update: Callable[[V], V], /) -> None:
-        self._signal.update(lambda state: update_path(state, self._path, update))
+        self._mutate(lambda state: update_path(state, self._path, update))
 
     def at(self, *path: PathKey) -> StoreLens[Any]:
         if not path:
             raise ValueError("store path cannot be empty")
-        return StoreLens(self._signal, (*self._path, *path))
+        return StoreLens(self._accessor, self._mutate, (*self._path, *path))
 
 
 @overload
@@ -65,8 +70,8 @@ def create_store(initial: T, /) -> tuple[Accessor[T], StoreSetter[T]]: ...
 
 
 def create_store(initial: T, /) -> tuple[Accessor[T], StoreSetter[T]]:
-    signal = Signal(initial)
-    return signal, StoreSetter(signal)
+    signal, set_signal = create_signal(initial)
+    return signal, StoreSetter(signal, set_signal)
 
 
 def produce[T](recipe: Callable[[T], T | None]) -> Callable[[T], T]:

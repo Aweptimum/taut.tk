@@ -2,7 +2,6 @@
 
 from reaktiv import Computed
 from reaktiv import Effect
-from reaktiv import Signal
 from reaktiv import batch
 from reaktiv import untracked
 
@@ -21,11 +20,9 @@ from .control import Switch
 from .props import NodeProps
 from .props import Props
 from .reactive import Accessor
-from .reactive import Setter
-from .reactive import SignalLike
-from .reactive import Updater
-from .reactive import WritableAccessor
+from .reactive import Mutator
 from .reactive import create_memo
+from .reactive import create_signal
 from .runtime import Mount
 from .runtime import Node
 from .runtime import after
@@ -74,16 +71,12 @@ __all__ = [
     "Provider",
     "Props",
     "Show",
-    "Signal",
     "StoreLens",
     "StoreSetter",
-    "Setter",
-    "SignalLike",
+    "Mutator",
     "Switch",
     "Tk",
-    "Updater",
     "VStack",
-    "WritableAccessor",
     "after",
     "batch",
     "component",
@@ -91,6 +84,7 @@ __all__ = [
     "create_effect",
     "create_memo",
     "create_root",
+    "create_signal",
     "defer",
     "to_ui",
     "create_store",

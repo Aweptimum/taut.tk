@@ -171,8 +171,8 @@ def collect_stub_imports(components: list[ComponentStub]) -> list[str]:
     solid_tk_imports = ["Node"]
     if any("Accessor" in external_type for external_type in external_types):
         solid_tk_imports.append("Accessor")
-    if any("SignalLike" in external_type for external_type in external_types):
-        solid_tk_imports.append("SignalLike")
+    if any("Mutator" in external_type for external_type in external_types):
+        solid_tk_imports.append("Mutator")
     imports.extend(f"from solid_tk import {name}" for name in solid_tk_imports)
     return imports
 

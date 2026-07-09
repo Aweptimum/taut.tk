@@ -5,9 +5,10 @@ from collections.abc import Mapping
 from typing import Any
 
 from reaktiv import Computed
-from reaktiv import Signal
 
 from .reactive import Accessor
+from .reactive import create_signal
+from .reactive import is_mutator
 from .reactive import is_signal
 from .reactive import read
 
@@ -16,21 +17,22 @@ class NodeProps:
     """Shared prop container for components and widget nodes.
 
     Props have value semantics by default: existing signals are preserved, while
-    plain values and callbacks are wrapped in ``Signal``. Widget nodes can opt
-    into binding semantics for a prop, where a callable means "derive this value
-    reactively" instead of "this value is a callback".
+    plain values and callbacks are wrapped in writable accessors. Widget nodes
+    can opt into binding semantics for a prop, where a callable means "derive
+    this value reactively" instead of "this value is a callback".
     """
 
     def __init__(self, values: Mapping[str, Any]) -> None:
         self._values = dict(values)
-        self._signals: dict[str, Accessor[Any]] = {
+        self._signals: dict[str, Any] = {
             key: self._wrap(value) for key, value in self._values.items()
         }
 
     def _wrap(self, value: Any) -> Accessor[Any]:
         if is_signal(value):
             return value
-        return Signal(value)
+        signal, _set_signal = create_signal(value)
+        return signal
 
     def __contains__(self, name: str) -> bool:
         return name in self._values
@@ -48,7 +50,8 @@ class NodeProps:
     def get(self, name: str, default: Any = None) -> Accessor[Any]:
         if name in self._signals:
             return self._signals[name]
-        return Signal(default)
+        signal, _set_signal = create_signal(default)
+        return signal
 
     def raw(self, name: str, default: Any = None) -> Any:
         return self._values.get(name, default)
@@ -99,3 +102,14 @@ class Props(NodeProps):
     This subclass exists to keep the public component API descriptive while
     sharing the same normalization machinery as widget nodes.
     """
+
+    def _wrap(self, value: Any) -> Any:
+        if is_mutator(value):
+            return value
+        return super()._wrap(value)
+
+    def read(self, name: str, default: Any = None) -> Any:
+        if name not in self._values:
+            return default
+        value = self._signals[name]
+        return value if is_mutator(value) else read(value)

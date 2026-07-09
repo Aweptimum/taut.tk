@@ -55,7 +55,7 @@ class Component(Generic[TProps]):
 
     Subclasses implement ``render`` and read props with ``self.props.name()``.
     Existing reaktiv signals are preserved, while plain values and callbacks are
-    wrapped in ``Signal`` so component props always have accessor semantics.
+    wrapped in accessors so component props always have accessor semantics.
     """
 
     props: TProps

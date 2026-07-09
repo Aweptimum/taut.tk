@@ -96,9 +96,8 @@ def external_prop_type(internal_type: str) -> str:
     if internal_type.startswith("Accessor[") and internal_type.endswith("]"):
         inner = internal_type.removeprefix("Accessor[").removesuffix("]")
         return f"{inner} | Accessor[{inner}]"
-    if internal_type.startswith("SignalLike[") and internal_type.endswith("]"):
-        inner = internal_type.removeprefix("SignalLike[").removesuffix("]")
-        return f"{inner} | SignalLike[{inner}]"
+    if internal_type.startswith("Mutator[") and internal_type.endswith("]"):
+        return internal_type
     return "Any"
 
 

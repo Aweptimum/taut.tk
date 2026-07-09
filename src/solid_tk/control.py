@@ -4,8 +4,9 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any
 
-from reaktiv import Signal
-
+from .reactive import Accessor
+from .reactive import Mutator
+from .reactive import create_signal
 from .reactive import is_signal
 from .reactive import read
 from .reactive import to_accessor
@@ -188,7 +189,7 @@ class IndexNode(MountedNode):
         super().__init__()
         self.each = to_accessor(each)
         self.render = render
-        self.items: list[Signal[Any]] = []
+        self.items: list[tuple[Accessor[Any], Mutator[Any]]] = []
         self.instances: list[Node] = []
 
     def mount(self, parent: Any | None) -> Any:
@@ -212,12 +213,13 @@ class IndexNode(MountedNode):
 
         for index, item in enumerate(items):
             if index < len(self.items):
-                self.items[index].set(item)
+                _accessor, mutate = self.items[index]
+                mutate(item)
                 continue
 
-            signal = Signal(item)
-            self.items.append(signal)
-            node = normalize_child(self.render(signal, index))
+            accessor, mutate = create_signal(item)
+            self.items.append((accessor, mutate))
+            node = normalize_child(self.render(accessor, index))
             self.instances.append(node)
             node.mount(self.widget)
 

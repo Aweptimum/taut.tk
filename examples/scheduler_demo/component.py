@@ -4,8 +4,6 @@ import threading
 import time
 from collections.abc import Callable
 
-from reaktiv import Signal
-
 from solid_tk import Button
 from solid_tk import Frame
 from solid_tk import HStack
@@ -13,6 +11,7 @@ from solid_tk import Label
 from solid_tk import VStack
 from solid_tk import after
 from solid_tk import component
+from solid_tk import create_signal
 from solid_tk import defer
 from solid_tk import interval
 from solid_tk import on_mount
@@ -21,11 +20,11 @@ from solid_tk import to_ui
 
 @component
 def scheduler_demo(props):
-    tick = Signal(0)
-    running = Signal(True)
-    deferred_text = Signal("defer: waiting for next event-loop turn")
-    delayed_text = Signal("after: scheduled for 900ms")
-    worker_text = Signal("to_ui: worker has not reported yet")
+    tick, set_tick = create_signal(0)
+    running, set_running = create_signal(True)
+    deferred_text, set_deferred_text = create_signal("defer: waiting for next event-loop turn")
+    delayed_text, set_delayed_text = create_signal("after: scheduled for 900ms")
+    worker_text, set_worker_text = create_signal("to_ui: worker has not reported yet")
 
     ticker = Label(
         text=lambda: f"interval: tick {tick()}",
@@ -63,17 +62,17 @@ def scheduler_demo(props):
         def move_ticker() -> None:
             if not running():
                 return
-            tick.update(lambda value: value + 1)
+            set_tick(lambda value: value + 1)
             if ticker.widget is not None:
                 ticker.widget.place_configure(x=12 + (tick() * 18) % 260)
 
         def move_deferred() -> None:
-            deferred_text.set("defer: ran after mount")
+            set_deferred_text("defer: ran after mount")
             if deferred.widget is not None:
                 deferred.widget.place_configure(x=190)
 
         def finish_delay() -> None:
-            delayed_text.set("after: fired once")
+            set_delayed_text("after: fired once")
             if delayed.widget is not None:
                 delayed.widget.place_configure(x=150)
 
@@ -81,7 +80,7 @@ def scheduler_demo(props):
             time.sleep(5)
             if stop_worker.is_set():
                 return
-            dispatch(lambda: worker_text.set("to_ui: delivered from worker"))
+            dispatch(lambda: set_worker_text("to_ui: delivered from worker"))
             dispatch(lambda: worker.widget.place_configure(x=96) if worker.widget else None)
 
         interval(120, move_ticker)
@@ -96,8 +95,8 @@ def scheduler_demo(props):
     return VStack(
         Label(text="Scheduler demo"),
         HStack(
-            Button(text="Pause interval", on_click=lambda: running.set(False)),
-            Button(text="Resume interval", on_click=lambda: running.set(True)),
+            Button(text="Pause interval", on_click=lambda: set_running(False)),
+            Button(text="Resume interval", on_click=lambda: set_running(True)),
         ),
         Frame(
             ticker,

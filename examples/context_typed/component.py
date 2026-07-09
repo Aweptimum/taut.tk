@@ -2,18 +2,16 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from reaktiv import Signal
-
 from solid_tk import Accessor
 from solid_tk import Button
 from solid_tk import HStack
 from solid_tk import Label
+from solid_tk import Mutator
 from solid_tk import Provider
-from solid_tk import Setter
-from solid_tk import SignalLike
 from solid_tk import VStack
 from solid_tk import component
 from solid_tk import create_context
+from solid_tk import create_signal
 from solid_tk import use_context
 
 """
@@ -24,16 +22,16 @@ https://gist.github.com/JLarky/a46055f673a2cb021db1a34449e3be07
 
 @dataclass(frozen=True)
 class DarkContextValue:
-    is_dark: SignalLike[bool]
-    set_is_dark: Setter[bool]
+    is_dark: Accessor[bool]
+    set_is_dark: Mutator[bool]
 
 
 dark_context = create_context(DarkContextValue)
 
 
 def use_provider_value() -> DarkContextValue:
-    is_dark = Signal(False)
-    return DarkContextValue(is_dark=is_dark, set_is_dark=is_dark.set)
+    is_dark, set_is_dark = create_signal(False)
+    return DarkContextValue(is_dark=is_dark, set_is_dark=set_is_dark)
 
 
 @component
@@ -53,7 +51,7 @@ def use_is_dark() -> Accessor[bool]:
     return use_dark().is_dark
 
 
-def use_set_dark() -> Setter[bool]:
+def use_set_dark() -> Mutator[bool]:
     return use_dark().set_is_dark
 
 
@@ -71,12 +69,11 @@ def DarkStatus(props):
 
 @component
 def DarkControls(props):
-    is_dark = use_is_dark()
     set_dark = use_set_dark()
     return HStack(
         Button(text="Light", on_click=lambda: set_dark(False)),
         Button(text="Dark", on_click=lambda: set_dark(True)),
-        Button(text="Toggle", on_click=lambda: set_dark(not is_dark())),
+        Button(text="Toggle", on_click=lambda: set_dark(lambda dark: not dark)),
     )
 
 

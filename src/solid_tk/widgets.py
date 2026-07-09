@@ -98,7 +98,7 @@ class WidgetNode(MountedNode):
 class ValueWidgetNode(WidgetNode):
     """Base for input widgets"""
 
-    skipped_props = {"value"}
+    skipped_props = {"value", "on_input"}
 
     def prepare_ctor_props(self, parent: Any | None, props: dict[str, Any]) -> None:
         if "value" not in self.props:
@@ -109,8 +109,7 @@ class ValueWidgetNode(WidgetNode):
         variable = tk.StringVar(master=parent)
         props["textvariable"] = variable
         accessor = self.props.prop_accessor("value")
-        raw_value = self.props.raw("value")
-        writable = raw_value if hasattr(raw_value, "set") else None
+        mutate = self.props.raw("on_input") if "on_input" in self.props else None
         syncing = False
 
         def sync_from_signal() -> None:
@@ -125,8 +124,8 @@ class ValueWidgetNode(WidgetNode):
                     syncing = False
 
         def sync_to_signal(*_: Any) -> None:
-            if writable is not None and not syncing:
-                writable.set(variable.get())
+            if mutate is not None and not syncing:
+                mutate(variable.get())
 
         trace_id = variable.trace_add("write", sync_to_signal)
         self.owner.cleanup(lambda: variable.trace_remove("write", trace_id))

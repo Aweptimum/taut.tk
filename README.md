@@ -8,44 +8,48 @@ This is currently a prototype that I hope makes Tkinter more fun
 ```python
 from typing import Protocol
 
-from reaktiv import Signal
-
 from solid_tk import Accessor
 from solid_tk import Button
 from solid_tk import For
 from solid_tk import HStack
 from solid_tk import Label
+from solid_tk import Mutator
 from solid_tk import Show
-from solid_tk import SignalLike
 from solid_tk import VStack
 from solid_tk import component
+from solid_tk import create_root
+from solid_tk import create_signal
 
 
 class CounterProps(Protocol):
     label: Accessor[str]
-    initial: SignalLike[int]
+    count: Accessor[int]
+    set_count: Mutator[int]
 
 
 @component
 def counter(props: CounterProps):
-    count = props.initial
-    todos = Signal(["wire props", "own effects", "dispose cleanly"])
+    todos, set_todos = create_signal(["wire props", "own effects", "dispose cleanly"])
 
     return VStack(
-        Label(text=lambda: f"{props.label()}: {count()}"),
-        Button(text="Increment", on_click=lambda: count.update(lambda n: n + 1)),
+        Label(text=lambda: f"{props.label()}: {props.count()}"),
+        Button(text="Increment", on_click=lambda: props.set_count(lambda n: n + 1)),
         Show(
-            lambda: count() % 2 == 0,
+            lambda: props.count() % 2 == 0,
             lambda: Label(text="Even"),
             fallback=lambda: Label(text="Odd"),
         ),
         For(todos, lambda item: Label(text=item), key=lambda item: item),
-        HStack(Button(text="-", on_click=lambda: todos.set(todos()[:-1]))),
+        HStack(Button(text="-", on_click=lambda: set_todos(lambda items: items[:-1]))),
         padx=12,
         pady=12,
     )
 
-mount = create_root(lambda: counter(label="Solid TK", initial=Signal(0)),title="Solid TK")
+count, set_count = create_signal(0)
+mount = create_root(
+    lambda: counter(label="Solid TK", count=count, set_count=set_count),
+    title="Solid TK",
+)
 mount.widget.mainloop()
 ```
 
@@ -64,7 +68,17 @@ This bit is honestly harder and more involved than the actual framework.
 
 ## Design Notes
 
-I did not think that hard about using `Signals` as-is instead of wrapping them in hooks returning accessor/mutator pairs. Some helper methods could be put around them to make it more solid-like, but it seems fine.
+`create_signal()` returns an accessor and a mutator:
+
+```python
+count, set_count = create_signal(0)
+count()
+set_count(lambda value: value + 1)
+```
+
+The accessor is still compatible with `reaktiv` signals, so widgets can bind to
+it directly. Writable widgets such as `Entry(value=..., on_input=...)` receive
+the accessor and mutator separately.
 
 `Component.__new__` returns a renderable node to keep the class API simple
 
@@ -73,14 +87,18 @@ Counter(title="Solid TK")
 ```
 
 Inside a component, `self.props.title()` reads a reaktiv signal. This is
-intentionally accessor-oriented: unlike Solid's `props.name` property access,
-`solid-tk` keeps component props consistent with `reaktiv` signals and computed
-values, which are called to read.
+intentionally accessor-oriented.
 
 Existing signals are preserved, while plain values and callbacks are wrapped as
 signal values. Tk widget props use one additional convention: callable non-event
 props are treated as reactive bindings, and event props such as `on_click` /
 `command` are passed through as callbacks.
+
+```python
+Label(text=f"{count()}")                  # snapshot now
+Label(text=count)                         # reactive signal value
+Label(text=lambda: f"{count()}")          # reactive derived expression
+```
 
 That means a component prop can be read inside a derived expression:
 
@@ -99,10 +117,12 @@ Label(text=self.props.name)
 
 - Functional components using `@component` decorator
 - `Component` with `__init__()/setup()` and `render()`
-- `Props`, where every attribute is a `Signal`
+- `Props`, where every attribute is an accessor
 - widgets: `Tk`, `Frame`, `Label`, `Button`, `Entry`, `Checkbutton`
 - some layout helpers: `VStack`, `HStack`
 - some control flow: `Show`, `For`, `Switch` / `Match`, `Index`, `Dynamic`
+- context: `create_context()`, `Provider`, `use_context()`
+- lifecycle helpers: `create_effect()`, `on_mount()`, `on_cleanup()`
 - `create_root()` and explicit disposal through the returned `Mount`
 
 ```python
@@ -125,12 +145,12 @@ python -m examples.control_demo
 - event-loop helpers: `after`, `interval`, `defer`, `to_ui`
 
 ```python
-after(500, lambda: status.set("half a second later"))
-interval(1000, lambda: count.update(lambda value: value + 1))
+after(500, lambda: set_status("half a second later"))
+interval(1000, lambda: set_count(lambda value: value + 1))
 defer(lambda: print("runs on the next Tk event loop turn"))
 
 dispatch = to_ui()
-dispatch(lambda: status.set("called from another thread"))
+dispatch(lambda: set_status("called from another thread"))
 ```
 
 Scheduled callbacks are owned and cancelled automatically when their component

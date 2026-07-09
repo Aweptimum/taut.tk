@@ -6,12 +6,13 @@ import threading
 from pathlib import Path
 from textwrap import dedent
 from types import SimpleNamespace
+from typing import Any
 from typing import Optional
 from typing import Protocol
+from typing import cast
 
 import pyright
 import pytest
-from reaktiv import Signal
 
 from solid_tk import Accessor
 from solid_tk import Button
@@ -30,6 +31,7 @@ from solid_tk import create_context
 from solid_tk import create_effect
 from solid_tk import create_memo
 from solid_tk import create_root
+from solid_tk import create_signal
 from solid_tk import defer
 from solid_tk import get_current_owner
 from solid_tk import interval
@@ -144,7 +146,7 @@ def fake_tk(monkeypatch):
 
 
 def test_entry_value_tracks_signal_changes_when_created_inside_root():
-    value = Signal("hello")
+    value, set_value = create_signal("hello")
 
     mount = create_root(lambda: VStack(Entry(value=value)), title="Demo")
     entry = mount.widget.children[0].children[0]
@@ -152,15 +154,17 @@ def test_entry_value_tracks_signal_changes_when_created_inside_root():
 
     assert variable.get() == "hello"
 
-    value.set("world")
+    set_value("world")
 
     assert variable.get() == "world"
 
 
 def test_entry_value_writes_user_changes_back_to_signal():
-    value = Signal("hello")
+    value, set_value = create_signal("hello")
 
-    mount = create_root(lambda: VStack(Entry(value=value)), title="Demo")
+    mount = create_root(
+        lambda: VStack(Entry(value=value, on_input=set_value)), title="Demo"
+    )
     entry = mount.widget.children[0].children[0]
     variable = entry.props["textvariable"]
 
@@ -170,7 +174,7 @@ def test_entry_value_writes_user_changes_back_to_signal():
 
 
 def test_entry_value_conflicts_with_textvariable():
-    value = Signal("hello")
+    value, _set_value = create_signal("hello")
 
     with pytest.raises(ValueError, match="value and textvariable"):
         create_root(
@@ -180,7 +184,8 @@ def test_entry_value_conflicts_with_textvariable():
 
 
 def test_create_root_disposes_mounted_app_node():
-    mount = create_root(lambda: VStack(Entry(value=Signal("hello"))), title="Demo")
+    value, _set_value = create_signal("hello")
+    mount = create_root(lambda: VStack(Entry(value=value)), title="Demo")
     app_frame = mount.widget.children[0]
 
     mount.dispose()
@@ -191,10 +196,10 @@ def test_create_root_disposes_mounted_app_node():
 def test_function_component_keeps_local_reactive_state_alive():
     @component
     def Counter(props):
-        count = Signal(0)
+        count, set_count = create_signal(0)
         return VStack(
             Label(text=lambda: f"{props.title()}: {count()}"),
-            Button(text="Increment", command=lambda: count.set(count() + 1)),
+            Button(text="Increment", command=lambda: set_count(lambda n: n + 1)),
         )
 
     mount = create_root(lambda: Counter(title="Count"), title="Demo")
@@ -210,7 +215,7 @@ def test_function_component_keeps_local_reactive_state_alive():
 
 
 def test_widget_binding_unwraps_forwarded_callable_prop_value():
-    count = Signal(0)
+    count, set_count = create_signal(0)
 
     @component
     def ForwardedLabel(props):
@@ -224,13 +229,13 @@ def test_widget_binding_unwraps_forwarded_callable_prop_value():
 
     assert label.props["text"] == "Count: 0"
 
-    count.set(1)
+    set_count(1)
 
     assert label.props["text"] == "Count: 1"
 
 
 def test_create_memo_derives_reactive_values():
-    count = Signal(1)
+    count, set_count = create_signal(1)
 
     @component
     def Counter(props):
@@ -242,13 +247,13 @@ def test_create_memo_derives_reactive_values():
 
     assert label.props["text"] == "Double: 2"
 
-    count.set(3)
+    set_count(3)
 
     assert label.props["text"] == "Double: 6"
 
 
 def test_switch_renders_first_matching_case_and_fallback():
-    mode = Signal("a")
+    mode, set_mode = create_signal("a")
 
     mount = create_root(
         lambda: Switch(
@@ -262,17 +267,17 @@ def test_switch_renders_first_matching_case_and_fallback():
 
     assert switch.active.widget.props["text"] == "A"
 
-    mode.set("b")
+    set_mode("b")
 
     assert switch.active.widget.props["text"] == "B"
 
-    mode.set("c")
+    set_mode("c")
 
     assert switch.active.widget.props["text"] == "fallback"
 
 
 def test_switch_renders_initial_fallback_when_no_case_matches():
-    mode = Signal("idle")
+    mode, _set_mode = create_signal("idle")
 
     mount = create_root(
         lambda: Switch(
@@ -287,7 +292,7 @@ def test_switch_renders_initial_fallback_when_no_case_matches():
 
 
 def test_index_reuses_nodes_by_index_and_updates_item_accessors():
-    items = Signal(["a", "b"])
+    items, set_items = create_signal(["a", "b"])
 
     mount = create_root(
         lambda: Index(items, lambda item, index: Label(text=lambda: f"{index}:{item()}")),
@@ -299,7 +304,7 @@ def test_index_reuses_nodes_by_index_and_updates_item_accessors():
     assert first.widget.props["text"] == "0:a"
     assert index_node.instances[1].widget.props["text"] == "1:b"
 
-    items.set(["x", "y", "z"])
+    set_items(["x", "y", "z"])
 
     assert index_node.instances[0] is first
     assert first.widget.props["text"] == "0:x"
@@ -307,7 +312,7 @@ def test_index_reuses_nodes_by_index_and_updates_item_accessors():
     assert index_node.instances[2].widget.props["text"] == "2:z"
 
     stale = index_node.instances[2]
-    items.set(["q"])
+    set_items(["q"])
 
     assert index_node.instances == [first]
     assert first.widget.props["text"] == "0:q"
@@ -315,7 +320,7 @@ def test_index_reuses_nodes_by_index_and_updates_item_accessors():
 
 
 def test_dynamic_switches_component_factories():
-    selected = Signal(None)
+    selected, set_selected = create_signal(cast(Any, None))
 
     @component
     def Red(props):
@@ -325,39 +330,39 @@ def test_dynamic_switches_component_factories():
     def Blue(props):
         return Label(text="blue")
 
-    selected.set(Red)
+    set_selected(lambda _: Red)
     mount = create_root(lambda: Dynamic(selected), title="Demo")
     dynamic = mount.node.children[0]
 
     assert dynamic.active.widget.props["text"] == "red"
 
-    selected.set(Blue)
+    set_selected(lambda _: Blue)
 
     assert dynamic.active.widget.props["text"] == "blue"
 
 
 def test_dynamic_forwards_reactive_props_to_selected_component():
-    selected = Signal(None)
-    item = Signal("first")
+    selected, set_selected = create_signal(cast(Any, None))
+    item, set_item = create_signal("first")
     selected_item = create_memo(lambda: item())
 
     @component
     def Detail(props):
         return Label(text=lambda: f"Detail: {props.item()}")
 
-    selected.set(Detail)
+    set_selected(lambda _: Detail)
     mount = create_root(lambda: Dynamic(selected, item=selected_item), title="Demo")
     dynamic = mount.node.children[0]
 
     assert dynamic.active.widget.props["text"] == "Detail: first"
 
-    item.set("second")
+    set_item("second")
 
     assert dynamic.active.widget.props["text"] == "Detail: second"
 
 
 def test_function_component_lifecycle_helpers_are_owned():
-    value = Signal("hello")
+    value, set_value = create_signal("hello")
     events = []
 
     @component
@@ -371,12 +376,12 @@ def test_function_component_lifecycle_helpers_are_owned():
 
     assert events == ["effect:hello", "mount"]
 
-    value.set("world")
+    set_value("world")
 
     assert events == ["effect:hello", "mount", "effect:world"]
 
     mount.dispose()
-    value.set("again")
+    set_value("again")
 
     assert events == ["effect:hello", "mount", "effect:world", "cleanup"]
 
@@ -618,7 +623,7 @@ def test_function_component_props_can_be_typed_with_protocol():
 
     @component
     def Counter(props: CounterProps):
-        count = Signal(props.initial())
+        count, _set_count = create_signal(props.initial())
         return Label(text=lambda: f"{props.title()}: {count()}")
 
     mount = create_root(lambda: Counter(title="Count", initial=2), title="Demo")
@@ -630,7 +635,7 @@ def test_function_component_props_can_be_typed_with_protocol():
 def test_class_component_can_initialize_state_with_init():
     class Counter(Component):
         def __init__(self) -> None:
-            self.count = Signal(1)
+            self.count, self.set_count = create_signal(1)
 
         def render(self):
             return Label(text=lambda: f"{self.props.title()}: {self.count()}")
@@ -649,7 +654,7 @@ def test_class_component_init_can_receive_typed_props():
     class Counter(Component):
         def __init__(self, props: CounterProps) -> None:
             self.title = props.title
-            self.count = Signal(props.initial())
+            self.count, self.set_count = create_signal(props.initial())
 
         def render(self):
             return Label(text=lambda: f"{self.title()}: {self.count()}")

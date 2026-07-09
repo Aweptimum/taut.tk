@@ -2,16 +2,14 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from reaktiv import Signal
-
 from solid_tk import Button
 from solid_tk import HStack
 from solid_tk import Label
 from solid_tk import Provider
-from solid_tk import SignalLike
 from solid_tk import VStack
 from solid_tk import component
 from solid_tk import create_context
+from solid_tk import create_signal
 from solid_tk import use_context
 
 
@@ -98,7 +96,7 @@ def preview(props):
 
 @component
 def context_demo(props):
-    selected: SignalLike[Theme] = Signal(LIGHT)
+    selected, set_selected = create_signal(LIGHT)
 
     return Provider(
         theme_context,
@@ -106,11 +104,11 @@ def context_demo(props):
         lambda: panel(
             children=VStack(
                 HStack(
-                    themed_button(text="Light", on_click=lambda: selected.set(LIGHT)),
-                    themed_button(text="Dark", on_click=lambda: selected.set(DARK)),
+                    themed_button(text="Light", on_click=lambda: set_selected(LIGHT)),
+                    themed_button(text="Dark", on_click=lambda: set_selected(DARK)),
                     themed_button(
                         text="Contrast",
-                        on_click=lambda: selected.set(CONTRAST),
+                        on_click=lambda: set_selected(CONTRAST),
                     ),
                 ),
                 preview(),

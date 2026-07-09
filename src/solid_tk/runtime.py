@@ -214,7 +214,7 @@ class NoopCancelHandle:
 def to_ui() -> ThreadDispatcher:
     """Capture an owner-bound dispatcher for UI work.
 
-    ``dispatch = to_ui(); dispatch(lambda: message.set("done"))``
+    ``dispatch = to_ui(); dispatch(lambda: set_message("done"))``
 
     Use this inside a component or lifecycle callback, then pass the returned
     dispatcher to worker code that needs to report back to the UI.
