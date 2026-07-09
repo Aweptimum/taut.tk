@@ -7,11 +7,12 @@ from typing import TypeAlias
 from typing import TypedDict
 from typing import TypeVar
 
-from reaktiv import ReadableSignal
+from .reactive import Accessor
+from .reactive import SignalLike
 
 T = TypeVar("T")
 
-Reactive: TypeAlias = T | ReadableSignal[T] | Callable[[], T]
+Reactive: TypeAlias = T | Accessor[T] | Callable[[], T]
 Command: TypeAlias = Callable[[], Any]
 Side: TypeAlias = Literal["left", "right", "top", "bottom"]
 Anchor: TypeAlias = Literal[
@@ -155,7 +156,7 @@ class EntryProps(BaseWidgetProps, total=False):
     textvariable: Reactive[Any]
     validate: Reactive[str]
     validatecommand: Command
-    value: Reactive[str]
+    value: SignalLike[str]
     xscrollcommand: Command
 
 

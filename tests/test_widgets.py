@@ -2,10 +2,12 @@ from __future__ import annotations
 
 from types import SimpleNamespace
 from typing import Optional
+from typing import Protocol
 
 import pytest
 from reaktiv import Signal
 
+from solid_tk import Accessor
 from solid_tk import Button
 from solid_tk import Entry
 from solid_tk import Label
@@ -160,3 +162,19 @@ def test_function_component_keeps_local_reactive_state_alive():
     button.props["command"]()
 
     assert label.props["text"] == "Count: 1"
+
+
+def test_function_component_props_can_be_typed_with_protocol():
+    class CounterProps(Protocol):
+        title: Accessor[str]
+        initial: Accessor[int]
+
+    @component
+    def Counter(props: CounterProps):
+        count = Signal(props.initial())
+        return Label(text=lambda: f"{props.title()}: {count()}")
+
+    mount = create_root(lambda: Counter(title="Count", initial=2), title="Demo")
+    label = mount.widget.children[0]
+
+    assert label.props["text"] == "Count: 2"

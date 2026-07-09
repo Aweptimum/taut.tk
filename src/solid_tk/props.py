@@ -23,11 +23,11 @@ class NodeProps:
 
     def __init__(self, values: Mapping[str, Any]) -> None:
         self._values = dict(values)
-        self._signals: dict[str, Accessor] = {
+        self._signals: dict[str, Accessor[Any]] = {
             key: self._wrap(value) for key, value in self._values.items()
         }
 
-    def _wrap(self, value: Any) -> Accessor:
+    def _wrap(self, value: Any) -> Accessor[Any]:
         if is_signal(value):
             return value
         return Signal(value)
@@ -35,7 +35,7 @@ class NodeProps:
     def __contains__(self, name: str) -> bool:
         return name in self._values
 
-    def __getattr__(self, name: str) -> Accessor:
+    def __getattr__(self, name: str) -> Accessor[Any]:
         try:
             return self._signals[name]
         except KeyError as exc:
@@ -45,7 +45,7 @@ class NodeProps:
         skipped = set(skip)
         return [name for name in self._values if name not in skipped]
 
-    def get(self, name: str, default: Any = None) -> Accessor:
+    def get(self, name: str, default: Any = None) -> Accessor[Any]:
         if name in self._signals:
             return self._signals[name]
         return Signal(default)
@@ -64,7 +64,7 @@ class NodeProps:
         value = self._values[name]
         return is_signal(value) or callable(value)
 
-    def binding(self, name: str) -> Accessor:
+    def binding(self, name: str) -> Accessor[Any]:
         value = self._values[name]
         if is_signal(value):
             return value
