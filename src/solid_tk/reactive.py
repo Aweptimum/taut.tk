@@ -79,7 +79,7 @@ def create_selector[T, U](
 def untrack[T](fn: Callable[[], T]) -> T:
     """Read reactive values inside ``fn`` without subscribing the current effect."""
 
-    return untracked(fn)
+    return cast(T, untracked(fn))
 
 
 def on[T, U](

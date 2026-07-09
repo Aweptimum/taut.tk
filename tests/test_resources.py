@@ -3,6 +3,8 @@ from __future__ import annotations
 from threading import Event
 from time import monotonic
 from time import sleep
+from typing import Optional
+from typing import cast
 
 from solid_tk import component
 from solid_tk import reactive
@@ -98,9 +100,9 @@ def test_resource_passes_source_value_to_fetcher_and_refetches_when_source_chang
     resources = []
     source, set_source = reactive.create_signal("alpha")
 
-    def fetcher(source_value, info):
-        calls.append((source_value, info["value"], info["refetching"]))
-        return source_value.upper()
+    def fetcher(source, info):
+        calls.append((source, info["value"], info["refetching"]))
+        return source.upper()
 
     @component
     def App(props):
@@ -127,11 +129,11 @@ def test_resource_passes_source_value_to_fetcher_and_refetches_when_source_chang
 def test_resource_does_not_fetch_for_disabled_source_until_enabled():
     calls = []
     resources = []
-    source, set_source = reactive.create_signal(None)
+    source, set_source = reactive.create_signal(cast(Optional[str], None))
 
-    def fetcher(source_value, info):
-        calls.append(source_value)
-        return f"value:{source_value}"
+    def fetcher(source, info):
+        calls.append(source)
+        return f"value:{source}"
 
     @component
     def App(props):
@@ -160,8 +162,8 @@ def test_resource_refetch_passes_custom_refetch_info_and_refreshing_state():
     resources = []
     actions = []
 
-    def fetcher(source_value, info):
-        calls.append((source_value, info["value"], info["refetching"]))
+    def fetcher(source, info):
+        calls.append((source, info["value"], info["refetching"]))
         return f"result:{len(calls)}"
 
     @component
@@ -197,8 +199,8 @@ def test_resource_mutate_updates_value_without_fetching():
     resources = []
     actions = []
 
-    def fetcher(source_value, info):
-        calls.append(source_value)
+    def fetcher(source, info):
+        calls.append(source)
         return 1
 
     @component
@@ -227,7 +229,7 @@ def test_resource_ignores_stale_results():
     resources = []
     actions = []
 
-    def fetcher(source_value, info):
+    def fetcher(source, info):
         done = Event()
         result = f"result:{len(pending) + 1}"
         pending.append((result, done))

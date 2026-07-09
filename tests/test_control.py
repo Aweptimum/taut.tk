@@ -23,7 +23,7 @@ def test_switch_renders_first_matching_case_and_fallback():
         ),
         title="Demo",
     )
-    switch = mount.node.children[0]
+    switch = cast(Any, mount.node).children[0]
 
     assert switch.active.widget.props["text"] == "A"
 
@@ -41,12 +41,14 @@ def test_switch_renders_initial_fallback_when_no_case_matches():
 
     mount = runtime.create_root(
         lambda: control.Switch(
-            control.Match(lambda: mode() == "ready", lambda: widgets.Label(text="Ready")),
+            control.Match(
+                lambda: mode() == "ready", lambda: widgets.Label(text="Ready")
+            ),
             fallback=lambda: widgets.Label(text="Idle"),
         ),
         title="Demo",
     )
-    switch = mount.node.children[0]
+    switch = cast(Any, mount.node).children[0]
 
     assert switch.active.widget.props["text"] == "Idle"
 
@@ -61,7 +63,7 @@ def test_index_reuses_nodes_by_index_and_updates_item_accessors():
         ),
         title="Demo",
     )
-    index_node = mount.node.children[0]
+    index_node = cast(Any, mount.node).children[0]
     first = index_node.instances[0]
 
     assert first.widget.props["text"] == "0:a"
@@ -95,7 +97,7 @@ def test_dynamic_switches_component_factories():
 
     set_selected(lambda _: Red)
     mount = runtime.create_root(lambda: control.Dynamic(selected), title="Demo")
-    dynamic = mount.node.children[0]
+    dynamic = cast(Any, mount.node).children[0]
 
     assert dynamic.active.widget.props["text"] == "red"
 
@@ -114,8 +116,10 @@ def test_dynamic_forwards_reactive_props_to_selected_component():
         return widgets.Label(text=lambda: f"Detail: {props.item()}")
 
     set_selected(lambda _: Detail)
-    mount = runtime.create_root(lambda: control.Dynamic(selected, item=selected_item), title="Demo")
-    dynamic = mount.node.children[0]
+    mount = runtime.create_root(
+        lambda: control.Dynamic(selected, item=selected_item), title="Demo"
+    )
+    dynamic = cast(Any, mount.node).children[0]
 
     assert dynamic.active.widget.props["text"] == "Detail: first"
 
@@ -135,7 +139,7 @@ def test_error_boundary_renders_fallback_when_child_render_raises():
         ),
         title="Demo",
     )
-    boundary = mount.node.children[0]
+    boundary = cast(Any, mount.node).children[0]
 
     assert boundary.active_kind == "fallback"
     assert boundary.active.widget.props["text"] == "Caught: boom"
@@ -156,7 +160,7 @@ def test_error_boundary_catches_child_reactive_update_errors():
         ),
         title="Demo",
     )
-    boundary = mount.node.children[0]
+    boundary = cast(Any, mount.node).children[0]
     child_widget = boundary.active.widget
 
     assert boundary.active_kind == "child"
@@ -188,7 +192,7 @@ def test_error_boundary_can_replace_show_after_reactive_child_error():
         ),
         title="Demo",
     )
-    boundary = mount.node.children[0]
+    boundary = cast(Any, mount.node).children[0]
     show = boundary.active
     show_widget = show.widget
 
@@ -214,10 +218,12 @@ def test_error_boundary_reset_retries_child_rendering():
         )
 
     mount = runtime.create_root(
-        lambda: control.ErrorBoundary(lambda: widgets.Label(text=text), fallback=fallback),
+        lambda: control.ErrorBoundary(
+            lambda: widgets.Label(text=text), fallback=fallback
+        ),
         title="Demo",
     )
-    boundary = mount.node.children[0]
+    boundary = cast(Any, mount.node).children[0]
 
     set_value("bad")
     assert boundary.active_kind == "fallback"
@@ -242,7 +248,7 @@ def test_error_boundary_fallback_errors_bubble_to_parent_boundary():
         ),
         title="Demo",
     )
-    boundary = mount.node.children[0]
+    boundary = cast(Any, mount.node).children[0]
 
     assert boundary.active_kind == "fallback"
     assert boundary.active.widget.props["text"] == "Outer: fallback failed"
@@ -264,7 +270,7 @@ def test_error_boundary_does_not_catch_deferred_callback_errors():
         ),
         title="Demo",
     )
-    boundary = mount.node.children[0]
+    boundary = cast(Any, mount.node).children[0]
 
     with pytest.raises(RuntimeError, match="event failed"):
         mount.widget.run_next_after()

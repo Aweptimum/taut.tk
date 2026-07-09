@@ -11,6 +11,7 @@ from inspect import signature
 from threading import Lock
 from typing import Any
 from typing import Protocol
+from typing import cast
 
 from reaktiv import Effect
 
@@ -48,15 +49,17 @@ class Owner:
     mounts: list[Callable[[], Any]] = field(default_factory=list)
     mounted: bool = False
 
-    def effect(self, fn: Callable[..., Any], *, accepts_cleanup: bool | None = None) -> Effect:
+    def effect(
+        self, fn: Callable[..., Any], *, accepts_cleanup: bool | None = None
+    ) -> Effect:
         if accepts_cleanup is None:
             accepts_cleanup = len(signature(fn).parameters) >= 1
 
         # Change definition of run for benefit of reaktive.Effect
-        # reaktiv.Effect also inspects the signature length 
+        # reaktiv.Effect also inspects the signature length
         if accepts_cleanup:
 
-            def run(on_cleanup: Callable[[Callable[[], None]], None]) -> Any: # pyright: ignore[reportRedeclaration]
+            def run(on_cleanup: Callable[[Callable[[], None]], None]) -> Any:  # pyright: ignore[reportRedeclaration]
                 try:
                     with use_owner(self):
                         return fn(on_cleanup)
@@ -111,7 +114,7 @@ class Owner:
             self.handle_error(exc)
             return
         if callable(cleanup):
-            self.cleanup(cleanup)
+            self.cleanup(cast(Callable[[], None], cleanup))
 
     def dispose(self) -> None:
         for effect in reversed(self.effects):
@@ -125,7 +128,9 @@ class Owner:
         self.mounted = False
 
 
-_current_owner: ContextVar[Owner | None] = ContextVar("solid_tk_current_owner", default=None)
+_current_owner: ContextVar[Owner | None] = ContextVar(
+    "solid_tk_current_owner", default=None
+)
 
 
 @contextmanager
@@ -315,7 +320,9 @@ def to_ui() -> ThreadDispatcher:
 class MountedNode:
     widget: Any | None = None
 
-    def __init__(self, children: Iterable[Any] = (), *, owner: Owner | None = None) -> None:
+    def __init__(
+        self, children: Iterable[Any] = (), *, owner: Owner | None = None
+    ) -> None:
         self.owner = owner if owner is not None else Owner(parent=get_current_owner())
         self.children = [normalize_child(child) for child in children]
 

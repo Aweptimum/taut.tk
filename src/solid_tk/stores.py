@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from collections.abc import Mapping
+from copy import copy
 from copy import deepcopy
 from dataclasses import fields
 from dataclasses import is_dataclass
@@ -48,7 +49,9 @@ class StoreLens(Generic[V]):
         self._accessor = accessor
         self._mutate = mutate
         self._path = path
-        self._path_accessor = create_memo(lambda: read_path(self._accessor(), self._path))
+        self._path_accessor = create_memo(
+            lambda: read_path(self._accessor(), self._path)
+        )
 
     def __call__(self) -> V:
         return self._path_accessor()
@@ -102,7 +105,9 @@ def unwrap(value: Any) -> Any:
     if isinstance(value, tuple):
         return type(value)(unwrap(item) for item in value)
     if is_dataclass(value) and not isinstance(value, type):
-        updates = {field.name: unwrap(getattr(value, field.name)) for field in fields(value)}
+        updates = {
+            field.name: unwrap(getattr(value, field.name)) for field in fields(value)
+        }
         return replace(value, **updates)
     return value
 
@@ -118,6 +123,8 @@ def read_key(value: Any, key: PathKey) -> Any:
     if isinstance(value, Mapping):
         return value[key]
     if isinstance(value, list | tuple):
+        if not isinstance(key, int):
+            raise TypeError(f"cannot read sequence key {key!r}")
         return value[key]
     if isinstance(key, str):
         return getattr(value, key)
@@ -141,17 +148,21 @@ def write_key(value: Any, key: PathKey, child: Any) -> Any:
     if isinstance(value, Mapping):
         return {**value, key: child}
     if isinstance(value, list):
+        if not isinstance(key, int):
+            raise TypeError(f"cannot write sequence key {key!r}")
         items = list(value)
         items[key] = child
         return items
     if isinstance(value, tuple):
+        if not isinstance(key, int):
+            raise TypeError(f"cannot write sequence key {key!r}")
         items = list(value)
         items[key] = child
         return type(value)(items)
-    if is_dataclass(value) and isinstance(key, str):
+    if is_dataclass(value) and not isinstance(value, type) and isinstance(key, str):
         return replace(value, **{key: child})
     if isinstance(key, str):
-        clone = value.__copy__() if hasattr(value, "__copy__") else copy_attrs(value)
+        clone = copy(value) if hasattr(value, "__copy__") else copy_attrs(value)
         setattr(clone, key, child)
         return clone
     raise TypeError(f"cannot write non-string attribute key {key!r}")
@@ -177,7 +188,9 @@ def reconcile_value(current: Any, value: Any) -> Any:
     return value
 
 
-def reconcile_mapping(current: Mapping[Any, Any], value: Mapping[Any, Any]) -> dict[Any, Any]:
+def reconcile_mapping(
+    current: Mapping[Any, Any], value: Mapping[Any, Any]
+) -> dict[Any, Any]:
     result = dict(current)
     for key, next_item in value.items():
         result[key] = (
@@ -185,7 +198,7 @@ def reconcile_mapping(current: Mapping[Any, Any], value: Mapping[Any, Any]) -> d
         )
     for key in set(current) - set(value):
         del result[key]
-    return current if result == current else result
+    return current if isinstance(current, dict) and result == current else result
 
 
 def reconcile_list(current: list[Any], value: list[Any]) -> list[Any]:
@@ -198,7 +211,9 @@ def reconcile_list(current: list[Any], value: list[Any]) -> list[Any]:
     return current if result == current else result
 
 
-def reconcile_tuple(current: tuple[Any, ...], value: tuple[Any, ...]) -> tuple[Any, ...]:
+def reconcile_tuple(
+    current: tuple[Any, ...], value: tuple[Any, ...]
+) -> tuple[Any, ...]:
     result = tuple(
         reconcile_value(old, new) if index < len(current) else new
         for index, (old, new) in enumerate(zip(current, value, strict=False))
@@ -210,10 +225,16 @@ def reconcile_tuple(current: tuple[Any, ...], value: tuple[Any, ...]) -> tuple[A
 
 def reconcile_dataclass(current: Any, value: Any) -> Any:
     updates = {
-        field.name: reconcile_value(getattr(current, field.name), getattr(value, field.name))
+        field.name: reconcile_value(
+            getattr(current, field.name), getattr(value, field.name)
+        )
         for field in fields(current)
     }
-    return current if all(getattr(current, key) is item for key, item in updates.items()) else replace(current, **updates)
+    return (
+        current
+        if all(getattr(current, key) is item for key, item in updates.items())
+        else replace(current, **updates)
+    )
 
 
 def copy_attrs(value: Any) -> Any:

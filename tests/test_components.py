@@ -5,6 +5,7 @@ import os
 from pathlib import Path
 from textwrap import dedent
 from typing import Protocol
+from typing import cast
 
 import pyright
 
@@ -21,7 +22,9 @@ def test_function_component_keeps_local_reactive_state_alive():
         count, set_count = reactive.create_signal(0)
         return widgets.VStack(
             widgets.Label(text=lambda: f"{props.title()}: {count()}"),
-            widgets.Button(text="Increment", command=lambda: set_count(lambda n: n + 1)),
+            widgets.Button(
+                text="Increment", command=lambda: set_count(lambda n: n + 1)
+            ),
         )
 
     mount = runtime.create_root(lambda: Counter(title="Count"), title="Demo")
@@ -195,8 +198,11 @@ def test_class_component_generic_types_self_props(tmp_path: Path):
         capture_output=True,
     )
 
-    assert result.returncode == 1, result.stdout + result.stderr
-    output = json.loads(result.stdout)
+    stdout = cast(str, result.stdout)
+    stderr = cast(str, result.stderr)
+
+    assert result.returncode == 1, stdout + stderr
+    output = json.loads(stdout)
     messages = [diagnostic["message"] for diagnostic in output["generalDiagnostics"]]
 
     assert any(

@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+from typing import Any
+from typing import cast
+
 from solid_tk import reactive
 from solid_tk import runtime
 from solid_tk import tk
@@ -10,7 +13,7 @@ def test_portal_mounts_child_in_toplevel():
         lambda: tk.Portal(lambda: tk.Label(text="Dialog"), title="Settings"),
         title="Demo",
     )
-    portal = mount.node.children[0]
+    portal = cast(Any, mount.node).children[0]
     toplevel = portal.widget
 
     assert toplevel.parent is mount.widget
@@ -29,7 +32,7 @@ def test_portal_close_runs_callback_and_destroys_toplevel():
         ),
         title="Demo",
     )
-    portal = mount.node.children[0]
+    portal = cast(Any, mount.node).children[0]
     toplevel = portal.widget
 
     toplevel.protocols["WM_DELETE_WINDOW"]()
@@ -49,7 +52,7 @@ def test_portal_close_is_idempotent():
         ),
         title="Demo",
     )
-    portal = mount.node.children[0]
+    portal = cast(Any, mount.node).children[0]
     toplevel = portal.widget
 
     portal.close()
@@ -68,7 +71,7 @@ def test_portal_title_tracks_signal():
         lambda: tk.Portal(lambda: tk.Label(text="Dialog"), title=title),
         title="Demo",
     )
-    portal = mount.node.children[0]
+    portal = cast(Any, mount.node).children[0]
     toplevel = portal.widget
 
     assert toplevel.props["title"] == "Settings"
@@ -83,7 +86,7 @@ def test_portal_disposes_with_root():
         lambda: tk.Portal(lambda: tk.Label(text="Dialog"), title="Settings"),
         title="Demo",
     )
-    portal = mount.node.children[0]
+    portal = cast(Any, mount.node).children[0]
     toplevel = portal.widget
 
     mount.dispose()
