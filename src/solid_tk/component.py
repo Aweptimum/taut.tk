@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from functools import wraps
+from inspect import signature
 from typing import Any
 from typing import TypeVar
 from typing import cast
@@ -55,12 +56,31 @@ class Component:
     def __new__(cls, **props: Any) -> ComponentNode:  # type: ignore[override]
         instance = super().__new__(cls)
         instance.props = Props(props)
-        instance.setup()
+        if _accepts_no_args(instance.__init__):
+            instance.__init__()
+        elif _accepts_props_object(instance.__init__):
+            instance.__init__(instance.props)
+        else:
+            raise TypeError(
+                f"{cls.__name__}.__init__ must accept no arguments or a props object"
+            )
         rendered = normalize_child(instance.render())
         return ComponentNode(instance, rendered)
+
+    def __init__(self, props: Props | None = None) -> None:
+        self.setup()
 
     def setup(self) -> None:
         pass
 
     def render(self) -> Node:
         raise NotImplementedError
+
+
+def _accepts_no_args(init: Callable[..., Any]) -> bool:
+    return len(signature(init).parameters) == 0
+
+
+def _accepts_props_object(init: Callable[..., Any]) -> bool:
+    parameters = signature(init).parameters
+    return len(parameters) == 1 and "props" in parameters

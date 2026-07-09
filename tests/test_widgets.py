@@ -9,6 +9,7 @@ from reaktiv import Signal
 
 from solid_tk import Accessor
 from solid_tk import Button
+from solid_tk import Component
 from solid_tk import Entry
 from solid_tk import Label
 from solid_tk import VStack
@@ -178,3 +179,36 @@ def test_function_component_props_can_be_typed_with_protocol():
     label = mount.widget.children[0]
 
     assert label.props["text"] == "Count: 2"
+
+
+def test_class_component_can_initialize_state_with_init():
+    class Counter(Component):
+        def __init__(self) -> None:
+            self.count = Signal(1)
+
+        def render(self):
+            return Label(text=lambda: f"{self.props.title()}: {self.count()}")
+
+    mount = create_root(lambda: Counter(title="Count"), title="Demo")
+    label = mount.widget.children[0]
+
+    assert label.props["text"] == "Count: 1"
+
+
+def test_class_component_init_can_receive_typed_props():
+    class CounterProps(Protocol):
+        title: Accessor[str]
+        initial: Accessor[int]
+
+    class Counter(Component):
+        def __init__(self, props: CounterProps) -> None:
+            self.title = props.title
+            self.count = Signal(props.initial())
+
+        def render(self):
+            return Label(text=lambda: f"{self.title()}: {self.count()}")
+
+    mount = create_root(lambda: Counter(title="Count", initial=3), title="Demo")
+    label = mount.widget.children[0]
+
+    assert label.props["text"] == "Count: 3"
