@@ -155,6 +155,7 @@ class EntryProps(BaseWidgetProps, total=False):
     textvariable: Reactive[Any]
     validate: Reactive[str]
     validatecommand: Command
+    value: Reactive[str]
     xscrollcommand: Command
 
 

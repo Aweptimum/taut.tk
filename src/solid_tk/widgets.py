@@ -51,6 +51,7 @@ class WidgetNode(MountedNode):
             else:
                 ctor_props[tk_name] = self.props.read(name)
 
+        self.prepare_ctor_props(parent, ctor_props)
         self.widget = (
             self.widget_type(parent, **ctor_props)
             if parent is not None
@@ -63,6 +64,9 @@ class WidgetNode(MountedNode):
             child.mount(self.widget)
 
         return self.widget
+
+    def prepare_ctor_props(self, parent: Any | None, props: dict[str, Any]) -> None:
+        pass
 
     def apply_layout(self) -> None:
         if self.widget is None:
@@ -94,6 +98,44 @@ class WidgetNode(MountedNode):
             child.unmount()
         self.children.clear()
         super().unmount()
+
+
+class ValueWidgetNode(WidgetNode):
+    """Base for input widgets"""
+
+    skipped_props = {"value"}
+
+    def prepare_ctor_props(self, parent: Any | None, props: dict[str, Any]) -> None:
+        if "value" not in self.props:
+            return
+        if "textvariable" in self.props:
+            raise ValueError("value and textvariable cannot be used together")
+
+        variable = tk.StringVar(master=parent)
+        props["textvariable"] = variable
+        accessor = self.props.binding("value")
+        raw_value = self.props.raw("value")
+        writable = raw_value if hasattr(raw_value, "set") else None
+        syncing = False
+
+        def sync_from_signal() -> None:
+            nonlocal syncing
+            value = accessor()
+            next_value = "" if value is None else str(value)
+            if variable.get() != next_value:
+                syncing = True
+                try:
+                    variable.set(next_value)
+                finally:
+                    syncing = False
+
+        def sync_to_signal(*_: Any) -> None:
+            if writable is not None and not syncing:
+                writable.set(variable.get())
+
+        trace_id = variable.trace_add("write", sync_to_signal)
+        self.owner.cleanup(lambda: variable.trace_remove("write", trace_id))
+        self.owner.effect(sync_from_signal)
 
 
 class RootNode(WidgetNode):
@@ -154,7 +196,7 @@ def Button(*children: Any, **props: Unpack[ButtonProps]) -> WidgetNode:
 
 def Entry(*children: Any, **props: Unpack[EntryProps]) -> WidgetNode:
     layout = consume_layout(props)
-    return WidgetNode(tk.Entry, children=children, layout=layout, **props)
+    return ValueWidgetNode(tk.Entry, children=children, layout=layout, **props)
 
 
 def Checkbutton(*children: Any, **props: Unpack[CheckbuttonProps]) -> WidgetNode:

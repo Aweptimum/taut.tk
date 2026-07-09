@@ -79,5 +79,6 @@ def create_root(app: Callable[[], Node] | Node, *, title: str | None = None) -> 
 
     child = app() if callable(app) and not hasattr(app, "mount") else app
     node = normalize_child(child)
+    root_node.children.append(node)
     node.mount(root)
     return Mount(node=root_node, widget=root)
