@@ -27,6 +27,7 @@ def fake_tk(monkeypatch):
             Label=FakeWidget,
             StringVar=FakeStringVar,
             Tk=FakeTk,
+            Toplevel=FakeWidget,
         ),
     )
     monkeypatch.setattr(

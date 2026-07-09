@@ -37,6 +37,7 @@ class FakeWidget:
         self.after_callbacks = {}
         self.after_cancelled = []
         self.next_after_id = 0
+        self.protocols = {}
         if parent is not None:
             parent.children.append(self)
 
@@ -63,6 +64,9 @@ class FakeWidget:
 
     def quit(self):
         self.quit_called = True
+
+    def protocol(self, name, callback):
+        self.protocols[name] = callback
 
     def after(self, ms, callback):
         self.next_after_id += 1

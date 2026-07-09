@@ -7,6 +7,7 @@ from .widgets import Frame
 from .widgets import HStack
 from .widgets import Item
 from .widgets import Label
+from .widgets import Portal
 from .widgets import Tk
 from .widgets import VStack
 
@@ -18,6 +19,7 @@ __all__ = [
     "HStack",
     "Item",
     "Label",
+    "Portal",
     "Tk",
     "VStack",
 ]

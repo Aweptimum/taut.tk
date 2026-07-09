@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import tkinter as tk
+from collections.abc import Callable
 from collections.abc import Iterable
 from typing import Any
 from typing import Unpack
@@ -8,7 +9,9 @@ from typing import Unpack
 from . import style as style_api
 from .props import NodeProps
 from .runtime import MountedNode
+from .runtime import Node
 from .runtime import normalize_child
+from .runtime import use_owner
 from .scheduler import TkScheduler
 from .tk_props import ButtonProps
 from .tk_props import CheckbuttonProps
@@ -17,6 +20,7 @@ from .tk_props import FrameProps
 from .tk_props import LabelProps
 from .tk_props import LayoutProps
 from .tk_props import Padding
+from .tk_props import PortalProps
 from .tk_props import StackAlign
 from .tk_props import StackItemProps
 from .tk_props import StackProps
@@ -164,6 +168,56 @@ class RootNode(WidgetNode):
             widget.destroy()
 
 
+class PortalNode(MountedNode):
+    def __init__(
+        self,
+        child: Callable[[], Any] | Any,
+        *,
+        title: Any | None = None,
+        on_close: Callable[[], Any] | None = None,
+    ) -> None:
+        super().__init__()
+        self.child_source = child
+        self.child: Node | None = None
+        self.title = title
+        self.on_close = on_close
+
+    def mount(self, parent: Any | None) -> Any:
+        self.widget = tk.Toplevel(parent)
+        self.owner.scheduler = TkScheduler(self.widget)
+        self.widget.protocol("WM_DELETE_WINDOW", self.close)
+
+        if self.title is not None:
+            title = NodeProps({"title": self.title}).prop_accessor("title")
+
+            def apply_title() -> None:
+                if self.widget is not None:
+                    self.widget.title(title())
+
+            self.owner.effect(apply_title)
+
+        with use_owner(self.owner):
+            self.child = normalize_child(resolve_portal_child(self.child_source))
+        self.child.mount(self.widget)
+        self.owner.run_mounts()
+        return self.widget
+
+    def close(self) -> None:
+        if self.on_close is not None:
+            self.on_close()
+        self.unmount()
+
+    def unmount(self) -> None:
+        if self.child is not None:
+            self.child.unmount()
+            self.child = None
+        self.owner.dispose()
+        widget = self.widget
+        self.widget = None
+        if widget is not None:
+            widget.destroy()
+
+
 def event_name(name: str) -> str:
     if name.startswith("on_"):
         return "command" if name == "on_click" else name[3:]
@@ -177,6 +231,14 @@ def is_event_prop(name: str) -> bool:
 def Tk(*children: Any, **props: Unpack[TkProps]) -> RootNode:
     apply_style(props)
     return RootNode(tk.Tk, children=children, layout={}, **props)
+
+
+def Portal(child: Callable[[], Any] | Any, **props: Unpack[PortalProps]) -> PortalNode:
+    return PortalNode(
+        child,
+        title=props.get("title"),
+        on_close=props.get("on_close"),
+    )
 
 
 def Frame(*children: Any, **props: Unpack[FrameProps]) -> WidgetNode:
@@ -232,6 +294,12 @@ def HStack(*children: Any, **props: Unpack[StackProps]) -> WidgetNode:
     node = WidgetNode(tk.Frame, children=children, layout=layout, **props)
     apply_stack_layout(node.children, stack)
     return node
+
+
+def resolve_portal_child(child: Callable[[], Any] | Any) -> Any:
+    while callable(child) and not (hasattr(child, "mount") and hasattr(child, "unmount")):
+        child = child()
+    return child
 
 
 def apply_style(props: Any) -> None:

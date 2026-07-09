@@ -263,6 +263,11 @@ class TkProps(TypedDict, total=False):
     title: Reactive[str]
 
 
+class PortalProps(TypedDict, total=False):
+    title: Reactive[str]
+    on_close: Command
+
+
 class StackProps(FrameProps, total=False):
     align: StackAlign
     fill: Fill
