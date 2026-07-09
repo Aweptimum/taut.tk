@@ -82,11 +82,25 @@ def collect_public_imports(module: ast.Module) -> list[ImportStub]:
 
 
 def render_component(component: ComponentStub) -> list[str]:
-    if not component.fields:
-        return [f"def {component.name}() -> runtime.Node: ..."]
+    fields = [field for field in component.fields if field.name != "children"]
+    children_field = next(
+        (field for field in component.fields if field.name == "children"),
+        None,
+    )
 
-    lines = [f"def {component.name}(", "    *,"]
-    lines.extend(f"    {field.name}: {field.external_type}," for field in component.fields)
+    if not component.fields:
+        return [
+            f"def {component.name}("
+            "*child_nodes: Any, children: Any = ..."
+            ") -> runtime.Node: ..."
+        ]
+
+    lines = [f"def {component.name}(", "    *child_nodes: Any,"]
+    lines.extend(f"    {field.name}: {field.external_type}," for field in fields)
+    if children_field is not None:
+        lines.append(f"    children: {children_field.external_type},")
+    else:
+        lines.append("    children: Any = ...,")
     lines.append(") -> runtime.Node: ...")
     return lines
 

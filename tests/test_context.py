@@ -69,6 +69,26 @@ def test_provider_accepts_forwarded_component_children():
     assert label.props["text"] == "dark"
 
 
+def test_provider_accepts_forwarded_positional_component_children():
+    theme = context.create_context("light")
+
+    @component
+    def ThemeProvider(props):
+        return context.Provider(theme, "dark", props.children)
+
+    @component
+    def ThemedLabel(props):
+        return widgets.Label(text=context.use_context(theme))
+
+    mount = runtime.create_root(
+        lambda: ThemeProvider(lambda: ThemedLabel()),
+        title="Demo",
+    )
+    label = mount.widget.children[0]
+
+    assert label.props["text"] == "dark"
+
+
 def test_nested_provider_uses_nearest_context_value():
     theme = context.create_context("light")
 

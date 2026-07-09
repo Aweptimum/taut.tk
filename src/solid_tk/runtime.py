@@ -351,9 +351,26 @@ class MountedNode:
             widget.destroy()
 
 
+class FragmentNode(MountedNode):
+    def mount(self, parent: Any | None) -> Any:
+        self.widget = parent
+        self.mount_children()
+        self.owner.run_mounts()
+        return parent
+
+    def unmount(self) -> None:
+        self.unmount_children()
+        self.owner.dispose()
+        self.widget = None
+
+
 def normalize_child(child: Any) -> Node:
     if hasattr(child, "mount") and hasattr(child, "unmount"):
         return child
+    if isinstance(child, Iterable) and not isinstance(
+        child, (str, bytes, bytearray, Mapping)
+    ):
+        return FragmentNode(child)
     from .widgets import Label
 
     return Label(text=str(child))

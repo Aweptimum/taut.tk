@@ -9,8 +9,8 @@ from pathlib import Path
 from .stub_model import ComponentStub
 from .stub_model import ImportStub
 from .stub_model import collect_components
-from .stub_model import collect_public_imports
 from .stub_model import collect_protocols
+from .stub_model import collect_public_imports
 from .stub_model import render_component
 
 DEFAULT_OUT_DIR = Path("typings")
@@ -192,7 +192,7 @@ def collect_stub_imports(components: list[ComponentStub]) -> list[str]:
     imports = []
     if any("Callable" in external_type for external_type in external_types):
         imports.append("from collections.abc import Callable")
-    if "Any" in external_types:
+    if components or "Any" in external_types:
         imports.append("from typing import Any")
     imports.append("from solid_tk import runtime")
     if any("reactive." in external_type for external_type in external_types):

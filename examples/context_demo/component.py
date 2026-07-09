@@ -87,9 +87,9 @@ def preview(props):
         theme_context,
         lambda: CONTRAST,
         lambda: panel(
-            children=themed_label(
+            themed_label(
                 text="This nested Provider shadows the app theme.",
-            ),
+            )
         ),
     )
 
@@ -102,7 +102,7 @@ def context_demo(props):
         theme_context,
         selected,
         lambda: panel(
-            children=VStack(
+            VStack(
                 HStack(
                     themed_button(text="Light", on_click=lambda: set_selected(LIGHT)),
                     themed_button(text="Dark", on_click=lambda: set_selected(DARK)),

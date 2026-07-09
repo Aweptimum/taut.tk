@@ -42,9 +42,10 @@ def component(fn: Callable[[TProps], Any]) -> Callable[..., ComponentNode]:
     """Wrap a function component in a mountable node factory."""
 
     @wraps(fn)
-    def factory(**props: Any) -> ComponentNode:
+    def factory(*children: Any, **props: Any) -> ComponentNode:
         owner = Owner(parent=get_current_owner())
-        component_props = Props(props)
+        component_props_values = props_with_children(props, children)
+        component_props = Props(component_props_values)
         with use_owner(owner):
             rendered = normalize_child(fn(cast(TProps, component_props)))
         return ComponentNode(fn, rendered, owner=owner)
@@ -62,10 +63,10 @@ class Component(Generic[TProps]):
 
     props: TProps
 
-    def __new__(cls, **props: Any) -> ComponentNode:  # type: ignore[override]
+    def __new__(cls, *children: Any, **props: Any) -> ComponentNode:  # type: ignore[override]
         owner = Owner(parent=get_current_owner())
         instance = super().__new__(cls)
-        instance.props = cast(TProps, Props(props))
+        instance.props = cast(TProps, Props(props_with_children(props, children)))
         with use_owner(owner):
             if _accepts_no_args(instance.__init__):
                 instance.__init__()
@@ -95,3 +96,16 @@ def _accepts_no_args(init: Callable[..., Any]) -> bool:
 def _accepts_props_object(init: Callable[..., Any]) -> bool:
     parameters = signature(init).parameters
     return len(parameters) == 1 and "props" in parameters
+
+
+def props_with_children(props: dict[str, Any], children: tuple[Any, ...]) -> dict[str, Any]:
+    if not children:
+        return props
+    merged = dict(props)
+    if "children" in merged:
+        merged["children"] = (merged["children"], *children)
+    elif len(children) == 1:
+        merged["children"] = children[0]
+    else:
+        merged["children"] = children
+    return merged

@@ -112,13 +112,15 @@ def test_main_preserves_mutator_prop_types(monkeypatch, tmp_path):
     ) == (
         "from __future__ import annotations\n"
         "\n"
+        "from typing import Any\n"
         "from solid_tk import runtime\n"
         "from solid_tk import reactive\n"
         "\n"
         "def Counter(\n"
-        "    *,\n"
+        "    *child_nodes: Any,\n"
         "    count: int | reactive.Accessor[int],\n"
         "    set_count: reactive.Mutator[int],\n"
+        "    children: Any = ...,\n"
         ") -> runtime.Node: ...\n"
     )
 
@@ -154,7 +156,7 @@ def test_main_writes_unannotated_component_as_no_prop_component(monkeypatch, tmp
         "\n"
         "styles: Any\n"
         "\n"
-        "def layout_demo() -> runtime.Node: ...\n"
+        "def layout_demo(*child_nodes: Any, children: Any = ...) -> runtime.Node: ...\n"
     )
     assert (
         tmp_path / "typings" / "examples" / "layout_demo" / "__init__.pyi"

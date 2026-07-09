@@ -113,12 +113,29 @@ or forwarded directly to a widget prop:
 tk.Label(text=self.props.name)
 ```
 
+Component children are also collected into `props.children`, so container-like
+components can feel like Solid components instead of manually passing a
+`children=` prop:
+
+```python
+@component
+def panel(props):
+    return tk.VStack(
+        tk.Label(text=props.title),
+        props.children(),
+        padding=8,
+    )
+
+panel(tk.Label(text="Nested"), title="Details")
+```
+
 
 ## What's Here So Far
 
 - Functional components using `@component` decorator
 - `Component` with `__init__()/setup()` and `render()`
 - `Props`, where every attribute is an accessor
+- first-class component children through `props.children`
 - widget namespaces: `tk` for classic Tk widgets and `ttk` for themed widgets
 - stack layout helpers: `VStack`, `HStack`, `Item`
 - StyleX-ish style objects with `style.define()`, `style.merge()`, and

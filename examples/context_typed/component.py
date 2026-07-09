@@ -89,4 +89,4 @@ def DarkConsumer(props):
 
 @component
 def dark_context_demo(props):
-    return DarkProvider(children=lambda: DarkConsumer())
+    return DarkProvider(lambda: DarkConsumer())

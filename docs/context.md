@@ -41,7 +41,13 @@ Forwarded component children work too:
 @component
 def ThemeProvider(props):
     return Provider(theme_context, "dark", props.children)
+
+ThemeProvider(lambda: App())
 ```
+
+The child is still usually callable for provider components. Python evaluates
+ordinary arguments before the provider owner exists, so `ThemeProvider(App())`
+creates `App` too early for provider-scoped context reads.
 
 ## `use_context()`
 

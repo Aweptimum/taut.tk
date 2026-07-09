@@ -125,6 +125,45 @@ def test_function_component_receives_signal_mutator_prop_directly():
     assert button.props["text"] == "Count: 1"
 
 
+def test_function_component_receives_positional_children_prop():
+    @component
+    def Panel(props):
+        return widgets.VStack(
+            widgets.Label(text=props.title),
+            props.children(),
+        )
+
+    mount = runtime.create_root(
+        lambda: Panel(
+            widgets.Label(text="First"),
+            widgets.Label(text="Second"),
+            title="Panel",
+        ),
+        title="Demo",
+    )
+    stack = mount.widget.children[0]
+
+    assert [child.props["text"] for child in stack.children] == [
+        "Panel",
+        "First",
+        "Second",
+    ]
+
+
+def test_function_component_keeps_keyword_children_prop():
+    @component
+    def Panel(props):
+        return widgets.VStack(props.children())
+
+    mount = runtime.create_root(
+        lambda: Panel(children=widgets.Label(text="Keyword child")),
+        title="Demo",
+    )
+    label = mount.widget.children[0].children[0]
+
+    assert label.props["text"] == "Keyword child"
+
+
 def test_class_component_can_initialize_state_with_init():
     class Counter(Component):
         def __init__(self) -> None:
@@ -137,6 +176,21 @@ def test_class_component_can_initialize_state_with_init():
     label = mount.widget.children[0]
 
     assert label.props["text"] == "Count: 1"
+
+
+def test_class_component_receives_positional_children_prop():
+    class Panel(Component):
+        def render(self):
+            return widgets.VStack(self.props.children())
+
+    mount = runtime.create_root(
+        lambda: Panel(widgets.Label(text="Class child")),
+        title="Demo",
+    )
+    stack = mount.widget.children[0]
+    label = stack.children[0]
+
+    assert label.props["text"] == "Class child"
 
 
 def test_class_component_init_can_receive_typed_props():
