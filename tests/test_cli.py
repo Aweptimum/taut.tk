@@ -123,6 +123,56 @@ def test_main_writes_init_reexports_from_source_init(monkeypatch, tmp_path):
     ) == "from __future__ import annotations\n"
 
 
+def test_main_writes_public_functions_from_source_init(monkeypatch, tmp_path):
+    component = tmp_path / "examples" / "counter" / "component.py"
+    source_init = tmp_path / "examples" / "counter" / "__init__.py"
+    component.parent.mkdir(parents=True)
+    component.write_text(
+        "\n".join(
+            [
+                "from typing import Protocol",
+                "from solid_tk import Accessor, component",
+                "",
+                "class CounterProps(Protocol):",
+                "    title: Accessor[str]",
+                "",
+                "@component",
+                "def counter(props: CounterProps):",
+                "    ...",
+            ]
+        ),
+        encoding="utf-8",
+    )
+    source_init.write_text(
+        "\n".join(
+            [
+                "from examples.counter.component import counter as counter",
+                "",
+                "def main() -> None:",
+                "    ...",
+                "",
+                "def _private() -> None:",
+                "    ...",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    monkeypatch.chdir(tmp_path)
+
+    stubs.main([tmp_path / "examples"], out_dir=tmp_path / "typings")
+
+    assert (tmp_path / "typings" / "examples" / "counter" / "__init__.pyi").read_text(
+        encoding="utf-8"
+    ) == (
+        "from __future__ import annotations\n"
+        "\n"
+        "from .component import counter as counter\n"
+        "\n"
+        "def main() -> None: ...\n"
+    )
+
+
 def test_main_writes_relative_reexports_from_nested_source_init(monkeypatch, tmp_path):
     component = tmp_path / "examples" / "component.py"
     source_init = tmp_path / "examples" / "counter" / "__init__.py"

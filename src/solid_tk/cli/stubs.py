@@ -232,26 +232,45 @@ def render_init_stub(
     source_init_path: Path,
     components_by_module: dict[str, set[str]],
 ) -> str:
-    lines = ["from __future__ import annotations", ""]
+    reexports: list[str] = []
+    functions: list[str] = []
     module = read_module(source_init_path)
     if module is None:
-        return "\n".join(lines).rstrip() + "\n"
+        return "from __future__ import annotations\n"
 
     package_import_path = module_import_path(source_init_path.parent)
     for node in module.body:
-        if not isinstance(node, ast.ImportFrom) or node.module is None:
-            continue
-        import_path = resolve_import_from(source_init_path, node)
-        component_names = components_by_module.get(import_path)
-        if not component_names:
-            continue
-        module_ref = marker_import_ref(package_import_path, import_path)
-        for alias in node.names:
-            if alias.name not in component_names:
+        if isinstance(node, ast.ImportFrom) and node.module is not None:
+            import_path = resolve_import_from(source_init_path, node)
+            component_names = components_by_module.get(import_path)
+            if not component_names:
                 continue
-            export_name = alias.asname or alias.name
-            lines.append(f"from {module_ref} import {alias.name} as {export_name}")
+            module_ref = marker_import_ref(package_import_path, import_path)
+            for alias in node.names:
+                if alias.name not in component_names:
+                    continue
+                export_name = alias.asname or alias.name
+                reexports.append(f"from {module_ref} import {alias.name} as {export_name}")
+        elif isinstance(node, ast.FunctionDef) and is_public_name(node.name):
+            functions.append(render_function_stub(node))
+
+    imports = ["from typing import Any"] if any_function_uses_any(functions) else []
+    sections = [["from __future__ import annotations"], imports, reexports, functions]
+    lines = [line for section in sections if section for line in (*section, "")]
     return "\n".join(lines).rstrip() + "\n"
+
+
+def is_public_name(name: str) -> bool:
+    return not name.startswith("_")
+
+
+def render_function_stub(node: ast.FunctionDef) -> str:
+    returns = ast.unparse(node.returns) if node.returns is not None else "Any"
+    return f"def {node.name}({ast.unparse(node.args)}) -> {returns}: ..."
+
+
+def any_function_uses_any(functions: list[str]) -> bool:
+    return any(" -> Any:" in function for function in functions)
 
 
 def resolve_import_from(source_path: Path, node: ast.ImportFrom) -> str:
