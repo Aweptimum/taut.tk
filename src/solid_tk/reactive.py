@@ -60,6 +60,21 @@ def create_memo[T](fn: Callable[[], T]) -> Accessor[T]:
     return Accessor(computed)
 
 
+def create_selector[T, U](
+    source: Callable[[], T],
+    equals: Callable[[U, T], bool] | None = None,
+) -> Callable[[U], bool]:
+    """Create a predicate that checks whether a key matches a source value."""
+
+    compare = equals if equals is not None else lambda key, value: key == value
+    current = create_memo(source)
+
+    def selected(key: U) -> bool:
+        return compare(key, current())
+
+    return selected
+
+
 def is_signal(value: object) -> TypeGuard[Accessor[Any]]:
     return isinstance(value, Accessor) or isinstance(value, Signal)
 
