@@ -3,10 +3,18 @@ from __future__ import annotations
 import tkinter as tk
 from collections.abc import Iterable
 from typing import Any
+from typing import Unpack
 
 from .props import NodeProps
 from .runtime import MountedNode
 from .runtime import normalize_child
+from .tk_props import ButtonProps
+from .tk_props import CheckbuttonProps
+from .tk_props import EntryProps
+from .tk_props import FrameProps
+from .tk_props import LabelProps
+from .tk_props import StackProps
+from .tk_props import TkProps
 
 LAYOUT_KEYS = {"pack", "grid", "place"}
 INTERNAL_KEYS = {"children", "layout"}
@@ -125,36 +133,36 @@ def is_event_prop(name: str) -> bool:
     return name == "command" or name.startswith("on_")
 
 
-def Tk(*children: Any, **props: Any) -> RootNode:
+def Tk(*children: Any, **props: Unpack[TkProps]) -> RootNode:
     return RootNode(tk.Tk, children=children, layout={}, **props)
 
 
-def Frame(*children: Any, **props: Any) -> WidgetNode:
+def Frame(*children: Any, **props: Unpack[FrameProps]) -> WidgetNode:
     layout = consume_layout(props)
     return WidgetNode(tk.Frame, children=children, layout=layout, **props)
 
 
-def Label(*children: Any, **props: Any) -> WidgetNode:
+def Label(*children: Any, **props: Unpack[LabelProps]) -> WidgetNode:
     layout = consume_layout(props)
     return WidgetNode(tk.Label, children=children, layout=layout, **props)
 
 
-def Button(*children: Any, **props: Any) -> WidgetNode:
+def Button(*children: Any, **props: Unpack[ButtonProps]) -> WidgetNode:
     layout = consume_layout(props)
     return WidgetNode(tk.Button, children=children, layout=layout, **props)
 
 
-def Entry(*children: Any, **props: Any) -> WidgetNode:
+def Entry(*children: Any, **props: Unpack[EntryProps]) -> WidgetNode:
     layout = consume_layout(props)
     return WidgetNode(tk.Entry, children=children, layout=layout, **props)
 
 
-def Checkbutton(*children: Any, **props: Any) -> WidgetNode:
+def Checkbutton(*children: Any, **props: Unpack[CheckbuttonProps]) -> WidgetNode:
     layout = consume_layout(props)
     return WidgetNode(tk.Checkbutton, children=children, layout=layout, **props)
 
 
-def VStack(*children: Any, **props: Any) -> WidgetNode:
+def VStack(*children: Any, **props: Unpack[StackProps]) -> WidgetNode:
     layout = consume_layout(props)
     node = WidgetNode(tk.Frame, children=children, layout=layout, **props)
     for child in node.children:
@@ -163,7 +171,7 @@ def VStack(*children: Any, **props: Any) -> WidgetNode:
     return node
 
 
-def HStack(*children: Any, **props: Any) -> WidgetNode:
+def HStack(*children: Any, **props: Unpack[StackProps]) -> WidgetNode:
     layout = consume_layout(props)
     node = WidgetNode(tk.Frame, children=children, layout=layout, **props)
     for child in node.children:
@@ -172,7 +180,7 @@ def HStack(*children: Any, **props: Any) -> WidgetNode:
     return node
 
 
-def consume_layout(props: dict[str, Any]) -> dict[str, Any]:
+def consume_layout(props: LayoutProps) -> dict[str, Any]:
     for key in ("pack", "grid", "place"):
         if key in props:
             return {key: props.pop(key)}

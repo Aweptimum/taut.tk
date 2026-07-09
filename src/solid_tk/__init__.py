@@ -7,13 +7,13 @@ from reaktiv import batch
 from reaktiv import untracked
 
 from .component import Component
+from .control import For
+from .control import Show
 from .props import NodeProps
 from .props import Props
 from .runtime import Mount
 from .runtime import Node
 from .runtime import create_root
-from .control import For
-from .control import Show
 from .widgets import Button
 from .widgets import Checkbutton
 from .widgets import Entry
