@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable
+from collections.abc import Iterable
 from dataclasses import dataclass
 from dataclasses import field
 from typing import Any
@@ -52,10 +53,28 @@ class Owner:
 class MountedNode:
     widget: Any | None = None
 
-    def __init__(self) -> None:
+    def __init__(self, children: Iterable[Any] = ()) -> None:
         self.owner = Owner()
+        self.children = [normalize_child(child) for child in children]
+
+    def mount_children(self) -> None:
+        if self.widget is None:
+            return
+        for child in self.children:
+            child.mount(self.widget)
+
+    def append_child(self, child: Any) -> Node:
+        node = normalize_child(child)
+        self.children.append(node)
+        return node
+
+    def unmount_children(self) -> None:
+        for child in reversed(self.children):
+            child.unmount()
+        self.children.clear()
 
     def unmount(self) -> None:
+        self.unmount_children()
         self.owner.dispose()
         widget = self.widget
         self.widget = None
@@ -78,7 +97,6 @@ def create_root(app: Callable[[], Node] | Node, *, title: str | None = None) -> 
     root = root_node.mount(None)
 
     child = app() if callable(app) and not hasattr(app, "mount") else app
-    node = normalize_child(child)
-    root_node.children.append(node)
+    node = root_node.append_child(child)
     node.mount(root)
     return Mount(node=root_node, widget=root)

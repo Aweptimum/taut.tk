@@ -7,12 +7,12 @@ from typing import Unpack
 
 from .props import NodeProps
 from .runtime import MountedNode
-from .runtime import normalize_child
 from .tk_props import ButtonProps
 from .tk_props import CheckbuttonProps
 from .tk_props import EntryProps
 from .tk_props import FrameProps
 from .tk_props import LabelProps
+from .tk_props import LayoutProps
 from .tk_props import StackProps
 from .tk_props import TkProps
 
@@ -31,10 +31,9 @@ class WidgetNode(MountedNode):
         layout: dict[str, Any] | None = None,
         **props: Any,
     ) -> None:
-        super().__init__()
+        super().__init__(children)
         self.widget_type = widget_type
         self.props = NodeProps(props)
-        self.children = [normalize_child(child) for child in children]
         self.layout = layout if layout is not None else {"pack": {}}
 
     def mount(self, parent: Any | None) -> Any:
@@ -60,8 +59,7 @@ class WidgetNode(MountedNode):
         self.apply_layout()
         self.bind_reactive_props(reactive_props)
 
-        for child in self.children:
-            child.mount(self.widget)
+        self.mount_children()
 
         return self.widget
 
@@ -92,12 +90,6 @@ class WidgetNode(MountedNode):
                 return apply
 
             self.owner.effect(make_apply(name, accessor))
-
-    def unmount(self) -> None:
-        for child in reversed(self.children):
-            child.unmount()
-        self.children.clear()
-        super().unmount()
 
 
 class ValueWidgetNode(WidgetNode):
@@ -154,9 +146,7 @@ class RootNode(WidgetNode):
         return widget
 
     def unmount(self) -> None:
-        for child in reversed(self.children):
-            child.unmount()
-        self.children.clear()
+        self.unmount_children()
         self.owner.dispose()
         widget = self.widget
         self.widget = None
