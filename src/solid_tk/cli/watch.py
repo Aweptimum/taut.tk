@@ -14,6 +14,10 @@ from .stubs import remove_stubs_for_source_dir
 
 SRC_ROOT = Path.cwd()
 
+def _ensure_str(string: bytes | str) -> str:
+    if not isinstance(string, str):
+        string = str(string)
+    return string
 
 class StubWatchHandler(FileSystemEventHandler):
     def __init__(self) -> None:
@@ -36,27 +40,27 @@ class StubWatchHandler(FileSystemEventHandler):
             regenerate_all_stubs()
             return
 
-        if is_stub_relevant_source(Path(event.src_path)):
+        if is_stub_relevant_source(Path(_ensure_str(event.src_path))):
             regenerate_all_stubs()
 
     def on_moved(self, event):
         if event.is_directory:
-            remove_generated_stub_tree(Path(event.src_path))
+            remove_generated_stub_tree(Path(_ensure_str(event.src_path)))
             regenerate_all_stubs()
             return
 
         if event_involves_stub_relevant_source(event):
-            removed = remove_generated_stub(Path(event.src_path))
+            removed = remove_generated_stub(Path(_ensure_str(event.src_path)))
             if removed or is_stub_relevant_source(event_path(event)):
                 regenerate_all_stubs()
 
     def on_deleted(self, event):
         if event.is_directory:
-            if remove_generated_stub_tree(Path(event.src_path)):
+            if remove_generated_stub_tree(Path(_ensure_str(event.src_path))):
                 regenerate_all_stubs()
             return
 
-        if remove_generated_stub(Path(event.src_path)):
+        if remove_generated_stub(Path(_ensure_str(event.src_path))):
             regenerate_all_stubs()
 
     def _maybe_generate(self, event):
@@ -166,9 +170,9 @@ def import_base_path(path: Path, level: int) -> Path:
 
 
 def event_involves_stub_relevant_source(event) -> bool:
-    return is_stub_relevant_source(Path(event.src_path)) or is_stub_relevant_source(
+    return is_stub_relevant_source(Path(_ensure_str(event.src_path))) or is_stub_relevant_source(
         event_path(event)
-    ) or generated_stub_has_reexports(Path(event.src_path))
+    ) or generated_stub_has_reexports(Path(_ensure_str(event.src_path)))
 
 
 def generated_stub_has_reexports(path: Path) -> bool:
@@ -187,7 +191,7 @@ def generated_stub_has_reexports(path: Path) -> bool:
 
 
 def event_path(event) -> Path:
-    return Path(getattr(event, "dest_path", None) or event.src_path)
+    return Path(getattr(event, "dest_path", None) or _ensure_str(event.src_path))
 
 
 def main(args):

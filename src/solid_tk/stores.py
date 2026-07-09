@@ -65,10 +65,6 @@ class StoreLens(Generic[V]):
         return StoreLens(self._accessor, self._mutate, (*self._path, *path))
 
 
-@overload
-def create_store(initial: T, /) -> tuple[Accessor[T], StoreSetter[T]]: ...
-
-
 def create_store(initial: T, /) -> tuple[Accessor[T], StoreSetter[T]]:
     signal, set_signal = create_signal(initial)
     return signal, StoreSetter(signal, set_signal)

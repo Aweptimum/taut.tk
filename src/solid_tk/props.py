@@ -89,7 +89,7 @@ class NodeProps:
         """
         value = self._values[name]
         if callable(value) and not is_signal(value):
-            return value
+            return to_accessor(value)
 
         prop_accessor = self.prop_accessor(name)
 
@@ -97,7 +97,7 @@ class NodeProps:
             value = prop_accessor()
             return value() if callable(value) else value
 
-        return read_widget_value
+        return to_accessor(read_widget_value)
 
 
 class Props(NodeProps):

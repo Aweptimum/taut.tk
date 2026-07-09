@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from typing import Any
 from typing import Generic
 from typing import TypeVar
+from typing import cast
 from typing import overload
 
 from .runtime import MountedNode
@@ -21,7 +22,8 @@ _MISSING = object()
 
 @dataclass(eq=False, frozen=True)
 class Context(Generic[T]):
-    default: T | object = _MISSING
+    default: T | None = None
+    has_default: bool = False
 
 
 @overload
@@ -50,7 +52,9 @@ def create_context(default: Any = _MISSING) -> Context[Any]:
     """
     if isinstance(default, type):
         return Context()
-    return Context(default=default)
+    if default is _MISSING:
+        return Context()
+    return Context(default=default, has_default=True)
 
 
 def use_context(context: Context[T]) -> T:
@@ -59,8 +63,8 @@ def use_context(context: Context[T]) -> T:
         if context in owner.context:
             return owner.context[context]
         owner = owner.parent
-    if context.default is not _MISSING:
-        return context.default
+    if context.has_default:
+        return cast(T, context.default)
     return None  # type: ignore[return-value]
 
 

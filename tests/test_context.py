@@ -19,6 +19,20 @@ def test_context_reads_default_value():
     assert label.props["text"] == "light"
 
 
+def test_context_preserves_explicit_none_default():
+    maybe_value = context.create_context(None)
+
+    @component
+    def MaybeLabel(props):
+        return widgets.Label(text=lambda: "missing" if context.use_context(maybe_value) is None else "set")
+
+    mount = runtime.create_root(lambda: MaybeLabel(), title="Demo")
+    label = mount.widget.children[0]
+
+    assert label.props["text"] == "missing"
+    assert maybe_value.has_default
+
+
 def test_provider_supplies_context_to_callable_child():
     theme = context.create_context("light")
 

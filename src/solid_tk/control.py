@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from inspect import Parameter
 from inspect import signature
 from typing import Any
+from typing import cast
 
 from .reactive import Accessor
 from .reactive import Mutator
@@ -327,7 +328,7 @@ class ErrorBoundaryNode(MountedNode):
         super().__init__(owner=owner)
         self.child_source = children
         self.fallback = fallback
-        self.error, self.set_error = create_signal(None)
+        self.error, self.set_error = create_signal(cast(Any, None))
         self.active: Node | None = None
         self.active_kind: str | None = None
         self.mounting_child = False

@@ -56,7 +56,7 @@ class Owner:
         # reaktiv.Effect also inspects the signature length 
         if accepts_cleanup:
 
-            def run(on_cleanup: Callable[[Callable[[], None]], None]) -> Any:
+            def run(on_cleanup: Callable[[Callable[[], None]], None]) -> Any: # pyright: ignore[reportRedeclaration]
                 try:
                     with use_owner(self):
                         return fn(on_cleanup)
