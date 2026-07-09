@@ -4,6 +4,7 @@ from collections.abc import Callable
 from functools import wraps
 from inspect import signature
 from typing import Any
+from typing import Generic
 from typing import TypeVar
 from typing import cast
 
@@ -49,7 +50,7 @@ def component(fn: Callable[[TProps], Any]) -> Callable[..., ComponentNode]:
     return factory
 
 
-class Component:
+class Component(Generic[TProps]):
     """Base class whose constructor returns a renderable node.
 
     Subclasses implement ``render`` and read props with ``self.props.name()``.
@@ -57,12 +58,12 @@ class Component:
     wrapped in ``Signal`` so component props always have accessor semantics.
     """
 
-    props: Props
+    props: TProps
 
     def __new__(cls, **props: Any) -> ComponentNode:  # type: ignore[override]
         owner = Owner(parent=get_current_owner())
         instance = super().__new__(cls)
-        instance.props = Props(props)
+        instance.props = cast(TProps, Props(props))
         with use_owner(owner):
             if _accepts_no_args(instance.__init__):
                 instance.__init__()
@@ -75,7 +76,7 @@ class Component:
             rendered = normalize_child(instance.render())
         return ComponentNode(instance, rendered, owner=owner)
 
-    def __init__(self, props: Props | None = None) -> None:
+    def __init__(self, props: TProps | None = None) -> None:
         self.setup()
 
     def setup(self) -> None:

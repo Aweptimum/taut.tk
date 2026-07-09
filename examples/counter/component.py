@@ -21,14 +21,15 @@ class CounterProps(Protocol):
     initial: SignalLike[int]
 
 
-class Counter(Component):
+class Counter(Component[CounterProps]):
     def __init__(self, props: CounterProps) -> None:
+        self.props = props
         self.count = props.initial
         self.todos = Signal(["wire props", "own effects", "dispose cleanly"])
 
     def render(self):
         return VStack(
-            Label(text=lambda: f"{self.props.title()}: {self.count()}"),
+            Label(text=lambda: f"{self.props.label()}: {self.count()}"),
             Button(
                 text="Increment", on_click=lambda: self.count.update(lambda n: n + 1)
             ),

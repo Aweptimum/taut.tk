@@ -1,9 +1,14 @@
 from __future__ import annotations
 
+import json
+import os
+from pathlib import Path
+from textwrap import dedent
 from types import SimpleNamespace
 from typing import Optional
 from typing import Protocol
 
+import pyright
 import pytest
 from reaktiv import Signal
 
@@ -368,3 +373,54 @@ def test_class_component_init_can_receive_typed_props():
     label = mount.widget.children[0]
 
     assert label.props["text"] == "Count: 3"
+
+
+def test_class_component_generic_types_self_props(tmp_path: Path):
+    sample = tmp_path / "component_generic.py"
+    sample.write_text(
+        dedent(
+            """
+            from __future__ import annotations
+
+            from typing import Protocol
+
+            from solid_tk import Accessor
+            from solid_tk import Component
+            from solid_tk import Label
+
+
+            class CounterProps(Protocol):
+                title: Accessor[str]
+                initial: Accessor[int]
+
+
+            class Counter(Component[CounterProps]):
+                def render(self):
+                    reveal_type(self.props.title)
+                    self.props.missing
+                    return Label(text=lambda: self.props.title())
+            """
+        ),
+        encoding="utf-8",
+    )
+    env = {**os.environ, "PYTHONPATH": str(Path.cwd() / "src")}
+
+    result = pyright.run(
+        "--outputjson",
+        str(sample),
+        check=False,
+        cwd=Path.cwd(),
+        env=env,
+        text=True,
+        capture_output=True,
+    )
+
+    assert result.returncode == 1, result.stdout + result.stderr
+    output = json.loads(result.stdout)
+    messages = [diagnostic["message"] for diagnostic in output["generalDiagnostics"]]
+
+    assert any('Type of "self.props.title" is "Accessor[str]"' in msg for msg in messages)
+    assert any(
+        'Cannot access attribute "missing" for class "CounterProps"' in msg
+        for msg in messages
+    )
