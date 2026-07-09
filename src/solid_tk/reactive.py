@@ -55,7 +55,7 @@ def create_memo[T](fn: Callable[[], T]) -> Accessor[T]:
 
 
 def is_signal(value: object) -> TypeGuard[Accessor[Any]]:
-    return callable(value) and hasattr(value, "get")
+    return isinstance(value, Signal)
 
 
 def is_accessor(value: object) -> TypeGuard[Accessor[Any]]:

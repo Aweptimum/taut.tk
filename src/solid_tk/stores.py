@@ -16,6 +16,7 @@ from reaktiv import Computed
 from .reactive import Accessor
 from .reactive import Mutator
 from .reactive import create_signal
+from .reactive import is_signal
 
 T = TypeVar("T")
 V = TypeVar("V")
@@ -97,7 +98,7 @@ def reconcile[T](value: T) -> Callable[[T], T]:
 def unwrap(value: Any) -> Any:
     """Read through store accessors/lenses and unwrap nested containers."""
 
-    if isinstance(value, StoreLens) or (callable(value) and hasattr(value, "get")):
+    if isinstance(value, StoreLens) or is_signal(value):
         return unwrap(value())
     if isinstance(value, Mapping):
         return {key: unwrap(item) for key, item in value.items()}

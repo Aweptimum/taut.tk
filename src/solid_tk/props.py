@@ -87,13 +87,17 @@ class NodeProps:
         This keeps the binding reactive but unwraps that forwarded callable so
         Tk receives its result instead of the function object.
         """
+        value = self._values[name]
+        if callable(value) and not is_signal(value):
+            return value
+
         prop_accessor = self.prop_accessor(name)
 
         def read_widget_value() -> Any:
             value = prop_accessor()
             return value() if callable(value) else value
 
-        return Computed(read_widget_value)
+        return read_widget_value
 
 
 class Props(NodeProps):

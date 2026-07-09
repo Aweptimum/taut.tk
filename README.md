@@ -173,5 +173,19 @@ python -m examples.scheduler_demo
 
 This is not a full Tkinter framework yet; more goodies to implement!
 
+## Benchmarks
+
+To estimate framework overhead without needing a display server, run the fake-Tk
+benchmark:
+
+```sh
+uv run python benchmarks/bench_overhead.py
+```
+
+It compares raw Tk-style widget creation with solid-tk mounting for static
+labels, reactive label props, and a component wrapper. The most useful line is
+the reported extra microseconds per widget, because native Tk/Tcl startup and
+platform display behavior are intentionally excluded.
+
 ## Why Tk?
 I keep reaching for it every time I want a small UI at work and I keep getting bogged down in abstractions I think are loose but turn out to be more tightly-coupled than I realize. Imperatively updating state is also a chore and makes for widgets with lots of clunky helpers, and I find widget vars unwieldy. My most recent attempt I threw `reaktiv` at the problem and was surprised at how streamlined it made my widgets. I felt it could be more. So here we are.

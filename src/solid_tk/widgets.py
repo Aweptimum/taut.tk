@@ -92,7 +92,7 @@ class WidgetNode(MountedNode):
 
                 return apply
 
-            self.owner.effect(make_apply(name, accessor))
+            self.owner.effect(make_apply(name, accessor), accepts_cleanup=False)
 
 
 class ValueWidgetNode(WidgetNode):

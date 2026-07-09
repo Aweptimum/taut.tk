@@ -48,8 +48,9 @@ class Owner:
     mounts: list[Callable[[], Any]] = field(default_factory=list)
     mounted: bool = False
 
-    def effect(self, fn: Callable[..., Any]) -> Effect:
-        accepts_cleanup = len(signature(fn).parameters) >= 1
+    def effect(self, fn: Callable[..., Any], *, accepts_cleanup: bool | None = None) -> Effect:
+        if accepts_cleanup is None:
+            accepts_cleanup = len(signature(fn).parameters) >= 1
 
         def run(on_cleanup: Callable[[Callable[[], None]], None]) -> Any:
             try:
