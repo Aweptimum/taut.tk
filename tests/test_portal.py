@@ -22,6 +22,23 @@ def test_portal_mounts_child_in_toplevel():
     assert "WM_DELETE_WINDOW" in toplevel.protocols
 
 
+def test_portal_mounts_fragment_children_in_toplevel():
+    mount = runtime.create_root(
+        lambda: tk.Portal(
+            lambda: tk.Fragment(
+                tk.Label(text="One"),
+                tk.Label(text="Two"),
+            ),
+            title="Settings",
+        ),
+        title="Demo",
+    )
+    portal = cast(Any, mount.node).children[0]
+    toplevel = portal.widget
+
+    assert [child.props["text"] for child in toplevel.children] == ["One", "Two"]
+
+
 def test_portal_close_runs_callback_and_destroys_toplevel():
     events = []
     mount = runtime.create_root(

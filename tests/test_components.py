@@ -4,13 +4,16 @@ import json
 import os
 from pathlib import Path
 from textwrap import dedent
+from typing import Any
 from typing import Protocol
 from typing import cast
 
 import pyright
 
 from solid_tk import Component
+from solid_tk import Fragment
 from solid_tk import component
+from solid_tk import control
 from solid_tk import reactive
 from solid_tk import runtime
 from solid_tk import widgets
@@ -148,6 +151,162 @@ def test_function_component_receives_positional_children_prop():
         "First",
         "Second",
     ]
+
+
+def test_function_component_can_return_fragment_into_parent_layout():
+    @component
+    def Actions(props):
+        return Fragment(
+            widgets.Button(text="Save"),
+            widgets.Button(text="Cancel"),
+        )
+
+    mount = runtime.create_root(
+        lambda: widgets.VStack(
+            widgets.Label(text="Before"),
+            Actions(),
+            widgets.Label(text="After"),
+        ),
+        title="Demo",
+    )
+    stack = mount.widget.children[0]
+
+    assert [child.props["text"] for child in stack.children] == [
+        "Before",
+        "Save",
+        "Cancel",
+        "After",
+    ]
+
+
+def test_function_component_can_return_control_fragment_into_parent_layout():
+    items, set_items = reactive.create_signal(["one", "two"])
+
+    @component
+    def Rows(props):
+        return control.For(
+            items,
+            lambda item: widgets.Label(text=item),
+            key=lambda item: item,
+        )
+
+    mount = runtime.create_root(
+        lambda: widgets.VStack(
+            widgets.Label(text="Before"),
+            Rows(),
+            widgets.Label(text="After"),
+        ),
+        title="Demo",
+    )
+    stack = mount.widget.children[0]
+
+    assert [child.props["text"] for child in stack.children] == [
+        "Before",
+        "one",
+        "two",
+        "After",
+    ]
+
+    set_items(["two", "three"])
+
+    visible_text = [child.props["text"] for child in stack.children if not child.destroyed]
+    assert "one" not in visible_text
+    assert "two" in visible_text
+    assert "three" in visible_text
+
+
+def test_fragment_returning_component_cleans_up_when_show_removes_it():
+    visible, set_visible = reactive.create_signal(True)
+    events = []
+
+    @component
+    def Actions(props):
+        runtime.on_cleanup(lambda: events.append("actions cleanup"))
+        return Fragment(
+            widgets.Button(text="Save"),
+            widgets.Button(text="Cancel"),
+        )
+
+    mount = runtime.create_root(
+        lambda: widgets.VStack(
+            control.Show(visible, lambda: Actions()),
+            widgets.Label(text="After"),
+        ),
+        title="Demo",
+    )
+    stack = mount.widget.children[0]
+    save, cancel = stack.children[:2]
+
+    set_visible(False)
+
+    assert save.destroyed
+    assert cancel.destroyed
+    assert events == ["actions cleanup"]
+
+
+def test_control_returning_component_cleans_up_when_show_removes_it():
+    visible, set_visible = reactive.create_signal(True)
+    items = reactive.create_signal(["one", "two"])[0]
+    events = []
+
+    @component
+    def Rows(props):
+        runtime.on_cleanup(lambda: events.append("rows cleanup"))
+        return control.For(
+            items,
+            lambda item: widgets.Label(text=item),
+            key=lambda item: item,
+        )
+
+    mount = runtime.create_root(
+        lambda: widgets.VStack(
+            control.Show(visible, lambda: Rows()),
+            widgets.Label(text="After"),
+        ),
+        title="Demo",
+    )
+    stack = mount.widget.children[0]
+    one, two = stack.children[:2]
+
+    set_visible(False)
+
+    assert one.destroyed
+    assert two.destroyed
+    assert events == ["rows cleanup"]
+
+
+def test_control_returning_component_cleans_up_when_dynamic_replaces_it():
+    selected, set_selected = reactive.create_signal(cast(Any, None))
+    items = reactive.create_signal(["one", "two"])[0]
+    events = []
+
+    @component
+    def Rows(props):
+        runtime.on_cleanup(lambda: events.append("rows cleanup"))
+        return control.For(
+            items,
+            lambda item: widgets.Label(text=item),
+            key=lambda item: item,
+        )
+
+    @component
+    def Empty(props):
+        return widgets.Label(text="empty")
+
+    set_selected(lambda _: Rows)
+    mount = runtime.create_root(
+        lambda: widgets.VStack(control.Dynamic(selected)),
+        title="Demo",
+    )
+    stack = mount.widget.children[0]
+    one, two = stack.children[:2]
+
+    set_selected(lambda _: Empty)
+
+    assert one.destroyed
+    assert two.destroyed
+    assert events == ["rows cleanup"]
+    assert stack.children[-1].props["text"] == "empty"
 
 
 def test_function_component_keeps_keyword_children_prop():

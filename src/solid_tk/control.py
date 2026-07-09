@@ -19,6 +19,7 @@ from .runtime import Owner
 from .runtime import get_current_owner
 from .runtime import normalize_child
 from .runtime import use_owner
+from .stores import MutableList
 
 ErrorFallback = Callable[[Exception, Callable[[], None]], Any] | Callable[[], Any] | Any
 
@@ -37,14 +38,14 @@ class ShowNode(MountedNode):
         self.fallback = fallback
         self.active: Node | None = None
         self.active_key: bool | None = None
+        self.fragment_children = MutableList[Node](wrap=False)
 
     def mount(self, parent: Any | None) -> Any:
-        from .widgets import tk
-
-        self.widget = tk.Frame(parent)
-        self.widget.pack(fill="both", expand=True)
+        self.widget = parent
+        with use_owner(self.owner):
+            self.update()
         self.owner.effect(self.update)
-        return self.widget
+        return parent
 
     def update(self) -> None:
         if self.widget is None:
@@ -58,16 +59,19 @@ class ShowNode(MountedNode):
         self.active_key = key
         source = self.child_source if key else self.fallback
         if source is None:
+            self.fragment_children.replace([])
             return
         child = source() if callable(source) else source
         self.active = normalize_child(child)
-        self.active.mount(self.widget)
+        self.fragment_children.replace([self.active])
 
     def unmount(self) -> None:
         if self.active is not None:
             self.active.unmount()
             self.active = None
-        super().unmount()
+        self.fragment_children.replace([])
+        self.owner.dispose()
+        self.widget = None
 
 
 class ForNode(MountedNode):
@@ -84,14 +88,14 @@ class ForNode(MountedNode):
         self.key = key if key is not None else id
         self.instances: dict[Any, Node] = {}
         self.order: list[Any] = []
+        self.fragment_children = MutableList[Node](wrap=False)
 
     def mount(self, parent: Any | None) -> Any:
-        from .widgets import tk
-
-        self.widget = tk.Frame(parent)
-        self.widget.pack(fill="both", expand=True)
+        self.widget = parent
+        with use_owner(self.owner):
+            self.update()
         self.owner.effect(self.update)
-        return self.widget
+        return parent
 
     def update(self) -> None:
         if self.widget is None:
@@ -109,26 +113,20 @@ class ForNode(MountedNode):
             node = self.instances.get(key)
             if node is None:
                 node = normalize_child(self.render(item))
-                node.mount(self.widget)
             next_instances[key] = node
 
         self.instances = next_instances
         self.order = next_keys
-        self.repack()
-
-    def repack(self) -> None:
-        for key in self.order:
-            widget = self.instances[key].widget
-            if widget is not None:
-                widget.pack_forget()
-                widget.pack(side="top", fill="x", anchor="w")
+        self.fragment_children.replace([self.instances[key] for key in self.order])
 
     def unmount(self) -> None:
         for key in reversed(self.order):
             self.instances[key].unmount()
         self.instances.clear()
         self.order.clear()
-        super().unmount()
+        self.fragment_children.replace([])
+        self.owner.dispose()
+        self.widget = None
 
 
 @dataclass
@@ -149,14 +147,14 @@ class SwitchNode(MountedNode):
         self.fallback = fallback
         self.active: Node | None = None
         self.active_key: Any = object()
+        self.fragment_children = MutableList[Node](wrap=False)
 
     def mount(self, parent: Any | None) -> Any:
-        from .widgets import tk
-
-        self.widget = tk.Frame(parent)
-        self.widget.pack(fill="both", expand=True)
+        self.widget = parent
+        with use_owner(self.owner):
+            self.update()
         self.owner.effect(self.update)
-        return self.widget
+        return parent
 
     def update(self) -> None:
         if self.widget is None:
@@ -179,34 +177,41 @@ class SwitchNode(MountedNode):
 
         self.active_key = next_key
         if source is None:
+            self.fragment_children.replace([])
             return
 
         child = source() if callable(source) else source
         self.active = normalize_child(child)
-        self.active.mount(self.widget)
+        self.fragment_children.replace([self.active])
 
     def unmount(self) -> None:
         if self.active is not None:
             self.active.unmount()
             self.active = None
-        super().unmount()
+        self.fragment_children.replace([])
+        self.owner.dispose()
+        self.widget = None
 
 
 class IndexNode(MountedNode):
-    def __init__(self, each: Any, render: Callable[[Any, int], Any]) -> None:
+    def __init__(
+        self,
+        each: Any,
+        render: Callable[[Any, int], Any],
+    ) -> None:
         super().__init__()
         self.each = to_accessor(each)
         self.render = render
         self.items: list[tuple[Accessor[Any], Mutator[Any]]] = []
         self.instances: list[Node] = []
+        self.fragment_children = MutableList[Node](wrap=False)
 
     def mount(self, parent: Any | None) -> Any:
-        from .widgets import tk
-
-        self.widget = tk.Frame(parent)
-        self.widget.pack(fill="both", expand=True)
+        self.widget = parent
+        with use_owner(self.owner):
+            self.update()
         self.owner.effect(self.update)
-        return self.widget
+        return parent
 
     def update(self) -> None:
         if self.widget is None:
@@ -229,22 +234,16 @@ class IndexNode(MountedNode):
             self.items.append((accessor, mutate))
             node = normalize_child(self.render(accessor, index))
             self.instances.append(node)
-            node.mount(self.widget)
-
-        self.repack()
-
-    def repack(self) -> None:
-        for node in self.instances:
-            if node.widget is not None:
-                node.widget.pack_forget()
-                node.widget.pack(side="top", fill="x", anchor="w")
+        self.fragment_children.replace(self.instances)
 
     def unmount(self) -> None:
         for node in reversed(self.instances):
             node.unmount()
         self.instances.clear()
         self.items.clear()
-        super().unmount()
+        self.fragment_children.replace([])
+        self.owner.dispose()
+        self.widget = None
 
 
 class DynamicNode(MountedNode):
@@ -255,14 +254,14 @@ class DynamicNode(MountedNode):
         self.props = props
         self.active: Node | None = None
         self.active_key: Any = object()
+        self.fragment_children = MutableList[Node](wrap=False)
 
     def mount(self, parent: Any | None) -> Any:
-        from .widgets import tk
-
-        self.widget = tk.Frame(parent)
-        self.widget.pack(fill="both", expand=True)
+        self.widget = parent
+        with use_owner(self.owner):
+            self.update()
         self.owner.effect(self.update)
-        return self.widget
+        return parent
 
     def update(self) -> None:
         if self.widget is None:
@@ -281,13 +280,15 @@ class DynamicNode(MountedNode):
         self.active_key = component
         child = component(**self.props) if callable(component) else component
         self.active = normalize_child(child)
-        self.active.mount(self.widget)
+        self.fragment_children.replace([self.active])
 
     def unmount(self) -> None:
         if self.active is not None:
             self.active.unmount()
             self.active = None
-        super().unmount()
+        self.fragment_children.replace([])
+        self.owner.dispose()
+        self.widget = None
 
 
 def _call_error_fallback(
@@ -332,14 +333,14 @@ class ErrorBoundaryNode(MountedNode):
         self.active: Node | None = None
         self.active_kind: str | None = None
         self.mounting_child = False
+        self.fragment_children = MutableList[Node](wrap=False)
 
     def mount(self, parent: Any | None) -> Any:
-        from .widgets import tk
-
-        self.widget = tk.Frame(parent)
-        self.widget.pack(fill="both", expand=True)
+        self.widget = parent
+        with use_owner(self.owner):
+            self.update()
         self.owner.effect(self.update)
-        return self.widget
+        return parent
 
     def update(self) -> None:
         if self.widget is None:
@@ -368,6 +369,7 @@ class ErrorBoundaryNode(MountedNode):
             self.show_fallback(error)
             return
         self.active_kind = "child"
+        self.fragment_children.replace([self.active])
 
     def mount_source(self, source: Callable[[], Any] | Any, *, owner: Owner) -> Node:
         if self.widget is None:
@@ -378,7 +380,6 @@ class ErrorBoundaryNode(MountedNode):
             with use_owner(owner):
                 child = source() if callable(source) else source
                 node = normalize_child(child)
-            node.mount(self.widget)
             return node
         except Exception:
             if node is not None:
@@ -397,6 +398,7 @@ class ErrorBoundaryNode(MountedNode):
             return
         else:
             self.active_kind = "fallback"
+            self.fragment_children.replace([self.active])
 
     def mount_fallback(self, error: Exception) -> Node:
         owner = self.owner.parent
@@ -404,9 +406,7 @@ class ErrorBoundaryNode(MountedNode):
             raise error
 
         if self.fallback is None:
-            from .widgets import Label
-
-            return self.mount_source(Label(text=str(error)), owner=owner)
+            return self.mount_source(str(error), owner=owner)
 
         source = self.fallback
         if callable(source):
@@ -437,10 +437,12 @@ class ErrorBoundaryNode(MountedNode):
             self.active.unmount()
             self.active = None
         self.active_kind = None
+        self.fragment_children.replace([])
 
     def unmount(self) -> None:
         self.unmount_active()
-        super().unmount()
+        self.owner.dispose()
+        self.widget = None
 
 
 def Show(
@@ -472,7 +474,10 @@ def Switch(
     return SwitchNode(cases, fallback=fallback)
 
 
-def Index(each: Any, render: Callable[[Any, int], Any]) -> IndexNode:
+def Index(
+    each: Any,
+    render: Callable[[Any, int], Any],
+) -> IndexNode:
     return IndexNode(each, render)
 
 

@@ -25,6 +25,7 @@ def test_switch_renders_first_matching_case_and_fallback():
     )
     switch = cast(Any, mount.node).children[0]
 
+    assert switch.widget is mount.widget
     assert switch.active.widget.props["text"] == "A"
 
     set_mode("b")
@@ -50,7 +51,28 @@ def test_switch_renders_initial_fallback_when_no_case_matches():
     )
     switch = cast(Any, mount.node).children[0]
 
+    assert switch.widget is mount.widget
     assert switch.active.widget.props["text"] == "Idle"
+
+
+def test_show_mounts_active_child_as_fragment():
+    mount = runtime.create_root(
+        lambda: widgets.VStack(
+            widgets.Label(text="Before"),
+            control.Show(True, lambda: widgets.Label(text="Shown")),
+            widgets.Label(text="After"),
+        ),
+        title="Demo",
+    )
+    stack = mount.widget.children[0]
+    show = cast(Any, mount.node).children[0].children[1]
+
+    assert show.widget is stack
+    assert [child.props["text"] for child in stack.children] == [
+        "Before",
+        "Shown",
+        "After",
+    ]
 
 
 def test_index_reuses_nodes_by_index_and_updates_item_accessors():
@@ -84,6 +106,33 @@ def test_index_reuses_nodes_by_index_and_updates_item_accessors():
     assert stale.widget is None
 
 
+def test_for_mounts_repeated_children_as_fragment():
+    items, _set_items = reactive.create_signal(["a", "b"])
+
+    mount = runtime.create_root(
+        lambda: widgets.VStack(
+            widgets.Label(text="Before"),
+            control.For(
+                items,
+                lambda item: widgets.Label(text=item),
+                key=lambda item: item,
+            ),
+            widgets.Label(text="After"),
+        ),
+        title="Demo",
+    )
+    stack = mount.widget.children[0]
+    for_node = cast(Any, mount.node).children[0].children[1]
+
+    assert for_node.widget is stack
+    assert [child.props["text"] for child in stack.children] == [
+        "Before",
+        "a",
+        "b",
+        "After",
+    ]
+
+
 def test_dynamic_switches_component_factories():
     selected, set_selected = reactive.create_signal(cast(Any, None))
 
@@ -99,6 +148,7 @@ def test_dynamic_switches_component_factories():
     mount = runtime.create_root(lambda: control.Dynamic(selected), title="Demo")
     dynamic = cast(Any, mount.node).children[0]
 
+    assert dynamic.widget is mount.widget
     assert dynamic.active.widget.props["text"] == "red"
 
     set_selected(lambda _: Blue)
@@ -141,8 +191,23 @@ def test_error_boundary_renders_fallback_when_child_render_raises():
     )
     boundary = cast(Any, mount.node).children[0]
 
+    assert boundary.widget is mount.widget
     assert boundary.active_kind == "fallback"
     assert boundary.active.widget.props["text"] == "Caught: boom"
+
+
+def test_error_boundary_default_fallback_uses_primitive_child_factory():
+    def Broken():
+        raise ValueError("boom")
+
+    mount = runtime.create_root(
+        lambda: control.ErrorBoundary(Broken),
+        title="Demo",
+    )
+    boundary = cast(Any, mount.node).children[0]
+
+    assert boundary.active_kind == "fallback"
+    assert boundary.active.widget.props["text"] == "boom"
 
 
 def test_error_boundary_catches_child_reactive_update_errors():
@@ -194,11 +259,12 @@ def test_error_boundary_can_replace_show_after_reactive_child_error():
     )
     boundary = cast(Any, mount.node).children[0]
     show = boundary.active
-    show_widget = show.widget
+    risky_widget = show.active.widget
 
     set_value("bad")
 
-    assert show_widget.destroyed
+    assert risky_widget.destroyed
+    assert show.widget is None
     assert boundary.active_kind == "fallback"
     assert boundary.active.widget.props["text"] == "Caught: bad value"
 

@@ -13,6 +13,7 @@ from .runtime import MountedNode
 from .runtime import Node
 from .runtime import Owner
 from .runtime import get_current_owner
+from .runtime import is_fragment_node
 from .runtime import normalize_child
 from .runtime import use_owner
 
@@ -24,6 +25,8 @@ class ComponentNode(MountedNode):
         super().__init__(owner=owner)
         self.component = component
         self.rendered = rendered
+        if is_fragment_node(rendered):
+            self.fragment_children = rendered.fragment_children
 
     def mount(self, parent: Any | None) -> Any:
         self.widget = self.rendered.mount(parent)

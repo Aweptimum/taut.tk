@@ -14,6 +14,7 @@ from .runtime import Owner
 from .runtime import current_owner
 from .runtime import normalize_child
 from .runtime import use_owner
+from .stores import MutableList
 
 T = TypeVar("T")
 
@@ -75,14 +76,16 @@ class ProviderNode(MountedNode):
         super().__init__(owner=owner)
         self.child_source = child
         self.child: Node | None = None
+        self.fragment_children = MutableList[Node](wrap=False)
 
     def mount(self, parent: Any | None) -> Any:
         with use_owner(self.owner):
             child = resolve_child(self.child_source)
             self.child = normalize_child(child)
-        self.widget = self.child.mount(parent)
+        self.fragment_children.replace([self.child])
+        self.widget = parent
         self.owner.run_mounts()
-        return self.widget
+        return parent
 
     def unmount(self) -> None:
         if self.widget is None and self.child is None:
@@ -91,6 +94,7 @@ class ProviderNode(MountedNode):
         if self.child is not None:
             self.child.unmount()
             self.child = None
+        self.fragment_children.replace([])
         self.widget = None
 
 

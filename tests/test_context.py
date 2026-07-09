@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from solid_tk import Fragment
 from solid_tk import component
 from solid_tk import context
 from solid_tk import runtime
@@ -87,6 +88,38 @@ def test_provider_accepts_forwarded_positional_component_children():
     label = mount.widget.children[0]
 
     assert label.props["text"] == "dark"
+
+
+def test_provider_fragment_children_are_laid_out_by_parent():
+    theme = context.create_context("light")
+
+    @component
+    def ThemedLabel(props):
+        return widgets.Label(text=context.use_context(theme))
+
+    mount = runtime.create_root(
+        lambda: widgets.VStack(
+            widgets.Label(text="Before"),
+            context.Provider(
+                theme,
+                "dark",
+                lambda: Fragment(
+                    ThemedLabel(),
+                    widgets.Label(text="After provider"),
+                ),
+            ),
+            widgets.Label(text="After"),
+        ),
+        title="Demo",
+    )
+    stack = mount.widget.children[0]
+
+    assert [child.props["text"] for child in stack.children] == [
+        "Before",
+        "dark",
+        "After provider",
+        "After",
+    ]
 
 
 def test_nested_provider_uses_nearest_context_value():

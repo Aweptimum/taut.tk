@@ -125,6 +125,17 @@ def test_create_root_expands_default_app_layout():
     assert app.pack_kwargs == {"fill": "both", "expand": True}
 
 
+def test_primitive_children_render_with_registered_text_factory():
+    mount = runtime.create_root(
+        lambda: widgets.VStack("Hello", 42),
+        title="Demo",
+    )
+    first, second = mount.widget.children[0].children
+
+    assert first.props["text"] == "Hello"
+    assert second.props["text"] == "42"
+
+
 def test_create_root_preserves_explicit_app_layout():
     mount = runtime.create_root(
         lambda: widgets.VStack(widgets.Label(text="Hello"), pack={"side": "left"}),

@@ -14,9 +14,11 @@ from . import ttk
 from . import widgets
 from .component import Component
 from .component import component
+from .runtime import Fragment
 
 __all__ = [
     "Component",
+    "Fragment",
     "component",
     "context",
     "control",

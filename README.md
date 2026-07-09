@@ -129,6 +129,24 @@ def panel(props):
 panel(tk.Label(text="Nested"), title="Details")
 ```
 
+Control-flow nodes and `Fragment(...)` are transparent to layout. They produce
+children; the parent widget or layout helper decides where those children go:
+
+```python
+@component
+def rows(props):
+    return For(props.items, lambda item: tk.Label(text=item), key=lambda item: item)
+
+tk.VStack(
+    tk.Label(text="Before"),
+    rows(items=todos),
+    tk.Label(text="After"),
+)
+```
+
+In that example, the repeated labels are laid out by `VStack` between
+`Before` and `After`; `For` and the component do not create wrapper frames.
+
 
 ## What's Here So Far
 
@@ -136,6 +154,7 @@ panel(tk.Label(text="Nested"), title="Details")
 - `Component` with `__init__()/setup()` and `render()`
 - `Props`, where every attribute is an accessor
 - first-class component children through `props.children`
+- transparent `Fragment(...)` nodes for returning multiple children
 - widget namespaces: `tk` for classic Tk widgets and `ttk` for themed widgets
 - stack layout helpers: `VStack`, `HStack`, `Item`
 - StyleX-ish style objects with `style.define()`, `style.merge()`, and

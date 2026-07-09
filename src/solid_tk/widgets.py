@@ -10,7 +10,11 @@ from . import style as style_api
 from .props import NodeProps
 from .runtime import MountedNode
 from .runtime import Node
+from .runtime import flatten_child_nodes
+from .runtime import mount_child_tree
+from .runtime import mount_fragment_children
 from .runtime import normalize_child
+from .runtime import set_primitive_child_factory
 from .runtime import use_owner
 from .scheduler import TkScheduler
 from .tk_props import ButtonProps
@@ -47,6 +51,7 @@ class WidgetNode(MountedNode):
         self.widget_type = widget_type
         self.props = NodeProps(props)
         self.layout = layout if layout is not None else {"pack": {}}
+        self.mounted_children: list[Node] = []
 
     def mount(self, parent: Any | None) -> Any:
         ctor_props: dict[str, Any] = {}
@@ -72,7 +77,7 @@ class WidgetNode(MountedNode):
         self.apply_layout()
         self.bind_reactive_props(reactive_props)
 
-        self.mount_children()
+        self.owner.effect(self.reconcile_children, accepts_cleanup=False)
         self.owner.run_mounts()
 
         return self.widget
@@ -80,9 +85,11 @@ class WidgetNode(MountedNode):
     def prepare_ctor_props(self, parent: Any | None, props: dict[str, Any]) -> None:
         pass
 
-    def apply_layout(self) -> None:
+    def apply_layout(self, *, reset: bool = False) -> None:
         if self.widget is None:
             return
+        if reset:
+            forget_layout(self.widget)
         if "grid" in self.layout:
             self.widget.grid(**self.layout["grid"])
         elif "place" in self.layout:
@@ -104,6 +111,30 @@ class WidgetNode(MountedNode):
                 return apply
 
             self.owner.effect(make_apply(name, accessor), accepts_cleanup=False)
+
+    def reconcile_children(self) -> None:
+        if self.widget is None:
+            return
+
+        mount_fragment_children(self.widget, self.children)
+
+        visible = flatten_child_nodes(self.children)
+        visible_set = set(visible)
+        for child in reversed(self.mounted_children):
+            if child not in visible_set:
+                child.unmount()
+
+        stack = getattr(self, "_stack", None)
+        if stack is not None:
+            apply_stack_layout(visible, stack)
+
+        for child in visible:
+            if child.widget is None:
+                child.mount(self.widget)
+            elif stack is not None and isinstance(child, WidgetNode):
+                child.apply_layout(reset=True)
+
+        self.mounted_children = visible
 
 
 class ValueWidgetNode(WidgetNode):
@@ -210,7 +241,7 @@ class PortalNode(MountedNode):
 
         with use_owner(self.owner):
             self.child = normalize_child(resolve_portal_child(self.child_source))
-        self.child.mount(self.widget)
+        mount_child_tree(self.widget, self.child)
         self.owner.run_mounts()
         return self.widget
 
@@ -300,7 +331,8 @@ def VStack(*children: Any, **props: Unpack[StackProps]) -> WidgetNode:
     stack = consume_stack(props, axis="vertical")
     layout = consume_layout(props)
     node = WidgetNode(tk.Frame, children=children, layout=layout, **props)
-    apply_stack_layout(node.children, stack)
+    setattr(node, "_stack", stack)
+    apply_stack_layout(list(node.children), stack)
     return node
 
 
@@ -309,7 +341,8 @@ def HStack(*children: Any, **props: Unpack[StackProps]) -> WidgetNode:
     stack = consume_stack(props, axis="horizontal")
     layout = consume_layout(props)
     node = WidgetNode(tk.Frame, children=children, layout=layout, **props)
-    apply_stack_layout(node.children, stack)
+    setattr(node, "_stack", stack)
+    apply_stack_layout(list(node.children), stack)
     return node
 
 
@@ -372,6 +405,13 @@ def apply_stack_layout(children: list[Any], stack: dict[str, Any]) -> None:
         child.layout = {"pack": pack}
 
 
+def forget_layout(widget: Any) -> None:
+    for name in ("pack_forget", "grid_forget", "place_forget"):
+        forget = getattr(widget, name, None)
+        if callable(forget):
+            forget()
+
+
 def stack_item_layout(child: WidgetNode) -> dict[str, Any]:
     layout = getattr(child, "_stack_layout", {})
     return {key: value for key, value in layout.items() if key in STACK_ITEM_KEYS}
@@ -409,3 +449,6 @@ def stack_anchor(axis: str, align: StackAlign) -> str:
     if axis == "vertical":
         return {"start": "w", "center": "center", "end": "e"}[align]
     return {"start": "n", "center": "center", "end": "s"}[align]
+
+
+set_primitive_child_factory(lambda child: Label(text=str(child)))

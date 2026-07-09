@@ -11,12 +11,14 @@ from inspect import signature
 from threading import Lock
 from typing import Any
 from typing import Protocol
+from typing import TypeGuard
 from typing import cast
 
 from reaktiv import Effect
 
 from .scheduler import CancelHandle
 from .scheduler import EventScheduler
+from .stores import MutableList
 
 ThreadDispatcher = Callable[[Callable[[], Any]], CancelHandle]
 
@@ -27,6 +29,19 @@ class Node(Protocol):
     def mount(self, parent: Any | None) -> Any: ...
 
     def unmount(self) -> None: ...
+
+
+class FragmentNodeProtocol(Node, Protocol):
+    fragment_children: MutableList[Node]
+
+
+PrimitiveChildFactory = Callable[[Any], Node]
+_primitive_child_factory: PrimitiveChildFactory | None = None
+
+
+def set_primitive_child_factory(factory: PrimitiveChildFactory) -> None:
+    global _primitive_child_factory
+    _primitive_child_factory = factory
 
 
 @dataclass
@@ -324,7 +339,10 @@ class MountedNode:
         self, children: Iterable[Any] = (), *, owner: Owner | None = None
     ) -> None:
         self.owner = owner if owner is not None else Owner(parent=get_current_owner())
-        self.children = [normalize_child(child) for child in children]
+        self.children = MutableList(
+            [normalize_child(child) for child in children],
+            wrap=False,
+        )
 
     def mount_children(self) -> None:
         if self.widget is None:
@@ -338,9 +356,9 @@ class MountedNode:
         return node
 
     def unmount_children(self) -> None:
-        for child in reversed(self.children):
+        for child in reversed(list(self.children)):
             child.unmount()
-        self.children.clear()
+        self.children.replace([])
 
     def unmount(self) -> None:
         self.unmount_children()
@@ -352,9 +370,12 @@ class MountedNode:
 
 
 class FragmentNode(MountedNode):
+    @property
+    def fragment_children(self) -> MutableList[Node]:
+        return self.children
+
     def mount(self, parent: Any | None) -> Any:
         self.widget = parent
-        self.mount_children()
         self.owner.run_mounts()
         return parent
 
@@ -371,9 +392,53 @@ def normalize_child(child: Any) -> Node:
         child, (str, bytes, bytearray, Mapping)
     ):
         return FragmentNode(child)
-    from .widgets import Label
 
-    return Label(text=str(child))
+    # This is here so that VStack("Hello World!") renders
+    if _primitive_child_factory is None:
+        raise TypeError(
+            "primitive children require a text child factory; import solid_tk.tk "
+            "or solid_tk.widgets before using primitive children"
+        )
+    return _primitive_child_factory(child)
+
+
+def Fragment(*children: Any) -> FragmentNode:
+    return FragmentNode(children)
+
+
+def is_fragment_node(node: Any) -> TypeGuard[FragmentNodeProtocol]:
+    return hasattr(node, "fragment_children")
+
+
+def flatten_child_nodes(children: Iterable[Node]) -> list[Node]:
+    nodes: list[Node] = []
+    for child in children:
+        if is_fragment_node(child):
+            nodes.extend(flatten_child_nodes(child.fragment_children))
+        else:
+            nodes.append(child)
+    return nodes
+
+
+def mount_child_tree(parent: Any, child: Node) -> Any:
+    """Mount a possibly-transparent node and its visible child widgets."""
+
+    if child.widget is None:
+        child.mount(parent)
+    mount_fragment_children(parent, [child])
+    for visible in flatten_child_nodes([child]):
+        if visible.widget is None:
+            visible.mount(parent)
+    return child.widget
+
+
+def mount_fragment_children(parent: Any, children: Iterable[Node]) -> None:
+    for child in children:
+        if not is_fragment_node(child):
+            continue
+        if child.widget is None:
+            child.mount(parent)
+        mount_fragment_children(parent, child.fragment_children)
 
 
 def create_root(app: Callable[[], Node] | Node, *, title: str | None = None) -> Mount:
@@ -384,9 +449,11 @@ def create_root(app: Callable[[], Node] | Node, *, title: str | None = None) -> 
 
     with use_owner(root_node.owner):
         child = app() if callable(app) and not hasattr(app, "mount") else app
-    node = root_node.append_child(child)
+    node = normalize_child(child)
     expand_root_child(node)
-    node.mount(root)
+    root_node.children.append(node)
+    if node.widget is None:
+        node.mount(root)
     return Mount(node=root_node, widget=root)
 
 
