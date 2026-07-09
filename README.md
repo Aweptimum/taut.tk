@@ -121,6 +121,26 @@ See `examples/control_demo` for a runnable version:
 ```sh
 python -m examples.control_demo
 ```
+
+- event-loop helpers: `after`, `interval`, `defer`, `to_ui`
+
+```python
+after(500, lambda: status.set("half a second later"))
+interval(1000, lambda: count.update(lambda value: value + 1))
+defer(lambda: print("runs on the next Tk event loop turn"))
+
+dispatch = to_ui()
+dispatch(lambda: status.set("called from another thread"))
+```
+
+Scheduled callbacks are owned and cancelled automatically when their component
+or root is disposed. Keep interval callbacks small; Tk runs UI work on one event
+loop, so slow callbacks still block the interface.
+
+See `examples/scheduler_demo` for moving labels and a worker-thread callback:
+
+```sh
+python -m examples.scheduler_demo
 ```
 
 This is not a full Tkinter framework yet; more goodies to implement!

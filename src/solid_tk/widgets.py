@@ -7,6 +7,7 @@ from typing import Unpack
 
 from .props import NodeProps
 from .runtime import MountedNode
+from .scheduler import TkScheduler
 from .tk_props import ButtonProps
 from .tk_props import CheckbuttonProps
 from .tk_props import EntryProps
@@ -56,6 +57,7 @@ class WidgetNode(MountedNode):
             if parent is not None
             else self.widget_type(**ctor_props)
         )
+        self.owner.scheduler = TkScheduler(self.widget)
         self.apply_layout()
         self.bind_reactive_props(reactive_props)
 

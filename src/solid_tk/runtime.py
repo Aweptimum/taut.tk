@@ -12,6 +12,11 @@ from typing import Protocol
 
 from reaktiv import Effect
 
+from .scheduler import CancelHandle
+from .scheduler import EventScheduler
+
+ThreadDispatcher = Callable[[Callable[[], Any]], CancelHandle]
+
 
 class Node(Protocol):
     widget: Any | None
@@ -34,6 +39,7 @@ class Mount:
 class Owner:
     parent: Owner | None = None
     context: Mapping[Any, Any] = field(default_factory=dict)
+    scheduler: EventScheduler | None = None
     cleanups: list[Callable[[], None]] = field(default_factory=list)
     effects: list[Effect] = field(default_factory=list)
     mounts: list[Callable[[], Any]] = field(default_factory=list)
@@ -61,7 +67,8 @@ class Owner:
             self._run_mount(fn)
 
     def _run_mount(self, fn: Callable[[], Any]) -> None:
-        cleanup = fn()
+        with use_owner(self):
+            cleanup = fn()
         if callable(cleanup):
             self.cleanup(cleanup)
 
@@ -90,26 +97,160 @@ def use_owner(owner: Owner):
 
 
 def get_current_owner() -> Owner | None:
+    """Return the current reactive owner, if code is running inside one."""
+
     return _current_owner.get()
 
 
 def current_owner() -> Owner:
+    """Return the current owner or raise when lifecycle APIs are used out of scope."""
+
     owner = get_current_owner()
     if owner is None:
         raise RuntimeError("lifecycle helpers must be called inside a solid-tk owner")
     return owner
 
 
+def current_scheduler() -> EventScheduler:
+    """Return the nearest mounted event scheduler for the current owner tree."""
+
+    owner = current_owner()
+    while owner is not None:
+        if owner.scheduler is not None:
+            return owner.scheduler
+        owner = owner.parent
+    raise RuntimeError("event loop helpers require a mounted solid-tk root")
+
+
 def create_effect(fn: Callable[..., Any]) -> Effect:
+    """Create an owned reactive effect disposed with the current owner."""
+
     return current_owner().effect(fn)
 
 
 def on_cleanup(fn: Callable[[], None]) -> None:
+    """Register cleanup to run when the current owner is disposed."""
+
     current_owner().cleanup(fn)
 
 
 def on_mount(fn: Callable[[], Any]) -> None:
+    """Run a callback after the current owner is mounted.
+
+    If the callback returns another callable, that returned callable is
+    registered as owner cleanup.
+    """
+
     current_owner().on_mount(fn)
+
+
+def after(ms: int, fn: Callable[[], Any]) -> CancelHandle:
+    """Schedule ``fn`` once on the current owner's event scheduler.
+
+    The scheduled callback is cancelled automatically when the owner is
+    disposed. When it runs, it restores the owner context so lifecycle helpers
+    and context lookups still refer to the component that scheduled it.
+    """
+
+    owner = current_owner()
+
+    def run() -> Any:
+        with use_owner(owner):
+            return fn()
+
+    handle = current_scheduler().after(ms, run)
+    owner.cleanup(handle.cancel)
+    return handle
+
+
+def defer(fn: Callable[[], Any]) -> CancelHandle:
+    """Schedule ``fn`` for the next event-loop turn."""
+
+    return after(0, fn)
+
+
+def interval(ms: int, fn: Callable[[], Any]) -> CancelHandle:
+    """Run ``fn`` repeatedly on the current owner's event scheduler.
+
+    The next tick is scheduled only after ``fn`` returns, so ticks do not pile up
+    concurrently. Returning ``False`` stops the interval. The interval is also
+    cancelled automatically when the owner is disposed.
+    """
+
+    owner = current_owner()
+    scheduler = current_scheduler()
+    cancelled = False
+    active: CancelHandle | None = None
+
+    class IntervalHandle:
+        def cancel(self) -> None:
+            nonlocal cancelled
+            cancelled = True
+            if active is not None:
+                active.cancel()
+
+    def tick() -> None:
+        nonlocal active
+        if cancelled:
+            return
+        with use_owner(owner):
+            result = fn()
+        if result is False or cancelled:
+            return
+        active = scheduler.after(ms, tick)
+
+    handle = IntervalHandle()
+    active = scheduler.after(ms, tick)
+    owner.cleanup(handle.cancel)
+    return handle
+
+
+class NoopCancelHandle:
+    def cancel(self) -> None:
+        pass
+
+
+def to_ui() -> ThreadDispatcher:
+    """Capture an owner-bound dispatcher for UI work.
+
+    ``dispatch = to_ui(); dispatch(lambda: message.set("done"))``
+
+    Use this inside a component or lifecycle callback, then pass the returned
+    dispatcher to worker code that needs to report back to the UI.
+
+    The dispatcher routes the supplied callback back through the owner
+    scheduler, restores owner context when it runs, and no-ops after the owner
+    has been disposed. The current Tk backend uses Tk's scheduler; a future
+    backend can replace that without changing this API.
+    """
+
+    owner = current_owner()
+    scheduler = current_scheduler()
+    cancelled = False
+    handles: list[CancelHandle] = []
+
+    def cleanup() -> None:
+        nonlocal cancelled
+        cancelled = True
+        for handle in handles:
+            handle.cancel()
+
+    def dispatch(callback: Callable[[], Any]) -> CancelHandle:
+        if cancelled:
+            return NoopCancelHandle()
+
+        def run() -> Any:
+            if cancelled:
+                return None
+            with use_owner(owner):
+                return callback()
+
+        handle = scheduler.to_ui(run)
+        handles.append(handle)
+        return handle
+
+    owner.cleanup(cleanup)
+    return dispatch
 
 
 class MountedNode:

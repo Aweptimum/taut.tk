@@ -28,11 +28,15 @@ from .reactive import WritableAccessor
 from .reactive import create_memo
 from .runtime import Mount
 from .runtime import Node
+from .runtime import after
 from .runtime import create_effect
 from .runtime import create_root
+from .runtime import defer
 from .runtime import get_current_owner
+from .runtime import interval
 from .runtime import on_cleanup
 from .runtime import on_mount
+from .runtime import to_ui
 from .stores import StoreLens
 from .stores import StoreSetter
 from .stores import create_store
@@ -80,14 +84,18 @@ __all__ = [
     "Updater",
     "VStack",
     "WritableAccessor",
+    "after",
     "batch",
     "component",
     "create_context",
     "create_effect",
     "create_memo",
     "create_root",
+    "defer",
+    "to_ui",
     "create_store",
     "get_current_owner",
+    "interval",
     "on_cleanup",
     "on_mount",
     "produce",

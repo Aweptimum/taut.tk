@@ -23,13 +23,18 @@ from solid_tk import Match
 from solid_tk import Provider
 from solid_tk import Switch
 from solid_tk import VStack
+from solid_tk import after
 from solid_tk import component
 from solid_tk import create_context
 from solid_tk import create_effect
 from solid_tk import create_memo
 from solid_tk import create_root
+from solid_tk import defer
+from solid_tk import get_current_owner
+from solid_tk import interval
 from solid_tk import on_cleanup
 from solid_tk import on_mount
+from solid_tk import to_ui
 from solid_tk import use_context
 from solid_tk import widgets
 
@@ -65,6 +70,9 @@ class FakeWidget:
         self.props = dict(props)
         self.children = []
         self.destroyed = False
+        self.after_callbacks = {}
+        self.after_cancelled = []
+        self.next_after_id = 0
         if parent is not None:
             parent.children.append(self)
 
@@ -91,6 +99,25 @@ class FakeWidget:
 
     def quit(self):
         self.quit_called = True
+
+    def after(self, ms, callback):
+        self.next_after_id += 1
+        after_id = f"after-{self.next_after_id}"
+        self.after_callbacks[after_id] = (ms, callback)
+        return after_id
+
+    def after_cancel(self, after_id):
+        self.after_cancelled.append(after_id)
+        self.after_callbacks.pop(after_id, None)
+
+    def run_after(self, after_id):
+        _ms, callback = self.after_callbacks.pop(after_id)
+        callback()
+
+    def run_next_after(self):
+        after_id = next(iter(self.after_callbacks))
+        self.run_after(after_id)
+        return after_id
 
 
 class FakeTk(FakeWidget):
@@ -351,6 +378,115 @@ def test_function_component_lifecycle_helpers_are_owned():
     value.set("again")
 
     assert events == ["effect:hello", "mount", "effect:world", "cleanup"]
+
+
+def test_after_runs_once_and_is_cancelled_on_cleanup():
+    events = []
+
+    @component
+    def App(props):
+        after(10, lambda: events.append("after"))
+        return Label(text="App")
+
+    mount = create_root(App, title="Demo")
+    after_id = next(iter(mount.widget.after_callbacks))
+
+    mount.dispose()
+
+    assert after_id in mount.widget.after_cancelled
+    assert events == []
+
+
+def test_defer_runs_on_next_event_loop_turn_with_owner_context():
+    owners = []
+
+    @component
+    def App(props):
+        owner = get_current_owner()
+        defer(lambda: owners.append(get_current_owner() is owner))
+        return Label(text="App")
+
+    mount = create_root(App, title="Demo")
+
+    mount.widget.run_next_after()
+
+    assert owners == [True]
+
+
+def test_defer_can_be_scheduled_from_on_mount():
+    events = []
+
+    @component
+    def App(props):
+        on_mount(lambda: defer(lambda: events.append("mounted")))
+        return Label(text="App")
+
+    mount = create_root(App, title="Demo")
+
+    mount.widget.run_next_after()
+
+    assert events == ["mounted"]
+
+
+def test_interval_repeats_until_cleanup():
+    ticks = []
+
+    @component
+    def App(props):
+        interval(5, lambda: ticks.append("tick"))
+        return Label(text="App")
+
+    mount = create_root(App, title="Demo")
+
+    first_id = mount.widget.run_next_after()
+    second_id = mount.widget.run_next_after()
+
+    assert ticks == ["tick", "tick"]
+
+    mount.dispose()
+
+    assert first_id not in mount.widget.after_cancelled
+    assert second_id not in mount.widget.after_cancelled
+    assert len(mount.widget.after_cancelled) == 1
+
+
+def test_interval_stops_when_callback_returns_false():
+    ticks = []
+
+    @component
+    def App(props):
+        interval(5, lambda: ticks.append("tick") or False)
+        return Label(text="App")
+
+    mount = create_root(App, title="Demo")
+
+    mount.widget.run_next_after()
+
+    assert ticks == ["tick"]
+    assert mount.widget.after_callbacks == {}
+
+
+def test_to_ui_can_capture_dispatcher_for_later_thread_callbacks():
+    events = []
+    dispatchers = []
+
+    @component
+    def App(props):
+        dispatchers.append(to_ui())
+        return Label(text="App")
+
+    mount = create_root(App, title="Demo")
+
+    dispatchers[0](lambda: events.append("worker result"))
+    mount.widget.run_next_after()
+
+    assert events == ["worker result"]
+
+    mount.dispose()
+    handle = dispatchers[0](lambda: events.append("too late"))
+
+    handle.cancel()
+    assert events == ["worker result"]
 
 
 def test_root_callback_lifecycle_helpers_are_owned():
