@@ -52,13 +52,27 @@ class Owner:
         if accepts_cleanup is None:
             accepts_cleanup = len(signature(fn).parameters) >= 1
 
-        def run(on_cleanup: Callable[[Callable[[], None]], None]) -> Any:
-            try:
-                with use_owner(self):
-                    return fn(on_cleanup) if accepts_cleanup else fn()
-            except Exception as exc:
-                self.handle_error(exc)
-                return None
+        # Change definition of run for benefit of reaktive.Effect
+        # reaktiv.Effect also inspects the signature length 
+        if accepts_cleanup:
+
+            def run(on_cleanup: Callable[[Callable[[], None]], None]) -> Any:
+                try:
+                    with use_owner(self):
+                        return fn(on_cleanup)
+                except Exception as exc:
+                    self.handle_error(exc)
+                    return None
+
+        else:
+
+            def run() -> Any:
+                try:
+                    with use_owner(self):
+                        return fn()
+                except Exception as exc:
+                    self.handle_error(exc)
+                    return None
 
         effect = Effect(run)
         self.effects.append(effect)
