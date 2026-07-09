@@ -168,7 +168,7 @@ def current_owner() -> Owner:
 
     owner = get_current_owner()
     if owner is None:
-        raise RuntimeError("lifecycle helpers must be called inside a solid-tk owner")
+        raise RuntimeError("lifecycle helpers must be called inside a taut.tk owner")
     return owner
 
 
@@ -180,7 +180,7 @@ def current_scheduler() -> EventScheduler:
         if owner.scheduler is not None:
             return owner.scheduler
         owner = owner.parent
-    raise RuntimeError("event loop helpers require a mounted solid-tk root")
+    raise RuntimeError("event loop helpers require a mounted taut.tk root")
 
 
 def create_effect(fn: Callable[..., Any]) -> Effect:
@@ -396,7 +396,7 @@ def normalize_child(child: Any) -> Node:
     # This is here so that VStack("Hello World!") renders
     if _primitive_child_factory is None:
         raise TypeError(
-            "primitive children require a text child factory; import solid_tk.tk "
+            "primitive children require a text child factory; taut.tk "
             "before using primitive children"
         )
     return _primitive_child_factory(child)

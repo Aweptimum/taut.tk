@@ -1,6 +1,6 @@
 # Reactive Primitives
 
-`solid-tk` uses small Python wrappers around `reaktiv` signals. The public API
+`taut.tk` uses small Python wrappers around `reaktiv` signals. The public API
 keeps reads and writes separate:
 
 ```python
@@ -13,29 +13,29 @@ set_count(lambda value: value + 1)
 
 ## API
 
-Import signal helpers from `solid_tk.reactive`:
+Import signal helpers from `taut.reactive`:
 
 ```python
-from solid_tk.reactive import Accessor
-from solid_tk.reactive import Mutator
-from solid_tk.reactive import create_memo
-from solid_tk.reactive import create_selector
-from solid_tk.reactive import create_signal
-from solid_tk.reactive import is_accessor
-from solid_tk.reactive import is_mutator
-from solid_tk.reactive import is_signal
-from solid_tk.reactive import on
-from solid_tk.reactive import read
-from solid_tk.reactive import to_accessor
-from solid_tk.reactive import untrack
+from taut.reactive import Accessor
+from taut.reactive import Mutator
+from taut.reactive import create_memo
+from taut.reactive import create_selector
+from taut.reactive import create_signal
+from taut.reactive import is_accessor
+from taut.reactive import is_mutator
+from taut.reactive import is_signal
+from taut.reactive import on
+from taut.reactive import read
+from taut.reactive import to_accessor
+from taut.reactive import untrack
 ```
 
-Import owned effect and lifecycle helpers from `solid_tk.runtime`:
+Import owned effect and lifecycle helpers from `taut.runtime`:
 
 ```python
-from solid_tk.runtime import create_effect
-from solid_tk.runtime import on_cleanup
-from solid_tk.runtime import on_mount
+from taut.runtime import create_effect
+from taut.runtime import on_cleanup
+from taut.runtime import on_mount
 ```
 
 ## Accessors And Mutators
@@ -123,7 +123,7 @@ Use `on_cleanup(fn)` to register teardown:
 on_cleanup(lambda: print("disposed"))
 ```
 
-Lifecycle helpers must be called inside a solid-tk owner, such as during
+Lifecycle helpers must be called inside a taut.tk owner, such as during
 component rendering or an owned effect.
 
 ## `create_selector`

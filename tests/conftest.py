@@ -10,10 +10,10 @@ from fakes import FakeStyle
 from fakes import FakeTk
 from fakes import FakeWidget
 
-from solid_tk import layout
-from solid_tk import nodes
-from solid_tk import tk
-from solid_tk import ttk
+from taut import layout
+from taut import nodes
+from taut import tk
+from taut import ttk
 
 
 @pytest.fixture(autouse=True)

@@ -1,7 +1,7 @@
 """Resource example application."""
 
 from examples.resource_demo.component import resource_demo
-from solid_tk.runtime import create_root
+from taut.runtime import create_root
 
 
 def main() -> None:

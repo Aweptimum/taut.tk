@@ -1,15 +1,15 @@
 import argparse
 from pathlib import Path
 
-from solid_tk.cli.stubs import main_cli as stubby
-from solid_tk.cli.watch import main as watcher
+from taut.cli.stubs import main_cli as stubby
+from taut.cli.watch import main as watcher
 
 
 def main():
-    parser = argparse.ArgumentParser(description="solid-tk development tools.")
+    parser = argparse.ArgumentParser(description="taut.tk development tools.")
     subparsers = parser.add_subparsers(dest="command", required=True)
 
-    parser_stubs = subparsers.add_parser("stubs", help="Generate solid-tk .pyi stubs.")
+    parser_stubs = subparsers.add_parser("stubs", help="Generate taut.tk .pyi stubs.")
     parser_stubs.add_argument("paths", nargs="+", type=Path)
     parser_stubs.add_argument(
         "-o",

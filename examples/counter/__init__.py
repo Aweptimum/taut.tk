@@ -2,8 +2,8 @@
 
 from examples.counter.component import Counter as Counter
 from examples.counter.component import counter as counter
-from solid_tk.reactive import create_signal
-from solid_tk.runtime import create_root
+from taut.reactive import create_signal
+from taut.runtime import create_root
 
 
 def main() -> None:

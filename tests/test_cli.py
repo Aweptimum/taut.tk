@@ -9,8 +9,8 @@ from watchdog.events import FileDeletedEvent
 from watchdog.events import FileModifiedEvent
 from watchdog.events import FileMovedEvent
 
-from solid_tk.cli import stubs
-from solid_tk.cli import watch
+from taut.cli import stubs
+from taut.cli import watch
 
 
 def test_contains_component_def_returns_false_for_missing_file(tmp_path):
@@ -51,8 +51,8 @@ def test_main_refreshes_stale_parent_package_markers(monkeypatch, tmp_path):
         "\n".join(
             [
                 "from typing import Protocol",
-                "from solid_tk import component",
-                "from solid_tk import reactive",
+                "from taut import component",
+                "from taut import reactive",
                 "",
                 "class CounterProps(Protocol):",
                 "    title: reactive.Accessor[str]",
@@ -88,8 +88,8 @@ def test_main_preserves_mutator_prop_types(monkeypatch, tmp_path):
         "\n".join(
             [
                 "from typing import Protocol",
-                "from solid_tk import component",
-                "from solid_tk import reactive",
+                "from taut import component",
+                "from taut import reactive",
                 "",
                 "class CounterProps(Protocol):",
                 "    count: reactive.Accessor[int]",
@@ -114,8 +114,8 @@ def test_main_preserves_mutator_prop_types(monkeypatch, tmp_path):
         "\n"
         "from typing import Any\n"
         "\n"
-        "from solid_tk import reactive\n"
-        "from solid_tk import runtime\n"
+        "from taut import reactive\n"
+        "from taut import runtime\n"
         "\n"
         "def Counter(\n"
         "    *child_nodes: Any,\n"
@@ -132,7 +132,7 @@ def test_main_writes_unannotated_component_as_no_prop_component(monkeypatch, tmp
     source.write_text(
         "\n".join(
             [
-                "from solid_tk import component",
+                "from taut import component",
                 "from . import styles",
                 "",
                 "@component",
@@ -154,7 +154,7 @@ def test_main_writes_unannotated_component_as_no_prop_component(monkeypatch, tmp
         "\n"
         "from typing import Any\n"
         "\n"
-        "from solid_tk import runtime\n"
+        "from taut import runtime\n"
         "\n"
         "def layout_demo(*child_nodes: Any, children: Any = ...) -> runtime.Node: ...\n"
     )
@@ -175,7 +175,7 @@ def test_main_does_not_generate_imported_source_module_stubs(monkeypatch, tmp_pa
     component.write_text(
         "\n".join(
             [
-                "from solid_tk import component",
+                "from taut import component",
                 "from . import styles",
                 "",
                 "@component",
@@ -188,7 +188,7 @@ def test_main_does_not_generate_imported_source_module_stubs(monkeypatch, tmp_pa
     styles.write_text(
         "\n".join(
             [
-                "from solid_tk import style",
+                "from taut import style",
                 "",
                 "page = style.define('page', gap=8)",
                 "grid = style.grid(columns=2)",
@@ -220,7 +220,7 @@ def test_main_does_not_generate_imported_source_module_stubs(monkeypatch, tmp_pa
         "\n"
         "from typing import Any\n"
         "\n"
-        "from solid_tk import runtime\n"
+        "from taut import runtime\n"
         "\n"
         "def layout_demo(*child_nodes: Any, children: Any = ...) -> runtime.Node: ...\n"
     )
@@ -242,7 +242,7 @@ def test_main_preserves_existing_non_component_stubs(monkeypatch, tmp_path):
     component.write_text(
         "\n".join(
             [
-                "from solid_tk import component",
+                "from taut import component",
                 "from . import styles",
                 "",
                 "@component",
@@ -255,7 +255,7 @@ def test_main_preserves_existing_non_component_stubs(monkeypatch, tmp_path):
     styles.write_text(
         "\n".join(
             [
-                "from solid_tk import style",
+                "from taut import style",
                 "",
                 "page = style.define('page', gap=8)",
             ]
@@ -288,7 +288,7 @@ def test_main_does_not_stub_non_component_imported_source_modules(
     component.write_text(
         "\n".join(
             [
-                "from solid_tk import component",
+                "from taut import component",
                 "from examples.demo import helpers",
                 "",
                 "@component",
@@ -323,7 +323,7 @@ def test_main_does_not_stub_non_component_imported_source_modules(
         "\n"
         "from typing import Any\n"
         "\n"
-        "from solid_tk import runtime\n"
+        "from taut import runtime\n"
         "\n"
         "def demo(*child_nodes: Any, children: Any = ...) -> runtime.Node: ...\n"
     )
@@ -337,8 +337,8 @@ def test_main_writes_init_reexports_from_source_init(monkeypatch, tmp_path):
         "\n".join(
             [
                 "from typing import Protocol",
-                "from solid_tk import component",
-                "from solid_tk import reactive",
+                "from taut import component",
+                "from taut import reactive",
                 "",
                 "class CounterProps(Protocol):",
                 "    title: reactive.Accessor[str]",
@@ -387,8 +387,8 @@ def test_main_writes_public_functions_from_source_init(monkeypatch, tmp_path):
         "\n".join(
             [
                 "from typing import Protocol",
-                "from solid_tk import component",
-                "from solid_tk import reactive",
+                "from taut import component",
+                "from taut import reactive",
                 "",
                 "class CounterProps(Protocol):",
                 "    title: reactive.Accessor[str]",
@@ -438,8 +438,8 @@ def test_main_writes_relative_reexports_from_nested_source_init(monkeypatch, tmp
         "\n".join(
             [
                 "from typing import Protocol",
-                "from solid_tk import component",
-                "from solid_tk import reactive",
+                "from taut import component",
+                "from taut import reactive",
                 "",
                 "class CounterProps(Protocol):",
                 "    title: reactive.Accessor[str]",
@@ -497,8 +497,8 @@ def test_watch_modified_init_file_with_component_reexports_regenerates_all(
         "\n".join(
             [
                 "from typing import Protocol",
-                "from solid_tk import component",
-                "from solid_tk import reactive",
+                "from taut import component",
+                "from taut import reactive",
                 "",
                 "class CounterProps(Protocol):",
                 "    title: reactive.Accessor[str]",
@@ -616,8 +616,8 @@ def test_watch_moved_init_file_removes_old_stub_and_regenerates_all(
         "\n".join(
             [
                 "from typing import Protocol",
-                "from solid_tk import component",
-                "from solid_tk import reactive",
+                "from taut import component",
+                "from taut import reactive",
                 "",
                 "class CounterProps(Protocol):",
                 "    title: reactive.Accessor[str]",

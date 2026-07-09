@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from reaktiv import Effect
 
-from solid_tk import reactive
+from taut import reactive
 
 
 def test_create_signal_sets_values_and_updates_from_current_value():

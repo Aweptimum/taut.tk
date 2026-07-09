@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from solid_tk import style
+from taut import style
 
 page = style.define("page", padding=12, gap=10, bg="#e5e7eb")
 title = style.define("title", font=("TkDefaultFont", 13, "bold"))

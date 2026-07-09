@@ -1,18 +1,18 @@
 # Context API
 
-`solid-tk` context is built on the current owner scope. A `Provider` creates a
+`taut.tk` context is built on the current owner scope. A `Provider` creates a
 child owner with a context value, and `use_context()` walks parent owners until
 it finds the nearest matching value.
 
 ## API
 
-Import context helpers from `solid_tk.context`:
+Import context helpers from `taut.context`:
 
 ```python
-from solid_tk.context import Context
-from solid_tk.context import Provider
-from solid_tk.context import create_context
-from solid_tk.context import use_context
+from taut.context import Context
+from taut.context import Provider
+from taut.context import create_context
+from taut.context import use_context
 ```
 
 ## `create_context()`

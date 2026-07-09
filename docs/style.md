@@ -8,7 +8,7 @@ Prefer defining styles as ordinary module variables:
 
 ```python
 # styles.py
-from solid_tk import style
+from taut import style
 
 panel = style.define("panel", bg="#f8fafc", padding=10, gap=8)
 title = style.define(
@@ -27,9 +27,9 @@ stack helpers:
 
 ```python
 from . import styles
-from solid_tk import layout
-from solid_tk import tk
-from solid_tk import ttk
+from taut import layout
+from taut import tk
+from taut import ttk
 
 tk.Label(text="Classic", style=styles.title)
 ttk.Label(text="Themed", style=styles.title)

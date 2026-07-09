@@ -6,14 +6,14 @@ Solid-style mutable objects whose reads are reactive.
 
 ## API
 
-Import store helpers from `solid_tk.stores`:
+Import store helpers from `taut.stores`:
 
 ```python
-from solid_tk.stores import create_mutable
-from solid_tk.stores import create_store
-from solid_tk.stores import produce
-from solid_tk.stores import reconcile
-from solid_tk.stores import unwrap
+from taut.stores import create_mutable
+from taut.stores import create_store
+from taut.stores import produce
+from taut.stores import reconcile
+from taut.stores import unwrap
 ```
 
 ## `create_store`

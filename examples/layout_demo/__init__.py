@@ -1,7 +1,7 @@
 """Layout example application."""
 
 from examples.layout_demo.component import layout_demo
-from solid_tk.runtime import create_root
+from taut.runtime import create_root
 
 
 def main() -> None:

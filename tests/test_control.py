@@ -5,12 +5,12 @@ from typing import cast
 
 import pytest
 
-from solid_tk import component
-from solid_tk import control
-from solid_tk import layout
-from solid_tk import reactive
-from solid_tk import runtime
-from solid_tk import tk
+from taut import component
+from taut import control
+from taut import layout
+from taut import reactive
+from taut import runtime
+from taut import tk
 
 
 def test_switch_renders_first_matching_case_and_fallback():

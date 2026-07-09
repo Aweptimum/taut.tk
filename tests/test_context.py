@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-from solid_tk import Fragment
-from solid_tk import component
-from solid_tk import context
-from solid_tk import layout
-from solid_tk import runtime
-from solid_tk import tk
+from taut import Fragment
+from taut import component
+from taut import context
+from taut import layout
+from taut import runtime
+from taut import tk
 
 
 def test_context_reads_default_value():

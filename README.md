@@ -1,4 +1,4 @@
-# solid-tk
+# taut.tk
 
 A small SolidJS-inspired runtime for Tkinter using
 [reaktiv](https://pypi.org/project/reaktiv/) for fine-grained signals.
@@ -8,15 +8,15 @@ This is currently a prototype that I hope makes Tkinter more fun
 ```python
 from typing import Protocol
 
-from solid_tk import component
-from solid_tk import layout
-from solid_tk import tk
-from solid_tk.reactive import Accessor
-from solid_tk.reactive import Mutator
-from solid_tk.reactive import create_signal
-from solid_tk.runtime import create_root
-from solid_tk.control import For
-from solid_tk.control import Show
+from taut import component
+from taut import layout
+from taut import tk
+from taut.reactive import Accessor
+from taut.reactive import Mutator
+from taut.reactive import create_signal
+from taut.runtime import create_root
+from taut.control import For
+from taut.control import Show
 
 
 class CounterProps(Protocol):
@@ -100,7 +100,7 @@ The beginning of solving that problem is the `@component` decorator. In addition
 
 The next bit is stub-genning; basically a build step. Files in the working directory are scanned for component declarations and a corresponding `.pyi` file is generated, unrolling the typed prop object into a function signature.
 
-This process can be manual with `uv run solid-tk stubs .`, or you can run a watcher to do it live with `uv run solid-tk watch` (it might be brittle though).
+This process can be manual with `uv run taut.tk stubs .`, or you can run a watcher to do it live with `uv run taut.tk watch` (it might be brittle though).
 
 There are some caveats though, as this bit is honestly harder and more involved than the actual framework to get right. It imposes some limitations on import patterns.
 
@@ -111,7 +111,7 @@ When a component module imports sibling modules, prefer `from . import <module>`
 `create_signal()` returns an accessor and a mutator:
 
 ```python
-from solid_tk.reactive import create_signal
+from taut.reactive import create_signal
 count, set_count = create_signal(0)
 count()
 set_count(lambda value: value + 1)
@@ -196,7 +196,7 @@ benchmark:
 uv run python benchmarks/bench_overhead.py
 ```
 
-It compares raw Tk-style widget creation with solid-tk mounting for static
+It compares raw Tk-style widget creation with taut.tk mounting for static
 labels, reactive label props, and a component wrapper. The most useful line is
 the reported extra microseconds per widget, because native Tk/Tcl startup and
 platform display behavior are intentionally excluded.

@@ -232,9 +232,9 @@ def collect_stub_imports(components: list[ComponentStub]) -> list[str]:
     if components or "Any" in external_types:
         imports.append("from typing import Any")
     if components:
-        imports.append("from solid_tk import runtime")
+        imports.append("from taut import runtime")
     if any("reactive." in external_type for external_type in external_types):
-        imports.append("from solid_tk import reactive")
+        imports.append("from taut import reactive")
     return imports
 
 

@@ -1,5 +1,5 @@
 [project]
-name = "solid-tk"
+name = "taut.tk"
 version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
@@ -12,7 +12,7 @@ dependencies = [
 ]
 
 [project.scripts]
-solid-tk = "solid_tk.cli:main"
+taut = "taut.cli:main"
 
 [project.optional-dependencies]
 dev = [

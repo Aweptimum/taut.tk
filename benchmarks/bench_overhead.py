@@ -8,12 +8,12 @@ from collections.abc import Callable
 from types import SimpleNamespace
 from typing import Any
 
-from solid_tk import component
-from solid_tk import layout
-from solid_tk import nodes
-from solid_tk import reactive
-from solid_tk import runtime
-from solid_tk import tk
+from taut import component
+from taut import layout
+from taut import nodes
+from taut import reactive
+from taut import runtime
+from taut import tk
 
 
 class FakeStringVar:
@@ -195,7 +195,7 @@ def format_us(seconds: float) -> str:
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="Benchmark solid-tk mounting overhead against raw Tk-style widget creation."
+        description="Benchmark taut.tk mounting overhead against raw Tk-style widget creation."
     )
     parser.add_argument("--widgets", type=int, default=100, help="labels per app mount")
     parser.add_argument("--iterations", type=int, default=100, help="app mounts per sample")

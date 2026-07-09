@@ -12,10 +12,10 @@ from bench_overhead import FakeWidget
 from bench_overhead import patch_fake_tk
 from reaktiv import batch
 
-from solid_tk import layout
-from solid_tk import reactive
-from solid_tk import runtime
-from solid_tk import tk
+from taut import layout
+from taut import reactive
+from taut import runtime
+from taut import tk
 
 Updater = Callable[[int], None]
 Disposer = Callable[[], None]
@@ -211,7 +211,7 @@ def format_us(seconds: float) -> str:
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="Benchmark solid-tk update propagation against raw Tk-style updates."
+        description="Benchmark taut.tk update propagation against raw Tk-style updates."
     )
     parser.add_argument("--widgets", type=int, default=100, help="labels in multi-widget cases")
     parser.add_argument("--iterations", type=int, default=1_000, help="state updates per sample")

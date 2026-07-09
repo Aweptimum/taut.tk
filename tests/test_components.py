@@ -10,14 +10,14 @@ from typing import cast
 
 import pyright
 
-from solid_tk import Component
-from solid_tk import Fragment
-from solid_tk import component
-from solid_tk import control
-from solid_tk import layout
-from solid_tk import reactive
-from solid_tk import runtime
-from solid_tk import tk
+from taut import Component
+from taut import Fragment
+from taut import component
+from taut import control
+from taut import layout
+from taut import reactive
+from taut import runtime
+from taut import tk
 
 
 def test_function_component_keeps_local_reactive_state_alive():
@@ -381,10 +381,10 @@ def test_class_component_generic_types_self_props(tmp_path: Path):
 
             from typing import Protocol
 
-            from solid_tk import Component
-            from solid_tk import reactive
-            from solid_tk import layout
-from solid_tk import tk
+            from taut import Component
+            from taut import reactive
+            from taut import layout
+from taut import tk
 
 
             class CounterProps(Protocol):

@@ -5,8 +5,8 @@ loop. A resource runs a fetcher on a worker thread, then publishes the result
 back through the current owner's UI dispatcher.
 
 ```python
-from solid_tk.resource import SourceInfo
-from solid_tk.resource import create_resource
+from taut.resource import SourceInfo
+from taut.resource import create_resource
 
 
 def fetch_user(user_id: int, info: SourceInfo[dict, str]) -> dict:
@@ -91,7 +91,7 @@ Other falsy values, such as `0` or `""`, are valid sources.
 
 If the source changes or `refetch()` is called while an older request is still
 running, the newer request wins. The older worker thread is not killed; Python
-does not provide safe general-purpose thread cancellation. Instead, solid-tk
+does not provide safe general-purpose thread cancellation. Instead, taut.tk
 assigns each request an id and ignores completions from stale requests.
 
 That means fetchers should still be written to finish reasonably quickly or use

@@ -2,12 +2,12 @@ from __future__ import annotations
 
 from fakes import FakeStyle
 
-from solid_tk import layout
-from solid_tk import reactive
-from solid_tk import runtime
-from solid_tk import style
-from solid_tk import tk
-from solid_tk import ttk
+from taut import layout
+from taut import reactive
+from taut import runtime
+from taut import style
+from taut import tk
+from taut import ttk
 
 
 def test_tk_namespace_exposes_classic_widgets():

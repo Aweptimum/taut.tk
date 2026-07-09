@@ -3,13 +3,13 @@ from __future__ import annotations
 import pytest
 from fakes import FakeStringVar
 
-from solid_tk import component
-from solid_tk import control
-from solid_tk import layout
-from solid_tk import reactive
-from solid_tk import runtime
-from solid_tk import style
-from solid_tk import tk
+from taut import component
+from taut import control
+from taut import layout
+from taut import reactive
+from taut import runtime
+from taut import style
+from taut import tk
 
 
 def test_entry_value_tracks_signal_changes_when_created_inside_root():

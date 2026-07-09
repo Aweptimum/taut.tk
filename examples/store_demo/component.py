@@ -2,16 +2,16 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from solid_tk import component
-from solid_tk.layout import HStack
-from solid_tk.layout import VStack
-from solid_tk.reactive import create_memo
-from solid_tk.stores import create_store
-from solid_tk.stores import produce
-from solid_tk.stores import reconcile
-from solid_tk.stores import unwrap
-from solid_tk.tk import Button
-from solid_tk.tk import Label
+from taut import component
+from taut.layout import HStack
+from taut.layout import VStack
+from taut.reactive import create_memo
+from taut.stores import create_store
+from taut.stores import produce
+from taut.stores import reconcile
+from taut.stores import unwrap
+from taut.tk import Button
+from taut.tk import Label
 
 
 @dataclass(frozen=True)

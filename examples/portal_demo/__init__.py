@@ -1,7 +1,7 @@
 """Portal example application."""
 
 from examples.portal_demo.component import portal_demo
-from solid_tk.runtime import create_root
+from taut.runtime import create_root
 
 
 def main() -> None:

@@ -7,11 +7,11 @@ from textwrap import dedent
 
 import pyright
 
-from solid_tk import layout
-from solid_tk import reactive
-from solid_tk import runtime
-from solid_tk import style
-from solid_tk import tk
+from taut import layout
+from taut import reactive
+from taut import runtime
+from taut import style
+from taut import tk
 
 
 def test_define_can_name_styles():
@@ -139,7 +139,7 @@ def test_style_rejects_parent_layout_props_for_ttk_widgets():
     floating = style.define("floating", grid={"row": 0})
 
     try:
-        from solid_tk import ttk
+        from taut import ttk
 
         ttk.Label(text="Bad", style=floating)
     except ValueError as exc:
@@ -153,7 +153,7 @@ def test_typed_style_helpers_reject_invalid_props(tmp_path: Path):
     sample.write_text(
         dedent(
             """
-            from solid_tk import style
+            from taut import style
 
             title = style.label(text="Title", fg="blue")
             bad = style.label(not_a_label_prop=True)
@@ -187,7 +187,7 @@ def test_define_keeps_mixed_style_dicts_typed(tmp_path: Path):
     sample.write_text(
         dedent(
             """
-            from solid_tk import style
+            from taut import style
 
             styles = {
                 "title": style.define(text="Title"),
@@ -227,7 +227,7 @@ def test_named_module_styles_keep_static_attributes_visible(tmp_path: Path):
     styles_module.write_text(
         dedent(
             """
-            from solid_tk import style
+            from taut import style
 
             page = style.define("page", gap=8)
             title = style.define("title", text="Title")

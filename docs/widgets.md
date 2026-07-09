@@ -6,14 +6,14 @@ children, Tk-style keyword props, reactive prop values, and layout props.
 Import from:
 
 ```python
-from solid_tk import tk
-from solid_tk import layout
-from solid_tk import ttk
+from taut import tk
+from taut import layout
+from taut import ttk
 ```
 
 ## Classic Tk Namespace
 
-`solid_tk.tk` exports:
+`taut.tk` exports:
 
 ```python
 tk.Tk
@@ -40,7 +40,7 @@ tk.Portal
 tk.Fragment
 ```
 
-`solid_tk.layout` exports the layout helper components:
+`taut.layout` exports the layout helper components:
 
 ```python
 layout.Grid
@@ -59,7 +59,7 @@ mount.widget.mainloop()
 
 ## Themed ttk Namespace
 
-`solid_tk.ttk` exports:
+`taut.ttk` exports:
 
 ```python
 ttk.Frame
@@ -109,7 +109,7 @@ layout.VStack("Hello", 42)
 Use `Fragment(...)` to return multiple children without a wrapper widget:
 
 ```python
-from solid_tk import Fragment
+from taut import Fragment
 
 @component
 def Actions(props):

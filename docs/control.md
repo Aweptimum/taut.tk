@@ -4,7 +4,7 @@ Control-flow nodes are transparent to layout. They produce child nodes, and the
 parent widget decides how those children are packed, gridded, placed, or stacked.
 
 ```python
-from solid_tk import layout
+from taut import layout
 
 layout.VStack(
     tk.Label(text="Before"),
@@ -18,16 +18,16 @@ not create a wrapper frame.
 
 ## API
 
-Import control helpers from `solid_tk.control`:
+Import control helpers from `taut.control`:
 
 ```python
-from solid_tk.control import Dynamic
-from solid_tk.control import ErrorBoundary
-from solid_tk.control import For
-from solid_tk.control import Index
-from solid_tk.control import Match
-from solid_tk.control import Show
-from solid_tk.control import Switch
+from taut.control import Dynamic
+from taut.control import ErrorBoundary
+from taut.control import For
+from taut.control import Index
+from taut.control import Match
+from taut.control import Show
+from taut.control import Switch
 ```
 
 ## `Show`

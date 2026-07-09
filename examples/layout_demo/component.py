@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-from solid_tk import component
-from solid_tk import layout
-from solid_tk import style
-from solid_tk import tk
-from solid_tk import ttk
-from solid_tk.control import For
+from taut import component
+from taut import layout
+from taut import style
+from taut import tk
+from taut import ttk
+from taut.control import For
 
 from . import styles
 

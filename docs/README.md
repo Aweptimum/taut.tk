@@ -1,4 +1,4 @@
-# solid-tk docs
+# taut.tk docs
 
 Start with the project [README](../README.md) for the big-picture tour.
 

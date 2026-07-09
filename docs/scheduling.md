@@ -6,16 +6,16 @@ automatically when their owner is disposed.
 
 ## API
 
-Import scheduling helpers from `solid_tk.runtime`:
+Import scheduling helpers from `taut.runtime`:
 
 ```python
-from solid_tk.runtime import after
-from solid_tk.runtime import defer
-from solid_tk.runtime import interval
-from solid_tk.runtime import to_ui
+from taut.runtime import after
+from taut.runtime import defer
+from taut.runtime import interval
+from taut.runtime import to_ui
 ```
 
-These helpers must be called inside a solid-tk owner, such as during component
+These helpers must be called inside a taut.tk owner, such as during component
 rendering, an effect, `on_mount`, or another owned callback.
 
 ## `after`

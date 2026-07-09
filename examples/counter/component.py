@@ -2,17 +2,17 @@ from __future__ import annotations
 
 from typing import Protocol
 
-from solid_tk import Component
-from solid_tk import component
-from solid_tk.control import For
-from solid_tk.control import Show
-from solid_tk.layout import HStack
-from solid_tk.layout import VStack
-from solid_tk.reactive import Accessor
-from solid_tk.reactive import Mutator
-from solid_tk.reactive import create_signal
-from solid_tk.tk import Button
-from solid_tk.tk import Label
+from taut import Component
+from taut import component
+from taut.control import For
+from taut.control import Show
+from taut.layout import HStack
+from taut.layout import VStack
+from taut.reactive import Accessor
+from taut.reactive import Mutator
+from taut.reactive import create_signal
+from taut.tk import Button
+from taut.tk import Label
 
 
 class CounterProps(Protocol):

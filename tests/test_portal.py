@@ -3,9 +3,9 @@ from __future__ import annotations
 from typing import Any
 from typing import cast
 
-from solid_tk import reactive
-from solid_tk import runtime
-from solid_tk import tk
+from taut import reactive
+from taut import runtime
+from taut import tk
 
 
 def test_portal_mounts_child_in_toplevel():

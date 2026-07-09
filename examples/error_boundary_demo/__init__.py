@@ -1,7 +1,7 @@
 """Error boundary example application."""
 
 from examples.error_boundary_demo.component import error_boundary_demo
-from solid_tk.runtime import create_root
+from taut.runtime import create_root
 
 
 def main() -> None:

@@ -1,4 +1,4 @@
-# solid-tk examples
+# taut.tk examples
 
 Run examples from the repository root with `python -m examples.<name>`.
 

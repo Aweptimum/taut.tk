@@ -2,15 +2,15 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from solid_tk import component
-from solid_tk.context import Provider
-from solid_tk.context import create_context
-from solid_tk.context import use_context
-from solid_tk.layout import HStack
-from solid_tk.layout import VStack
-from solid_tk.reactive import create_signal
-from solid_tk.tk import Button
-from solid_tk.tk import Label
+from taut import component
+from taut.context import Provider
+from taut.context import create_context
+from taut.context import use_context
+from taut.layout import HStack
+from taut.layout import VStack
+from taut.reactive import create_signal
+from taut.tk import Button
+from taut.tk import Label
 
 
 @dataclass(frozen=True)

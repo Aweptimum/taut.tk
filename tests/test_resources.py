@@ -6,11 +6,11 @@ from time import sleep
 from typing import Optional
 from typing import cast
 
-from solid_tk import component
-from solid_tk import reactive
-from solid_tk import resource
-from solid_tk import runtime
-from solid_tk import tk
+from taut import component
+from taut import reactive
+from taut import resource
+from taut import runtime
+from taut import tk
 
 
 def run_pending_ui(widget, *, limit: int = 20) -> None:

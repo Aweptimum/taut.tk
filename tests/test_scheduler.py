@@ -2,9 +2,9 @@ from __future__ import annotations
 
 import threading
 
-from solid_tk import component
-from solid_tk import runtime
-from solid_tk import tk
+from taut import component
+from taut import runtime
+from taut import tk
 
 
 def test_after_runs_once_and_is_cancelled_on_cleanup():

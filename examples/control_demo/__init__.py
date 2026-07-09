@@ -1,7 +1,7 @@
 """Control-flow example application."""
 
 from examples.control_demo.component import control_demo
-from solid_tk.runtime import create_root
+from taut.runtime import create_root
 
 
 def main() -> None:

@@ -2,9 +2,9 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from solid_tk import runtime
-from solid_tk import stores
-from solid_tk import tk
+from taut import runtime
+from taut import stores
+from taut import tk
 
 
 @dataclass(frozen=True)

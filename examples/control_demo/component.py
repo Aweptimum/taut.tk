@@ -1,16 +1,16 @@
 from __future__ import annotations
 
-from solid_tk import component
-from solid_tk.control import Dynamic
-from solid_tk.control import Index
-from solid_tk.control import Match
-from solid_tk.control import Switch
-from solid_tk.layout import HStack
-from solid_tk.layout import VStack
-from solid_tk.reactive import create_memo
-from solid_tk.reactive import create_signal
-from solid_tk.tk import Button
-from solid_tk.tk import Label
+from taut import component
+from taut.control import Dynamic
+from taut.control import Index
+from taut.control import Match
+from taut.control import Switch
+from taut.layout import HStack
+from taut.layout import VStack
+from taut.reactive import create_memo
+from taut.reactive import create_signal
+from taut.tk import Button
+from taut.tk import Label
 
 STATUSES = ("ready", "busy", "done")
 

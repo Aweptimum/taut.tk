@@ -4,18 +4,18 @@ import threading
 import time
 from collections.abc import Callable
 
-from solid_tk import component
-from solid_tk.layout import HStack
-from solid_tk.layout import VStack
-from solid_tk.reactive import create_signal
-from solid_tk.runtime import after
-from solid_tk.runtime import defer
-from solid_tk.runtime import interval
-from solid_tk.runtime import on_mount
-from solid_tk.runtime import to_ui
-from solid_tk.tk import Button
-from solid_tk.tk import Frame
-from solid_tk.tk import Label
+from taut import component
+from taut.layout import HStack
+from taut.layout import VStack
+from taut.reactive import create_signal
+from taut.runtime import after
+from taut.runtime import defer
+from taut.runtime import interval
+from taut.runtime import on_mount
+from taut.runtime import to_ui
+from taut.tk import Button
+from taut.tk import Frame
+from taut.tk import Label
 
 
 @component
