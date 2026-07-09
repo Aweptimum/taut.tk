@@ -40,9 +40,12 @@ def counter(props: CounterProps):
             fallback=lambda: Label(text="Odd"),
         ),
         For(todos, lambda item: Label(text=item), key=lambda item: item),
-        HStack(Button(text="-", on_click=lambda: set_todos(lambda items: items[:-1]))),
-        padx=12,
-        pady=12,
+        HStack(
+            Button(text="-", on_click=lambda: set_todos(lambda items: items[:-1])),
+            gap=6,
+        ),
+        padding=12,
+        gap=6,
     )
 
 count, set_count = create_signal(0)
@@ -120,7 +123,9 @@ Label(text=self.props.name)
 - `Component` with `__init__()/setup()` and `render()`
 - `Props`, where every attribute is an accessor
 - widgets: `Tk`, `Frame`, `Label`, `Button`, `Entry`, `Checkbutton`
-- some layout helpers: `VStack`, `HStack`
+- stack layout helpers: `VStack`, `HStack`, `Item`
+- StyleX-ish style objects with `style.define()`, `style.merge()`, and
+  `style.component()`
 - some control flow: `Show`, `For`, `Switch` / `Match`, `Index`, `Dynamic`
 - context: `create_context()`, `Provider`, `use_context()`
 - resources: `create_resource()` with `loading`, `error`, `state`, `mutate`, `refetch`
@@ -137,6 +142,15 @@ Switch(
 Index(items, lambda item, index: Label(text=lambda: f"{index}: {item()}"))
 Dynamic(selected_component, title="Hello")
 ```
+
+See `examples/layout_demo` for stack spacing, padding, alignment, per-child
+layout overrides, and importable style definitions:
+
+```sh
+python -m examples.layout_demo
+```
+
+See `docs/style.md` for the style helper conventions.
 
 See `examples/control_demo` for a runnable version:
 

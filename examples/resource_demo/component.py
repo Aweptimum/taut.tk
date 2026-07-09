@@ -60,13 +60,11 @@ def resource_demo(props):
     image, actions = create_resource(fetch_image, None, DATASET_IMAGE_URL)
     mutate, refetch = actions
 
-    photo = create_memo(
-        lambda: (
-            resized_photo(image.latest())
-            if image.latest() is not None
-            else None
-        )
-    )
+    def current_photo() -> ImageTk.PhotoImage | None:
+        data = image.latest()
+        return resized_photo(data) if data is not None else None
+
+    photo = create_memo(current_photo)
 
     def retry() -> None:
         set_progress(0)
@@ -106,11 +104,12 @@ def resource_demo(props):
         HStack(
             Button(text="Refetch", on_click=retry),
             Button(text="Clear", on_click=clear),
+            gap=6,
         ),
         Label(text=lambda: f"state={image.state()} loading={image.loading()}"),
         Label(text=lambda: f"error={image.error()}" if image.error() else ""),
-        padx=8,
-        pady=8,
+        padding=8,
+        gap=6,
     )
 
 

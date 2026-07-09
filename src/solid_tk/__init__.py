@@ -7,6 +7,7 @@ from . import reactive
 from . import resource
 from . import runtime
 from . import stores
+from . import style
 from . import tk_props
 from . import widgets
 from .component import Component
@@ -21,6 +22,7 @@ __all__ = [
     "reactive",
     "resource",
     "runtime",
+    "style",
     "stores",
     "tk_props",
     "widgets",

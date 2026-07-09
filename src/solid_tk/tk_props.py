@@ -30,6 +30,8 @@ Fill: TypeAlias = Literal["none", "x", "y", "both"]
 Relief: TypeAlias = Literal["flat", "groove", "raised", "ridge", "solid", "sunken"]
 Justify: TypeAlias = Literal["left", "center", "right"]
 State: TypeAlias = Literal["normal", "active", "disabled"]
+StackAlign: TypeAlias = Literal["start", "center", "end", "stretch"]
+Padding: TypeAlias = int | tuple[int, int]
 
 
 class PackOptions(TypedDict, total=False):
@@ -175,4 +177,63 @@ class TkProps(TypedDict, total=False):
 
 
 class StackProps(FrameProps, total=False):
-    pass
+    align: StackAlign
+    fill: Fill
+    gap: int
+    grow: bool
+    padding: Padding
+
+
+class StackItemProps(TypedDict, total=False):
+    align: StackAlign
+    fill: Fill
+    grow: bool
+    pack: PackOptions
+
+
+class StyleProps(StackProps, total=False):
+    title: Reactive[str]
+    anchor: Reactive[Anchor]
+    font: Reactive[str | tuple[Any, ...]]
+    image: Reactive[Any]
+    justify: Reactive[Justify]
+    text: Reactive[str]
+    textvariable: Reactive[Any]
+    underline: Reactive[int]
+    wraplength: Reactive[int]
+    bitmap: Reactive[str]
+    compound: Reactive[str]
+    activebackground: Reactive[str]
+    activeforeground: Reactive[str]
+    command: Command
+    default: Reactive[Literal["normal", "active", "disabled"]]
+    disabledforeground: Reactive[str]
+    on_click: Command
+    overrelief: Reactive[Relief]
+    repeatdelay: Reactive[int]
+    repeatinterval: Reactive[int]
+    state: Reactive[State | Literal["readonly"]]
+    disabledbackground: Reactive[str]
+    exportselection: Reactive[bool]
+    insertbackground: Reactive[str]
+    insertborderwidth: Reactive[int]
+    insertofftime: Reactive[int]
+    insertontime: Reactive[int]
+    insertwidth: Reactive[int]
+    invalidcommand: Command
+    readonlybackground: Reactive[str]
+    selectbackground: Reactive[str]
+    selectborderwidth: Reactive[int]
+    selectforeground: Reactive[str]
+    show: Reactive[str]
+    validate: Reactive[str]
+    validatecommand: Command
+    value: Reactive[str]
+    on_input: Mutator[str]
+    xscrollcommand: Command
+    indicatoron: Reactive[bool]
+    offvalue: Reactive[Any]
+    onvalue: Reactive[Any]
+    selectcolor: Reactive[str]
+    selectimage: Reactive[Any]
+    variable: Reactive[Any]

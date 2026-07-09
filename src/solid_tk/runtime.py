@@ -353,5 +353,15 @@ def create_root(app: Callable[[], Node] | Node, *, title: str | None = None) -> 
     with use_owner(root_node.owner):
         child = app() if callable(app) and not hasattr(app, "mount") else app
     node = root_node.append_child(child)
+    expand_root_child(node)
     node.mount(root)
     return Mount(node=root_node, widget=root)
+
+
+def expand_root_child(node: Node) -> None:
+    target: Any = node
+    while hasattr(target, "rendered"):
+        target = target.rendered
+    layout = getattr(target, "layout", None)
+    if layout == {"pack": {}}:
+        target.layout = {"pack": {"fill": "both", "expand": True}}

@@ -76,3 +76,108 @@ def test_widget_binding_unwraps_forwarded_callable_prop_value():
     set_count(1)
 
     assert label.props["text"] == "Count: 1"
+
+
+def test_create_root_expands_default_app_layout():
+    mount = runtime.create_root(
+        lambda: widgets.VStack(widgets.Label(text="Hello")),
+        title="Demo",
+    )
+    app = mount.widget.children[0]
+
+    assert app.pack_kwargs == {"fill": "both", "expand": True}
+
+
+def test_create_root_preserves_explicit_app_layout():
+    mount = runtime.create_root(
+        lambda: widgets.VStack(widgets.Label(text="Hello"), pack={"side": "left"}),
+        title="Demo",
+    )
+    app = mount.widget.children[0]
+
+    assert app.pack_kwargs == {"side": "left"}
+
+
+def test_vstack_defaults_match_existing_layout():
+    mount = runtime.create_root(
+        lambda: widgets.VStack(widgets.Label(text="One"), widgets.Label(text="Two")),
+        title="Demo",
+    )
+    first, second = mount.widget.children[0].children
+
+    assert first.pack_kwargs == {
+        "side": "top",
+        "anchor": "w",
+        "expand": False,
+        "fill": "x",
+    }
+    assert second.pack_kwargs == first.pack_kwargs
+
+
+def test_stack_padding_gap_and_alignment_are_applied():
+    mount = runtime.create_root(
+        lambda: widgets.VStack(
+            widgets.Label(text="One"),
+            widgets.Label(text="Two"),
+            padding=(8, 4),
+            gap=6,
+            align="center",
+            fill="none",
+        ),
+        title="Demo",
+    )
+    stack = mount.widget.children[0]
+    first, second = stack.children
+
+    assert stack.props["padx"] == 8
+    assert stack.props["pady"] == 4
+    assert first.pack_kwargs == {
+        "side": "top",
+        "anchor": "center",
+        "expand": False,
+        "pady": (0, 6),
+    }
+    assert second.pack_kwargs == {
+        "side": "top",
+        "anchor": "center",
+        "expand": False,
+    }
+
+
+def test_hstack_item_overrides_stack_child_layout():
+    mount = runtime.create_root(
+        lambda: widgets.HStack(
+            widgets.Label(text="Fixed"),
+            widgets.Item(widgets.Label(text="Growing"), grow=True, fill="both", align="stretch"),
+            gap=3,
+        ),
+        title="Demo",
+    )
+    fixed, growing = mount.widget.children[0].children
+
+    assert fixed.pack_kwargs == {
+        "side": "left",
+        "anchor": "center",
+        "expand": False,
+        "padx": (0, 3),
+    }
+    assert growing.pack_kwargs == {
+        "side": "left",
+        "anchor": "center",
+        "expand": True,
+        "fill": "both",
+    }
+
+
+def test_stack_preserves_explicit_grid_and_place_layouts():
+    mount = runtime.create_root(
+        lambda: widgets.VStack(
+            widgets.Label(text="Grid", grid={"row": 0, "column": 1}),
+            widgets.Label(text="Place", place={"x": 10, "y": 20}),
+        ),
+        title="Demo",
+    )
+    grid_child, place_child = mount.widget.children[0].children
+
+    assert grid_child.grid_kwargs == {"row": 0, "column": 1}
+    assert place_child.place_kwargs == {"x": 10, "y": 20}

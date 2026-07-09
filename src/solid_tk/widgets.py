@@ -7,6 +7,7 @@ from typing import Unpack
 
 from .props import NodeProps
 from .runtime import MountedNode
+from .runtime import normalize_child
 from .scheduler import TkScheduler
 from .tk_props import ButtonProps
 from .tk_props import CheckbuttonProps
@@ -14,11 +15,16 @@ from .tk_props import EntryProps
 from .tk_props import FrameProps
 from .tk_props import LabelProps
 from .tk_props import LayoutProps
+from .tk_props import Padding
+from .tk_props import StackAlign
+from .tk_props import StackItemProps
 from .tk_props import StackProps
 from .tk_props import TkProps
 
 LAYOUT_KEYS = {"pack", "grid", "place"}
 INTERNAL_KEYS = {"children", "layout"}
+STACK_KEYS = {"align", "fill", "gap", "grow", "padding"}
+STACK_ITEM_KEYS = {"align", "fill", "grow", "pack"}
 
 
 class WidgetNode(MountedNode):
@@ -196,21 +202,25 @@ def Checkbutton(*children: Any, **props: Unpack[CheckbuttonProps]) -> WidgetNode
     return WidgetNode(tk.Checkbutton, children=children, layout=layout, **props)
 
 
+def Item(child: Any, **props: Unpack[StackItemProps]) -> Any:
+    node = normalize_child(child)
+    setattr(node, "_stack_layout", dict(props))
+    return node
+
+
 def VStack(*children: Any, **props: Unpack[StackProps]) -> WidgetNode:
+    stack = consume_stack(props, axis="vertical")
     layout = consume_layout(props)
     node = WidgetNode(tk.Frame, children=children, layout=layout, **props)
-    for child in node.children:
-        if isinstance(child, WidgetNode):
-            child.layout = {"pack": {"side": "top", "fill": "x", "anchor": "w"}}
+    apply_stack_layout(node.children, stack)
     return node
 
 
 def HStack(*children: Any, **props: Unpack[StackProps]) -> WidgetNode:
+    stack = consume_stack(props, axis="horizontal")
     layout = consume_layout(props)
     node = WidgetNode(tk.Frame, children=children, layout=layout, **props)
-    for child in node.children:
-        if isinstance(child, WidgetNode):
-            child.layout = {"pack": {"side": "left", "anchor": "center"}}
+    apply_stack_layout(node.children, stack)
     return node
 
 
@@ -219,3 +229,79 @@ def consume_layout(props: LayoutProps) -> dict[str, Any]:
         if key in props:
             return {key: props.pop(key)}
     return {"pack": {}}
+
+
+def consume_stack(props: Any, *, axis: str) -> dict[str, Any]:
+    stack = {key: props.pop(key) for key in STACK_KEYS if key in props}
+
+    if "padding" in stack:
+        padx, pady = resolve_padding(stack["padding"])
+        props.setdefault("padx", padx)
+        props.setdefault("pady", pady)
+
+    stack.setdefault("axis", axis)
+    stack.setdefault("align", "stretch" if axis == "vertical" else "center")
+    stack.setdefault("fill", "x" if axis == "vertical" else "none")
+    stack.setdefault("gap", 0)
+    stack.setdefault("grow", False)
+    return stack
+
+
+def resolve_padding(padding: Padding) -> tuple[int, int]:
+    if isinstance(padding, tuple):
+        return padding
+    return padding, padding
+
+
+def apply_stack_layout(children: list[Any], stack: dict[str, Any]) -> None:
+    last_index = len(children) - 1
+    for index, child in enumerate(children):
+        if not isinstance(child, WidgetNode):
+            continue
+        if "grid" in child.layout or "place" in child.layout:
+            continue
+
+        item = stack_item_layout(child)
+        pack = stack_pack_options(stack, item, last=index == last_index)
+        pack.update(child.layout.get("pack", {}))
+        pack.update(item.get("pack", {}))
+        child.layout = {"pack": pack}
+
+
+def stack_item_layout(child: WidgetNode) -> dict[str, Any]:
+    layout = getattr(child, "_stack_layout", {})
+    return {key: value for key, value in layout.items() if key in STACK_ITEM_KEYS}
+
+
+def stack_pack_options(
+    stack: dict[str, Any],
+    item: dict[str, Any],
+    *,
+    last: bool,
+) -> dict[str, Any]:
+    axis = stack["axis"]
+    align = item.get("align", stack["align"])
+    fill = item.get("fill", stack["fill"])
+    grow = item.get("grow", stack["grow"])
+
+    pack: dict[str, Any] = {
+        "side": "top" if axis == "vertical" else "left",
+        "anchor": stack_anchor(axis, align),
+        "expand": grow,
+    }
+    if fill != "none":
+        pack["fill"] = fill
+    if stack["gap"] and not last:
+        if axis == "vertical":
+            pack["pady"] = (0, stack["gap"])
+        else:
+            pack["padx"] = (0, stack["gap"])
+    return pack
+
+
+def stack_anchor(axis: str, align: StackAlign) -> str:
+    if align == "stretch":
+        return "w" if axis == "vertical" else "center"
+    if axis == "vertical":
+        return {"start": "w", "center": "center", "end": "e"}[align]
+    return {"start": "n", "center": "center", "end": "s"}[align]
