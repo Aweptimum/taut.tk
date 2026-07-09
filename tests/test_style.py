@@ -7,10 +7,11 @@ from textwrap import dedent
 
 import pyright
 
+from solid_tk import layout
 from solid_tk import reactive
 from solid_tk import runtime
 from solid_tk import style
-from solid_tk import widgets
+from solid_tk import tk
 
 
 def test_define_can_name_styles():
@@ -50,13 +51,13 @@ def test_merge_applies_styles_in_order_and_ignores_falsey_values():
     assert props.name == "Muted"
 
 
-def test_merged_styles_can_be_applied_to_widgets():
+def test_merged_styles_can_be_applied_to_tk():
     page_style = style.define("page", padding=8, gap=6)
     title_style = style.define("title", fg="blue", font=("TkDefaultFont", 13, "bold"))
 
     mount = runtime.create_root(
-        lambda: widgets.VStack(
-            widgets.Label(text="Styled", **style.merge(title_style)),
+        lambda: layout.VStack(
+            tk.Label(text="Styled", **style.merge(title_style)),
             **style.merge(page_style),
         ),
         title="Demo",
@@ -73,7 +74,7 @@ def test_merged_styles_can_be_applied_to_widgets():
 def test_component_applies_styles_defaults_and_call_overrides():
     base = style.define(fg="black", padx=4)
     accent = style.define(fg="blue", pady=2)
-    StyledLabel = style.component(widgets.Label, base, accent, text="Styled")
+    StyledLabel = style.component(tk.Label, base, accent, text="Styled")
 
     mount = runtime.create_root(
         lambda: StyledLabel(fg="red"),
@@ -88,12 +89,12 @@ def test_component_applies_styles_defaults_and_call_overrides():
 
 
 def test_component_preserves_children():
-    StyledStack = style.component(widgets.VStack, style.define(gap=6, padding=8))
+    StyledStack = style.component(layout.VStack, style.define(gap=6, padding=8))
 
     mount = runtime.create_root(
         lambda: StyledStack(
-            widgets.Label(text="One"),
-            widgets.Label(text="Two"),
+            tk.Label(text="One"),
+            tk.Label(text="Two"),
         ),
         title="Demo",
     )
@@ -111,7 +112,7 @@ def test_style_values_can_be_reactive():
     accent = style.define("accent", fg=color)
 
     mount = runtime.create_root(
-        lambda: widgets.Label(text="Accent", **style.merge(accent)),
+        lambda: tk.Label(text="Accent", **style.merge(accent)),
         title="Demo",
     )
     label = mount.widget.children[0]
@@ -121,6 +122,30 @@ def test_style_values_can_be_reactive():
     set_color("green")
 
     assert label.props["fg"] == "green"
+
+
+def test_style_rejects_parent_layout_props_for_tk_widgets():
+    floating = style.define("floating", pack={"fill": "x"})
+
+    try:
+        tk.Label(text="Bad", style=floating)
+    except ValueError as exc:
+        assert str(exc) == "style cannot define parent layout props: pack"
+    else:
+        raise AssertionError("expected style layout props to be rejected")
+
+
+def test_style_rejects_parent_layout_props_for_ttk_widgets():
+    floating = style.define("floating", grid={"row": 0})
+
+    try:
+        from solid_tk import ttk
+
+        ttk.Label(text="Bad", style=floating)
+    except ValueError as exc:
+        assert str(exc) == "style cannot define parent layout props: grid"
+    else:
+        raise AssertionError("expected style layout props to be rejected")
 
 
 def test_typed_style_helpers_reject_invalid_props(tmp_path: Path):

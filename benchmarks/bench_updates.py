@@ -12,9 +12,10 @@ from bench_overhead import FakeWidget
 from bench_overhead import patch_fake_tk
 from reaktiv import batch
 
+from solid_tk import layout
 from solid_tk import reactive
 from solid_tk import runtime
-from solid_tk import widgets
+from solid_tk import tk
 
 Updater = Callable[[int], None]
 Disposer = Callable[[], None]
@@ -47,7 +48,7 @@ def raw_one_label(_count: int) -> tuple[Updater, Disposer]:
 def solid_one_label(_count: int) -> tuple[Updater, Disposer]:
     value, set_value = reactive.create_signal(0)
     mount = runtime.create_root(
-        lambda: widgets.Label(text=lambda: f"Value {value()}"),
+        lambda: tk.Label(text=lambda: f"Value {value()}"),
         title="Bench",
     )
 
@@ -72,9 +73,9 @@ def raw_fanout(count: int) -> tuple[Updater, Disposer]:
 def solid_fanout(count: int) -> tuple[Updater, Disposer]:
     value, set_value = reactive.create_signal(0)
     mount = runtime.create_root(
-        lambda: widgets.VStack(
+        lambda: layout.VStack(
             *(
-                widgets.Label(text=lambda index=index: f"Value {value()} {index}")
+                tk.Label(text=lambda index=index: f"Value {value()} {index}")
                 for index in range(count)
             )
         ),
@@ -104,9 +105,9 @@ def solid_update_one_of_many(count: int) -> tuple[Updater, Disposer]:
     accessors = [accessor for accessor, _set_accessor in signals]
     mutators = [set_accessor for _accessor, set_accessor in signals]
     mount = runtime.create_root(
-        lambda: widgets.VStack(
+        lambda: layout.VStack(
             *(
-                widgets.Label(
+                tk.Label(
                     text=lambda index=index: f"Value {accessors[index]()} {index}"
                 )
                 for index in range(count)
@@ -141,9 +142,9 @@ def solid_update_all(count: int) -> tuple[Updater, Disposer]:
     accessors = [accessor for accessor, _set_accessor in signals]
     mutators = [set_accessor for _accessor, set_accessor in signals]
     mount = runtime.create_root(
-        lambda: widgets.VStack(
+        lambda: layout.VStack(
             *(
-                widgets.Label(
+                tk.Label(
                     text=lambda index=index: f"Value {accessors[index]()} {index}"
                 )
                 for index in range(count)

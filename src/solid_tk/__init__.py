@@ -2,6 +2,7 @@
 
 from . import context
 from . import control
+from . import layout
 from . import props
 from . import reactive
 from . import resource
@@ -11,7 +12,6 @@ from . import style
 from . import tk
 from . import tk_props
 from . import ttk
-from . import widgets
 from .component import Component
 from .component import component
 from .runtime import Fragment
@@ -22,6 +22,7 @@ __all__ = [
     "component",
     "context",
     "control",
+    "layout",
     "props",
     "reactive",
     "resource",
@@ -31,5 +32,4 @@ __all__ = [
     "tk",
     "tk_props",
     "ttk",
-    "widgets",
 ]

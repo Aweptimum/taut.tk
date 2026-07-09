@@ -7,6 +7,7 @@ Import from:
 
 ```python
 from solid_tk import tk
+from solid_tk import layout
 from solid_tk import ttk
 ```
 
@@ -17,16 +18,21 @@ from solid_tk import ttk
 ```python
 tk.Tk
 tk.Frame
-tk.Grid
 tk.Label
 tk.Button
 tk.Entry
 tk.Checkbutton
-tk.VStack
-tk.HStack
-tk.Item
 tk.Portal
 tk.Fragment
+```
+
+`solid_tk.layout` exports the layout helper components:
+
+```python
+layout.Grid
+layout.VStack
+layout.HStack
+layout.Item
 ```
 
 `tk.Tk` is normally created for you by `create_root()`:
@@ -58,7 +64,7 @@ ttk widgets support ttk styling through `style=...`; see [Styles](style.md).
 Children are passed positionally:
 
 ```python
-tk.VStack(
+layout.VStack(
     tk.Label(text="Name"),
     tk.Entry(value=name, on_input=set_name),
 )
@@ -68,7 +74,7 @@ Primitive children are rendered with the widget layer's text-child factory,
 which currently creates `tk.Label(text=str(child))`:
 
 ```python
-tk.VStack("Hello", 42)
+layout.VStack("Hello", 42)
 ```
 
 Use `Fragment(...)` to return multiple children without a wrapper widget:
@@ -153,7 +159,7 @@ Avoid mixing Tk geometry managers inside the same parent. If one child uses
 their visible children.
 
 ```python
-tk.VStack(
+layout.VStack(
     tk.Label(text="One"),
     tk.Label(text="Two"),
     padding=12,
@@ -172,9 +178,9 @@ Stack props:
 Use `Item(child, ...)` for per-child stack overrides:
 
 ```python
-tk.VStack(
-    tk.Item(tk.Label(text="Title"), align="center"),
-    tk.Item(tk.Button(text="Save"), fill="none"),
+layout.VStack(
+    layout.Item(tk.Label(text="Title"), align="center"),
+    layout.Item(tk.Button(text="Save"), fill="none"),
 )
 ```
 
@@ -190,7 +196,7 @@ layout.
 children. It works well with transparent control flow:
 
 ```python
-tk.Grid(
+layout.Grid(
     For(images, lambda image: ImageTile(image), key=lambda image: image["id"]),
     columns=2,
     gap=6,
@@ -216,7 +222,7 @@ return transparent nodes do not create wrapper frames. They expose their child
 nodes to the parent:
 
 ```python
-tk.VStack(
+layout.VStack(
     tk.Label(text="Before"),
     For(items, lambda item: tk.Label(text=item), key=lambda item: item),
     tk.Label(text="After"),
@@ -233,7 +239,7 @@ labels.
 
 ```python
 tk.Portal(
-    lambda: tk.VStack(tk.Label(text="Dialog")),
+    lambda: layout.VStack(tk.Label(text="Dialog")),
     title="Dialog",
     on_close=lambda: set_open(False),
 )
@@ -249,7 +255,7 @@ Pass `style=...` to classic Tk widgets, ttk widgets, and stack helpers:
 ```python
 tk.Label(text="Classic", style=styles.title)
 ttk.Label(text="Themed", style=styles.title)
-tk.VStack(style=styles.panel)
+layout.VStack(style=styles.panel)
 ```
 
 Classic Tk widgets unpack style props directly. ttk widgets configure and use a

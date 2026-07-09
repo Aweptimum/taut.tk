@@ -8,28 +8,33 @@ from fakes import FakeStyle
 from fakes import FakeTk
 from fakes import FakeWidget
 
+from solid_tk import layout
+from solid_tk import nodes
+from solid_tk import tk
 from solid_tk import ttk
-from solid_tk import widgets
 
 
 @pytest.fixture(autouse=True)
 def fake_tk(monkeypatch):
     FakeStyle.configured = {}
     ttk._configured_styles.clear()
-    monkeypatch.setattr(
-        widgets,
-        "tk",
-        SimpleNamespace(
-            Button=FakeWidget,
-            Checkbutton=FakeWidget,
-            Entry=FakeWidget,
-            Frame=FakeWidget,
-            Label=FakeWidget,
-            StringVar=FakeStringVar,
-            Tk=FakeTk,
-            Toplevel=FakeWidget,
-        ),
+    fake_tk = SimpleNamespace(
+        Button=FakeWidget,
+        Checkbutton=FakeWidget,
+        Entry=FakeWidget,
+        Frame=FakeWidget,
+        Label=FakeWidget,
+        StringVar=FakeStringVar,
+        Tk=FakeTk,
+        Toplevel=FakeWidget,
     )
+    monkeypatch.setattr(
+        tk,
+        "tk",
+        fake_tk,
+    )
+    monkeypatch.setattr(layout, "tk", fake_tk)
+    monkeypatch.setattr(nodes, "tk", fake_tk)
     monkeypatch.setattr(
         ttk,
         "ttk",

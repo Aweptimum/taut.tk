@@ -6,11 +6,11 @@ from solid_tk import component
 from solid_tk.context import Provider
 from solid_tk.context import create_context
 from solid_tk.context import use_context
+from solid_tk.layout import HStack
+from solid_tk.layout import VStack
 from solid_tk.reactive import create_signal
-from solid_tk.widgets import Button
-from solid_tk.widgets import HStack
-from solid_tk.widgets import Label
-from solid_tk.widgets import VStack
+from solid_tk.tk import Button
+from solid_tk.tk import Label
 
 
 @dataclass(frozen=True)

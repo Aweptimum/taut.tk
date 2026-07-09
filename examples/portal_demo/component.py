@@ -2,12 +2,12 @@ from __future__ import annotations
 
 from solid_tk import component
 from solid_tk.control import Show
+from solid_tk.layout import HStack
+from solid_tk.layout import VStack
 from solid_tk.reactive import create_signal
+from solid_tk.tk import Button
+from solid_tk.tk import Label
 from solid_tk.tk import Portal
-from solid_tk.widgets import Button
-from solid_tk.widgets import HStack
-from solid_tk.widgets import Label
-from solid_tk.widgets import VStack
 
 
 @component

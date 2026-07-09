@@ -7,9 +7,10 @@ import pytest
 
 from solid_tk import component
 from solid_tk import control
+from solid_tk import layout
 from solid_tk import reactive
 from solid_tk import runtime
-from solid_tk import widgets
+from solid_tk import tk
 
 
 def test_switch_renders_first_matching_case_and_fallback():
@@ -17,9 +18,9 @@ def test_switch_renders_first_matching_case_and_fallback():
 
     mount = runtime.create_root(
         lambda: control.Switch(
-            control.Match(lambda: mode() == "a", lambda: widgets.Label(text="A")),
-            control.Match(lambda: mode() == "b", lambda: widgets.Label(text="B")),
-            fallback=lambda: widgets.Label(text="fallback"),
+            control.Match(lambda: mode() == "a", lambda: tk.Label(text="A")),
+            control.Match(lambda: mode() == "b", lambda: tk.Label(text="B")),
+            fallback=lambda: tk.Label(text="fallback"),
         ),
         title="Demo",
     )
@@ -43,9 +44,9 @@ def test_switch_renders_initial_fallback_when_no_case_matches():
     mount = runtime.create_root(
         lambda: control.Switch(
             control.Match(
-                lambda: mode() == "ready", lambda: widgets.Label(text="Ready")
+                lambda: mode() == "ready", lambda: tk.Label(text="Ready")
             ),
-            fallback=lambda: widgets.Label(text="Idle"),
+            fallback=lambda: tk.Label(text="Idle"),
         ),
         title="Demo",
     )
@@ -57,10 +58,10 @@ def test_switch_renders_initial_fallback_when_no_case_matches():
 
 def test_show_mounts_active_child_as_fragment():
     mount = runtime.create_root(
-        lambda: widgets.VStack(
-            widgets.Label(text="Before"),
-            control.Show(True, lambda: widgets.Label(text="Shown")),
-            widgets.Label(text="After"),
+        lambda: layout.VStack(
+            tk.Label(text="Before"),
+            control.Show(True, lambda: tk.Label(text="Shown")),
+            tk.Label(text="After"),
         ),
         title="Demo",
     )
@@ -81,7 +82,7 @@ def test_index_reuses_nodes_by_index_and_updates_item_accessors():
     mount = runtime.create_root(
         lambda: control.Index(
             items,
-            lambda item, index: widgets.Label(text=lambda: f"{index}:{item()}"),
+            lambda item, index: tk.Label(text=lambda: f"{index}:{item()}"),
         ),
         title="Demo",
     )
@@ -110,14 +111,14 @@ def test_for_mounts_repeated_children_as_fragment():
     items, _set_items = reactive.create_signal(["a", "b"])
 
     mount = runtime.create_root(
-        lambda: widgets.VStack(
-            widgets.Label(text="Before"),
+        lambda: layout.VStack(
+            tk.Label(text="Before"),
             control.For(
                 items,
-                lambda item: widgets.Label(text=item),
+                lambda item: tk.Label(text=item),
                 key=lambda item: item,
             ),
-            widgets.Label(text="After"),
+            tk.Label(text="After"),
         ),
         title="Demo",
     )
@@ -138,11 +139,11 @@ def test_dynamic_switches_component_factories():
 
     @component
     def Red(props):
-        return widgets.Label(text="red")
+        return tk.Label(text="red")
 
     @component
     def Blue(props):
-        return widgets.Label(text="blue")
+        return tk.Label(text="blue")
 
     set_selected(lambda _: Red)
     mount = runtime.create_root(lambda: control.Dynamic(selected), title="Demo")
@@ -163,7 +164,7 @@ def test_dynamic_forwards_reactive_props_to_selected_component():
 
     @component
     def Detail(props):
-        return widgets.Label(text=lambda: f"Detail: {props.item()}")
+        return tk.Label(text=lambda: f"Detail: {props.item()}")
 
     set_selected(lambda _: Detail)
     mount = runtime.create_root(
@@ -185,7 +186,7 @@ def test_error_boundary_renders_fallback_when_child_render_raises():
     mount = runtime.create_root(
         lambda: control.ErrorBoundary(
             Broken,
-            fallback=lambda error, reset: widgets.Label(text=f"Caught: {error}"),
+            fallback=lambda error, reset: tk.Label(text=f"Caught: {error}"),
         ),
         title="Demo",
     )
@@ -220,8 +221,8 @@ def test_error_boundary_catches_child_reactive_update_errors():
 
     mount = runtime.create_root(
         lambda: control.ErrorBoundary(
-            lambda: widgets.Label(text=text),
-            fallback=lambda error, reset: widgets.Label(text=f"Caught: {error}"),
+            lambda: tk.Label(text=text),
+            fallback=lambda error, reset: tk.Label(text=f"Caught: {error}"),
         ),
         title="Demo",
     )
@@ -248,12 +249,12 @@ def test_error_boundary_can_replace_show_after_reactive_child_error():
                 raise ValueError("bad value")
             return props.value()
 
-        return widgets.Label(text=text)
+        return tk.Label(text=text)
 
     mount = runtime.create_root(
         lambda: control.ErrorBoundary(
             lambda: control.Show(True, lambda: Risky(value=value)),
-            fallback=lambda error, reset: widgets.Label(text=f"Caught: {error}"),
+            fallback=lambda error, reset: tk.Label(text=f"Caught: {error}"),
         ),
         title="Demo",
     )
@@ -278,14 +279,14 @@ def test_error_boundary_reset_retries_child_rendering():
         return value()
 
     def fallback(error, reset):
-        return widgets.Button(
+        return tk.Button(
             text=f"Reset from {error}",
             command=lambda: (set_value("ok"), reset()),
         )
 
     mount = runtime.create_root(
         lambda: control.ErrorBoundary(
-            lambda: widgets.Label(text=text), fallback=fallback
+            lambda: tk.Label(text=text), fallback=fallback
         ),
         title="Demo",
     )
@@ -310,7 +311,7 @@ def test_error_boundary_fallback_errors_bubble_to_parent_boundary():
     mount = runtime.create_root(
         lambda: control.ErrorBoundary(
             lambda: control.ErrorBoundary(Broken, fallback=BrokenFallback),
-            fallback=lambda error, reset: widgets.Label(text=f"Outer: {error}"),
+            fallback=lambda error, reset: tk.Label(text=f"Outer: {error}"),
         ),
         title="Demo",
     )
@@ -327,12 +328,12 @@ def test_error_boundary_does_not_catch_deferred_callback_errors():
     @component
     def App(props):
         runtime.defer(boom)
-        return widgets.Label(text="Ready")
+        return tk.Label(text="Ready")
 
     mount = runtime.create_root(
         lambda: control.ErrorBoundary(
             lambda: App(),
-            fallback=lambda error, reset: widgets.Label(text=f"Caught: {error}"),
+            fallback=lambda error, reset: tk.Label(text=f"Caught: {error}"),
         ),
         title="Demo",
     )

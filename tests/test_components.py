@@ -14,18 +14,19 @@ from solid_tk import Component
 from solid_tk import Fragment
 from solid_tk import component
 from solid_tk import control
+from solid_tk import layout
 from solid_tk import reactive
 from solid_tk import runtime
-from solid_tk import widgets
+from solid_tk import tk
 
 
 def test_function_component_keeps_local_reactive_state_alive():
     @component
     def Counter(props):
         count, set_count = reactive.create_signal(0)
-        return widgets.VStack(
-            widgets.Label(text=lambda: f"{props.title()}: {count()}"),
-            widgets.Button(
+        return layout.VStack(
+            tk.Label(text=lambda: f"{props.title()}: {count()}"),
+            tk.Button(
                 text="Increment", command=lambda: set_count(lambda n: n + 1)
             ),
         )
@@ -48,7 +49,7 @@ def test_create_memo_derives_reactive_values():
     @component
     def Counter(props):
         doubled = reactive.create_memo(lambda: count() * 2)
-        return widgets.Label(text=lambda: f"Double: {doubled()}")
+        return tk.Label(text=lambda: f"Double: {doubled()}")
 
     mount = runtime.create_root(Counter, title="Demo")
     label = mount.widget.children[0]
@@ -69,7 +70,7 @@ def test_function_component_lifecycle_helpers_are_owned():
         runtime.create_effect(lambda: events.append(f"effect:{props.value()}"))
         runtime.on_mount(lambda: events.append("mount"))
         runtime.on_cleanup(lambda: events.append("cleanup"))
-        return widgets.Label(text=props.value)
+        return tk.Label(text=props.value)
 
     mount = runtime.create_root(lambda: Tracker(value=value), title="Demo")
 
@@ -93,7 +94,7 @@ def test_function_component_props_can_be_typed_with_protocol():
     @component
     def Counter(props: CounterProps):
         count, _set_count = reactive.create_signal(props.initial())
-        return widgets.Label(text=lambda: f"{props.title()}: {count()}")
+        return tk.Label(text=lambda: f"{props.title()}: {count()}")
 
     mount = runtime.create_root(lambda: Counter(title="Count", initial=2), title="Demo")
     label = mount.widget.children[0]
@@ -108,7 +109,7 @@ def test_function_component_receives_signal_mutator_prop_directly():
 
     @component
     def Counter(props: CounterProps):
-        return widgets.Button(
+        return tk.Button(
             text=lambda: f"Count: {props.count()}",
             command=lambda: props.set_count(lambda n: n + 1),
         )
@@ -131,15 +132,15 @@ def test_function_component_receives_signal_mutator_prop_directly():
 def test_function_component_receives_positional_children_prop():
     @component
     def Panel(props):
-        return widgets.VStack(
-            widgets.Label(text=props.title),
+        return layout.VStack(
+            tk.Label(text=props.title),
             props.children(),
         )
 
     mount = runtime.create_root(
         lambda: Panel(
-            widgets.Label(text="First"),
-            widgets.Label(text="Second"),
+            tk.Label(text="First"),
+            tk.Label(text="Second"),
             title="Panel",
         ),
         title="Demo",
@@ -157,15 +158,15 @@ def test_function_component_can_return_fragment_into_parent_layout():
     @component
     def Actions(props):
         return Fragment(
-            widgets.Button(text="Save"),
-            widgets.Button(text="Cancel"),
+            tk.Button(text="Save"),
+            tk.Button(text="Cancel"),
         )
 
     mount = runtime.create_root(
-        lambda: widgets.VStack(
-            widgets.Label(text="Before"),
+        lambda: layout.VStack(
+            tk.Label(text="Before"),
             Actions(),
-            widgets.Label(text="After"),
+            tk.Label(text="After"),
         ),
         title="Demo",
     )
@@ -186,15 +187,15 @@ def test_function_component_can_return_control_fragment_into_parent_layout():
     def Rows(props):
         return control.For(
             items,
-            lambda item: widgets.Label(text=item),
+            lambda item: tk.Label(text=item),
             key=lambda item: item,
         )
 
     mount = runtime.create_root(
-        lambda: widgets.VStack(
-            widgets.Label(text="Before"),
+        lambda: layout.VStack(
+            tk.Label(text="Before"),
             Rows(),
-            widgets.Label(text="After"),
+            tk.Label(text="After"),
         ),
         title="Demo",
     )
@@ -223,14 +224,14 @@ def test_fragment_returning_component_cleans_up_when_show_removes_it():
     def Actions(props):
         runtime.on_cleanup(lambda: events.append("actions cleanup"))
         return Fragment(
-            widgets.Button(text="Save"),
-            widgets.Button(text="Cancel"),
+            tk.Button(text="Save"),
+            tk.Button(text="Cancel"),
         )
 
     mount = runtime.create_root(
-        lambda: widgets.VStack(
+        lambda: layout.VStack(
             control.Show(visible, lambda: Actions()),
-            widgets.Label(text="After"),
+            tk.Label(text="After"),
         ),
         title="Demo",
     )
@@ -254,14 +255,14 @@ def test_control_returning_component_cleans_up_when_show_removes_it():
         runtime.on_cleanup(lambda: events.append("rows cleanup"))
         return control.For(
             items,
-            lambda item: widgets.Label(text=item),
+            lambda item: tk.Label(text=item),
             key=lambda item: item,
         )
 
     mount = runtime.create_root(
-        lambda: widgets.VStack(
+        lambda: layout.VStack(
             control.Show(visible, lambda: Rows()),
-            widgets.Label(text="After"),
+            tk.Label(text="After"),
         ),
         title="Demo",
     )
@@ -285,17 +286,17 @@ def test_control_returning_component_cleans_up_when_dynamic_replaces_it():
         runtime.on_cleanup(lambda: events.append("rows cleanup"))
         return control.For(
             items,
-            lambda item: widgets.Label(text=item),
+            lambda item: tk.Label(text=item),
             key=lambda item: item,
         )
 
     @component
     def Empty(props):
-        return widgets.Label(text="empty")
+        return tk.Label(text="empty")
 
     set_selected(lambda _: Rows)
     mount = runtime.create_root(
-        lambda: widgets.VStack(control.Dynamic(selected)),
+        lambda: layout.VStack(control.Dynamic(selected)),
         title="Demo",
     )
     stack = mount.widget.children[0]
@@ -312,10 +313,10 @@ def test_control_returning_component_cleans_up_when_dynamic_replaces_it():
 def test_function_component_keeps_keyword_children_prop():
     @component
     def Panel(props):
-        return widgets.VStack(props.children())
+        return layout.VStack(props.children())
 
     mount = runtime.create_root(
-        lambda: Panel(children=widgets.Label(text="Keyword child")),
+        lambda: Panel(children=tk.Label(text="Keyword child")),
         title="Demo",
     )
     label = mount.widget.children[0].children[0]
@@ -329,7 +330,7 @@ def test_class_component_can_initialize_state_with_init():
             self.count, self.set_count = reactive.create_signal(1)
 
         def render(self):
-            return widgets.Label(text=lambda: f"{self.props.title()}: {self.count()}")
+            return tk.Label(text=lambda: f"{self.props.title()}: {self.count()}")
 
     mount = runtime.create_root(lambda: Counter(title="Count"), title="Demo")
     label = mount.widget.children[0]
@@ -340,10 +341,10 @@ def test_class_component_can_initialize_state_with_init():
 def test_class_component_receives_positional_children_prop():
     class Panel(Component):
         def render(self):
-            return widgets.VStack(self.props.children())
+            return layout.VStack(self.props.children())
 
     mount = runtime.create_root(
-        lambda: Panel(widgets.Label(text="Class child")),
+        lambda: Panel(tk.Label(text="Class child")),
         title="Demo",
     )
     stack = mount.widget.children[0]
@@ -363,7 +364,7 @@ def test_class_component_init_can_receive_typed_props():
             self.count, self.set_count = reactive.create_signal(props.initial())
 
         def render(self):
-            return widgets.Label(text=lambda: f"{self.title()}: {self.count()}")
+            return tk.Label(text=lambda: f"{self.title()}: {self.count()}")
 
     mount = runtime.create_root(lambda: Counter(title="Count", initial=3), title="Demo")
     label = mount.widget.children[0]
@@ -382,7 +383,8 @@ def test_class_component_generic_types_self_props(tmp_path: Path):
 
             from solid_tk import Component
             from solid_tk import reactive
-            from solid_tk import widgets
+            from solid_tk import layout
+from solid_tk import tk
 
 
             class CounterProps(Protocol):
@@ -394,7 +396,7 @@ def test_class_component_generic_types_self_props(tmp_path: Path):
                 def render(self):
                     reveal_type(self.props.title)
                     self.props.missing
-                    return widgets.Label(text=lambda: self.props.title())
+                    return tk.Label(text=lambda: self.props.title())
             """
         ),
         encoding="utf-8",

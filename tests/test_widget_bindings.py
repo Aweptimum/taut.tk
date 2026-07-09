@@ -5,16 +5,17 @@ from fakes import FakeStringVar
 
 from solid_tk import component
 from solid_tk import control
+from solid_tk import layout
 from solid_tk import reactive
 from solid_tk import runtime
 from solid_tk import style
-from solid_tk import widgets
+from solid_tk import tk
 
 
 def test_entry_value_tracks_signal_changes_when_created_inside_root():
     value, set_value = reactive.create_signal("hello")
 
-    mount = runtime.create_root(lambda: widgets.VStack(widgets.Entry(value=value)), title="Demo")
+    mount = runtime.create_root(lambda: layout.VStack(tk.Entry(value=value)), title="Demo")
     entry = mount.widget.children[0].children[0]
     variable = entry.props["textvariable"]
 
@@ -29,7 +30,7 @@ def test_entry_value_writes_user_changes_back_to_signal():
     value, set_value = reactive.create_signal("hello")
 
     mount = runtime.create_root(
-        lambda: widgets.VStack(widgets.Entry(value=value, on_input=set_value)),
+        lambda: layout.VStack(tk.Entry(value=value, on_input=set_value)),
         title="Demo",
     )
     entry = mount.widget.children[0].children[0]
@@ -45,14 +46,14 @@ def test_entry_value_conflicts_with_textvariable():
 
     with pytest.raises(ValueError, match="value and textvariable"):
         runtime.create_root(
-            lambda: widgets.Entry(value=value, textvariable=FakeStringVar()),
+            lambda: tk.Entry(value=value, textvariable=FakeStringVar()),
             title="Demo",
         )
 
 
 def test_create_root_disposes_mounted_app_node():
     value, _set_value = reactive.create_signal("hello")
-    mount = runtime.create_root(lambda: widgets.VStack(widgets.Entry(value=value)), title="Demo")
+    mount = runtime.create_root(lambda: layout.VStack(tk.Entry(value=value)), title="Demo")
     app_frame = mount.widget.children[0]
 
     mount.dispose()
@@ -66,7 +67,7 @@ def test_mount_dispose_is_idempotent():
     @component
     def App(props):
         runtime.on_cleanup(lambda: events.append("cleanup"))
-        return widgets.Label(text="App")
+        return tk.Label(text="App")
 
     mount = runtime.create_root(App, title="Demo")
     app_label = mount.widget.children[0]
@@ -85,7 +86,7 @@ def test_root_window_close_disposes_mounted_app_node():
     @component
     def App(props):
         runtime.on_cleanup(lambda: events.append("cleanup"))
-        return widgets.Label(text="App")
+        return tk.Label(text="App")
 
     mount = runtime.create_root(App, title="Demo")
     app_label = mount.widget.children[0]
@@ -102,7 +103,7 @@ def test_widget_binding_unwraps_forwarded_callable_prop_value():
 
     @component
     def ForwardedLabel(props):
-        return widgets.Label(text=props.text)
+        return tk.Label(text=props.text)
 
     mount = runtime.create_root(
         lambda: ForwardedLabel(text=lambda: f"Count: {count()}"),
@@ -119,7 +120,7 @@ def test_widget_binding_unwraps_forwarded_callable_prop_value():
 
 def test_create_root_expands_default_app_layout():
     mount = runtime.create_root(
-        lambda: widgets.VStack(widgets.Label(text="Hello")),
+        lambda: layout.VStack(tk.Label(text="Hello")),
         title="Demo",
     )
     app = mount.widget.children[0]
@@ -129,7 +130,7 @@ def test_create_root_expands_default_app_layout():
 
 def test_primitive_children_render_with_registered_text_factory():
     mount = runtime.create_root(
-        lambda: widgets.VStack("Hello", 42),
+        lambda: layout.VStack("Hello", 42),
         title="Demo",
     )
     first, second = mount.widget.children[0].children
@@ -140,7 +141,7 @@ def test_primitive_children_render_with_registered_text_factory():
 
 def test_create_root_preserves_explicit_app_layout():
     mount = runtime.create_root(
-        lambda: widgets.VStack(widgets.Label(text="Hello"), pack={"side": "left"}),
+        lambda: layout.VStack(tk.Label(text="Hello"), pack={"side": "left"}),
         title="Demo",
     )
     app = mount.widget.children[0]
@@ -150,7 +151,7 @@ def test_create_root_preserves_explicit_app_layout():
 
 def test_vstack_defaults_match_existing_layout():
     mount = runtime.create_root(
-        lambda: widgets.VStack(widgets.Label(text="One"), widgets.Label(text="Two")),
+        lambda: layout.VStack(tk.Label(text="One"), tk.Label(text="Two")),
         title="Demo",
     )
     first, second = mount.widget.children[0].children
@@ -166,9 +167,9 @@ def test_vstack_defaults_match_existing_layout():
 
 def test_stack_padding_gap_and_alignment_are_applied():
     mount = runtime.create_root(
-        lambda: widgets.VStack(
-            widgets.Label(text="One"),
-            widgets.Label(text="Two"),
+        lambda: layout.VStack(
+            tk.Label(text="One"),
+            tk.Label(text="Two"),
             padding=(8, 4),
             gap=6,
             align="center",
@@ -196,9 +197,9 @@ def test_stack_padding_gap_and_alignment_are_applied():
 
 def test_hstack_item_overrides_stack_child_layout():
     mount = runtime.create_root(
-        lambda: widgets.HStack(
-            widgets.Label(text="Fixed"),
-            widgets.Item(widgets.Label(text="Growing"), grow=True, fill="both", align="stretch"),
+        lambda: layout.HStack(
+            tk.Label(text="Fixed"),
+            layout.Item(tk.Label(text="Growing"), grow=True, fill="both", align="stretch"),
             gap=3,
         ),
         title="Demo",
@@ -221,9 +222,9 @@ def test_hstack_item_overrides_stack_child_layout():
 
 def test_stack_preserves_explicit_grid_and_place_layouts():
     mount = runtime.create_root(
-        lambda: widgets.VStack(
-            widgets.Label(text="Grid", grid={"row": 0, "column": 1}),
-            widgets.Label(text="Place", place={"x": 10, "y": 20}),
+        lambda: layout.VStack(
+            tk.Label(text="Grid", grid={"row": 0, "column": 1}),
+            tk.Label(text="Place", place={"x": 10, "y": 20}),
         ),
         title="Demo",
     )
@@ -237,8 +238,8 @@ def test_grid_tiles_for_children_by_visible_order():
     items, set_items = reactive.create_signal(["a", "b", "c", "d"])
 
     mount = runtime.create_root(
-        lambda: widgets.Grid(
-            control.For(items, lambda item: widgets.Label(text=item), key=lambda item: item),
+        lambda: layout.Grid(
+            control.For(items, lambda item: tk.Label(text=item), key=lambda item: item),
             columns=2,
             gap=4,
             sticky="ew",
@@ -275,9 +276,9 @@ def test_grid_accepts_layout_from_style():
     grid_style = style.grid(columns=2, gap=3, sticky="nsew", padding=8)
 
     mount = runtime.create_root(
-        lambda: widgets.Grid(
-            widgets.Label(text="One"),
-            widgets.Label(text="Two"),
+        lambda: layout.Grid(
+            tk.Label(text="One"),
+            tk.Label(text="Two"),
             style=grid_style,
         ),
         title="Demo",

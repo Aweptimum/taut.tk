@@ -8,15 +8,15 @@ from PIL import Image
 from PIL import ImageTk
 
 from solid_tk import component
+from solid_tk.layout import HStack
+from solid_tk.layout import VStack
 from solid_tk.reactive import create_memo
 from solid_tk.reactive import create_signal
 from solid_tk.resource import SourceInfo
 from solid_tk.resource import create_resource
 from solid_tk.runtime import to_ui
-from solid_tk.widgets import Button
-from solid_tk.widgets import HStack
-from solid_tk.widgets import Label
-from solid_tk.widgets import VStack
+from solid_tk.tk import Button
+from solid_tk.tk import Label
 
 DATASET_IMAGE_URL = (
     "https://raw.githubusercontent.com/scikit-image/scikit-image/"

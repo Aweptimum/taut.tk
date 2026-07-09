@@ -27,6 +27,7 @@ TProps = TypeVar("TProps")
 P = ParamSpec("P")
 R = TypeVar("R")
 StyleInput: TypeAlias = "Style[Any] | Mapping[str, Any] | None | bool"
+LAYOUT_PROP_KEYS = {"pack", "grid", "place"}
 
 
 class Style(Mapping[str, Any], Generic[TProps]):
@@ -155,6 +156,13 @@ def style_props(style: StyleInput) -> dict[str, Any]:
     if isinstance(style, Style):
         return style.props()
     return dict(style)
+
+
+def reject_layout_props(props: Mapping[str, Any]) -> None:
+    keys = LAYOUT_PROP_KEYS & props.keys()
+    if keys:
+        joined = ", ".join(sorted(keys))
+        raise ValueError(f"style cannot define parent layout props: {joined}")
 
 
 def component(

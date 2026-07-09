@@ -5,6 +5,9 @@ from typing import Any
 from typing import Unpack
 
 from . import style as style_api
+from .nodes import ValueWidgetNode
+from .nodes import WidgetNode
+from .nodes import consume_layout
 from .tk_props import TtkButtonProps
 from .tk_props import TtkCheckbuttonProps
 from .tk_props import TtkComboboxProps
@@ -13,9 +16,6 @@ from .tk_props import TtkFrameProps
 from .tk_props import TtkLabelProps
 from .tk_props import TtkProgressbarProps
 from .tk_props import TtkSeparatorProps
-from .widgets import ValueWidgetNode
-from .widgets import WidgetNode
-from .widgets import consume_layout
 
 LAYOUT_KEYS = {"pack", "grid", "place"}
 TTK_STYLE_NAMES: dict[str, str] = {
@@ -94,9 +94,7 @@ def apply_style(props: Any, *, widget: str) -> None:
 
     style = style_api.merged_style(styled)
     style_props = style.props()
-    layout_props = {key: style_props.pop(key) for key in LAYOUT_KEYS if key in style_props}
-    for key, value in layout_props.items():
-        props.setdefault(key, value)
+    style_api.reject_layout_props(style_props)
 
     if style.name is None:
         props.update({key: value for key, value in style_props.items() if key not in props})

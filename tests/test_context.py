@@ -3,8 +3,9 @@ from __future__ import annotations
 from solid_tk import Fragment
 from solid_tk import component
 from solid_tk import context
+from solid_tk import layout
 from solid_tk import runtime
-from solid_tk import widgets
+from solid_tk import tk
 
 
 def test_context_reads_default_value():
@@ -12,7 +13,7 @@ def test_context_reads_default_value():
 
     @component
     def ThemedLabel(props):
-        return widgets.Label(text=context.use_context(theme))
+        return tk.Label(text=context.use_context(theme))
 
     mount = runtime.create_root(lambda: ThemedLabel(), title="Demo")
     label = mount.widget.children[0]
@@ -25,7 +26,7 @@ def test_context_preserves_explicit_none_default():
 
     @component
     def MaybeLabel(props):
-        return widgets.Label(text=lambda: "missing" if context.use_context(maybe_value) is None else "set")
+        return tk.Label(text=lambda: "missing" if context.use_context(maybe_value) is None else "set")
 
     mount = runtime.create_root(lambda: MaybeLabel(), title="Demo")
     label = mount.widget.children[0]
@@ -39,7 +40,7 @@ def test_provider_supplies_context_to_callable_child():
 
     @component
     def ThemedLabel(props):
-        return widgets.Label(text=context.use_context(theme))
+        return tk.Label(text=context.use_context(theme))
 
     mount = runtime.create_root(
         lambda: context.Provider(theme, "dark", lambda: ThemedLabel()),
@@ -59,7 +60,7 @@ def test_provider_accepts_forwarded_component_children():
 
     @component
     def ThemedLabel(props):
-        return widgets.Label(text=context.use_context(theme))
+        return tk.Label(text=context.use_context(theme))
 
     mount = runtime.create_root(
         lambda: ThemeProvider(children=lambda: ThemedLabel()),
@@ -79,7 +80,7 @@ def test_provider_accepts_forwarded_positional_component_children():
 
     @component
     def ThemedLabel(props):
-        return widgets.Label(text=context.use_context(theme))
+        return tk.Label(text=context.use_context(theme))
 
     mount = runtime.create_root(
         lambda: ThemeProvider(lambda: ThemedLabel()),
@@ -95,20 +96,20 @@ def test_provider_fragment_children_are_laid_out_by_parent():
 
     @component
     def ThemedLabel(props):
-        return widgets.Label(text=context.use_context(theme))
+        return tk.Label(text=context.use_context(theme))
 
     mount = runtime.create_root(
-        lambda: widgets.VStack(
-            widgets.Label(text="Before"),
+        lambda: layout.VStack(
+            tk.Label(text="Before"),
             context.Provider(
                 theme,
                 "dark",
                 lambda: Fragment(
                     ThemedLabel(),
-                    widgets.Label(text="After provider"),
+                    tk.Label(text="After provider"),
                 ),
             ),
-            widgets.Label(text="After"),
+            tk.Label(text="After"),
         ),
         title="Demo",
     )
@@ -127,7 +128,7 @@ def test_nested_provider_uses_nearest_context_value():
 
     @component
     def ThemedLabel(props):
-        return widgets.Label(text=context.use_context(theme))
+        return tk.Label(text=context.use_context(theme))
 
     mount = runtime.create_root(
         lambda: context.Provider(

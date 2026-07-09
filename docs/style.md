@@ -27,12 +27,13 @@ stack helpers:
 
 ```python
 from . import styles
+from solid_tk import layout
 from solid_tk import tk
 from solid_tk import ttk
 
 tk.Label(text="Classic", style=styles.title)
 ttk.Label(text="Themed", style=styles.title)
-tk.VStack(tk.Label(text="Settings"), style=styles.panel)
+layout.VStack(tk.Label(text="Settings"), style=styles.panel)
 ```
 
 Classic `tk` widgets unpack the style into direct widget options. In the example
@@ -43,28 +44,32 @@ example above, `ttk.Label(..., style=styles.title)` uses `Title.TLabel`, and the
 style config maps friendly aliases such as `fg`, `bg`, and `bd` to ttk's
 `foreground`, `background`, and `borderwidth` options.
 
-Stack helpers consume layout props from styles before mounting:
+Layout helpers can still consume their own configuration props from styles:
 
 ```python
 content = style.define("content", padding=12, gap=8)
 
-tk.VStack(
+layout.VStack(
     tk.Label(text="One"),
     tk.Label(text="Two"),
     style=content,
 )
 ```
 
-Grid helpers consume grid layout props from styles too:
+Grid helpers can do the same:
 
 ```python
 image_grid = style.define("image_grid", columns=2, gap=6, sticky="nsew")
 
-tk.Grid(
+layout.Grid(
     For(images, lambda image: ImageTile(image), key=lambda image: image["id"]),
     style=image_grid,
 )
 ```
+
+Styles cannot define parent-owned Tk geometry manager props: `pack`, `grid`, or
+`place`. Pass those directly at the call site so placement stays visible where
+the widget is used.
 
 Use `style.merge()` when composing styles or adding conditional props. Later
 styles win, and the generated style name comes from the last named style.
@@ -83,7 +88,7 @@ For repeated styled widgets, use `style.component()` to create a small factory.
 Call-site props still override style props.
 
 ```python
-Panel = style.component(tk.VStack, styles.panel)
+Panel = style.component(layout.VStack, styles.panel)
 PanelTitle = style.component(ttk.Label, styles.title)
 
 Panel(

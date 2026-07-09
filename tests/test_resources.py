@@ -10,7 +10,7 @@ from solid_tk import component
 from solid_tk import reactive
 from solid_tk import resource
 from solid_tk import runtime
-from solid_tk import widgets
+from solid_tk import tk
 
 
 def run_pending_ui(widget, *, limit: int = 20) -> None:
@@ -46,7 +46,7 @@ def test_resource_resolves_on_ui_thread():
     def App(props):
         res, _actions = resource.create_resource(fetcher, None)
         resources.append(res)
-        return widgets.Label(text=lambda: res() or "loading")
+        return tk.Label(text=lambda: res() or "loading")
 
     mount = runtime.create_root(App, title="Demo")
     label = mount.widget.children[0]
@@ -80,7 +80,7 @@ def test_resource_rejects_on_ui_thread():
     def App(props):
         res, _actions = resource.create_resource(fetcher, None)
         resources.append(res)
-        return widgets.Label(text="App")
+        return tk.Label(text="App")
 
     mount = runtime.create_root(App, title="Demo")
     res = resources[0]
@@ -108,7 +108,7 @@ def test_resource_passes_source_value_to_fetcher_and_refetches_when_source_chang
     def App(props):
         res, _actions = resource.create_resource(fetcher, None, source)
         resources.append(res)
-        return widgets.Label(text=lambda: res() or "loading")
+        return tk.Label(text=lambda: res() or "loading")
 
     mount = runtime.create_root(App, title="Demo")
 
@@ -139,7 +139,7 @@ def test_resource_does_not_fetch_for_disabled_source_until_enabled():
     def App(props):
         res, _actions = resource.create_resource(fetcher, None, source)
         resources.append(res)
-        return widgets.Label(text="App")
+        return tk.Label(text="App")
 
     mount = runtime.create_root(App, title="Demo")
     res = resources[0]
@@ -171,7 +171,7 @@ def test_resource_refetch_passes_custom_refetch_info_and_refreshing_state():
         res, resource_actions = resource.create_resource(fetcher, None)
         resources.append(res)
         actions.append(resource_actions)
-        return widgets.Label(text=lambda: res() or "loading")
+        return tk.Label(text=lambda: res() or "loading")
 
     mount = runtime.create_root(App, title="Demo")
     run_pending_ui(mount.widget)
@@ -208,7 +208,7 @@ def test_resource_mutate_updates_value_without_fetching():
         res, resource_actions = resource.create_resource(fetcher, None)
         resources.append(res)
         actions.append(resource_actions)
-        return widgets.Label(text=lambda: str(res()))
+        return tk.Label(text=lambda: str(res()))
 
     mount = runtime.create_root(App, title="Demo")
     run_pending_ui(mount.widget)
@@ -241,7 +241,7 @@ def test_resource_ignores_stale_results():
         res, resource_actions = resource.create_resource(fetcher, None)
         resources.append(res)
         actions.append(resource_actions)
-        return widgets.Label(text=lambda: res() or "loading")
+        return tk.Label(text=lambda: res() or "loading")
 
     mount = runtime.create_root(App, title="Demo")
     res = resources[0]

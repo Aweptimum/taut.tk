@@ -49,7 +49,6 @@ center_fill = style.define(
     fill="both",
     grow=True,
     bg="#0f766e",
-    pack={"fill": "both", "expand": True},
 )
 button_row = style.define("button_row", gap=6, align="center")
 
@@ -59,7 +58,6 @@ image_grid = style.define(
     gap=4,
     sticky="nsew",
     bg="#f8fafc",
-    pack={"fill": "x"},
 )
 image_tile = style.define(
     "image_tile",

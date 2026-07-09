@@ -4,7 +4,7 @@ import threading
 
 from solid_tk import component
 from solid_tk import runtime
-from solid_tk import widgets
+from solid_tk import tk
 
 
 def test_after_runs_once_and_is_cancelled_on_cleanup():
@@ -13,7 +13,7 @@ def test_after_runs_once_and_is_cancelled_on_cleanup():
     @component
     def App(props):
         runtime.after(10, lambda: events.append("after"))
-        return widgets.Label(text="App")
+        return tk.Label(text="App")
 
     mount = runtime.create_root(App, title="Demo")
     after_id = next(iter(mount.widget.after_callbacks))
@@ -31,7 +31,7 @@ def test_defer_runs_on_next_event_loop_turn_with_owner_context():
     def App(props):
         owner = runtime.get_current_owner()
         runtime.defer(lambda: owners.append(runtime.get_current_owner() is owner))
-        return widgets.Label(text="App")
+        return tk.Label(text="App")
 
     mount = runtime.create_root(App, title="Demo")
 
@@ -46,7 +46,7 @@ def test_defer_can_be_scheduled_from_on_mount():
     @component
     def App(props):
         runtime.on_mount(lambda: runtime.defer(lambda: events.append("mounted")))
-        return widgets.Label(text="App")
+        return tk.Label(text="App")
 
     mount = runtime.create_root(App, title="Demo")
 
@@ -61,7 +61,7 @@ def test_interval_repeats_until_cleanup():
     @component
     def App(props):
         runtime.interval(5, lambda: ticks.append("tick"))
-        return widgets.Label(text="App")
+        return tk.Label(text="App")
 
     mount = runtime.create_root(App, title="Demo")
 
@@ -83,7 +83,7 @@ def test_interval_stops_when_callback_returns_false():
     @component
     def App(props):
         runtime.interval(5, lambda: ticks.append("tick") or False)
-        return widgets.Label(text="App")
+        return tk.Label(text="App")
 
     mount = runtime.create_root(App, title="Demo")
 
@@ -100,7 +100,7 @@ def test_to_ui_can_capture_dispatcher_for_later_thread_callbacks():
     @component
     def App(props):
         dispatchers.append(runtime.to_ui())
-        return widgets.Label(text="App")
+        return tk.Label(text="App")
 
     mount = runtime.create_root(App, title="Demo")
 
@@ -161,7 +161,7 @@ def test_to_ui_dispatcher_cancels_callbacks_dispatched_during_disposal():
     @component
     def App(props):
         dispatchers.append(runtime.to_ui())
-        return widgets.Label(text="App")
+        return tk.Label(text="App")
 
     mount = runtime.create_root(App, title="Demo")
     dispatch = dispatchers[0]
@@ -194,7 +194,7 @@ def test_root_callback_lifecycle_helpers_are_owned():
     def App():
         runtime.on_mount(lambda: events.append("mount"))
         runtime.on_cleanup(lambda: events.append("cleanup"))
-        return widgets.Label(text="Root")
+        return tk.Label(text="Root")
 
     mount = runtime.create_root(App, title="Demo")
 

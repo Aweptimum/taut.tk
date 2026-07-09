@@ -397,7 +397,7 @@ def normalize_child(child: Any) -> Node:
     if _primitive_child_factory is None:
         raise TypeError(
             "primitive children require a text child factory; import solid_tk.tk "
-            "or solid_tk.widgets before using primitive children"
+            "before using primitive children"
         )
     return _primitive_child_factory(child)
 
@@ -442,7 +442,7 @@ def mount_fragment_children(parent: Any, children: Iterable[Node]) -> None:
 
 
 def create_root(app: Callable[[], Node] | Node, *, title: str | None = None) -> Mount:
-    from .widgets import Tk
+    from .tk import Tk
 
     root_node = Tk(title=title) if title is not None else Tk()
     root = root_node.mount(None)

@@ -9,6 +9,7 @@ This is currently a prototype that I hope makes Tkinter more fun
 from typing import Protocol
 
 from solid_tk import component
+from solid_tk import layout
 from solid_tk import tk
 from solid_tk.reactive import Accessor
 from solid_tk.reactive import Mutator
@@ -28,7 +29,7 @@ class CounterProps(Protocol):
 def counter(props: CounterProps):
     todos, set_todos = create_signal(["wire props", "own effects", "dispose cleanly"])
 
-    return tk.VStack(
+    return layout.VStack(
         tk.Label(text=lambda: f"{props.label()}: {props.count()}"),
         tk.Button(text="Increment", on_click=lambda: props.set_count(lambda n: n + 1)),
         Show(
@@ -37,7 +38,7 @@ def counter(props: CounterProps):
             fallback=lambda: tk.Label(text="Odd"),
         ),
         For(todos, lambda item: tk.Label(text=item), key=lambda item: item),
-        tk.HStack(
+        layout.HStack(
             tk.Button(text="-", on_click=lambda: set_todos(lambda items: items[:-1])),
             gap=6,
         ),
@@ -64,7 +65,7 @@ I keep reaching for it every time I want a small UI at work and I keep getting b
 - first-class component children through `props.children`
 - transparent `Fragment(...)` nodes for returning multiple children
 - widget namespaces: `tk` for classic Tk widgets and `ttk` for themed widgets
-- layout helpers: `VStack`, `HStack`, `Grid`, `Item`
+- layout namespace: `layout.VStack`, `layout.HStack`, `layout.Grid`, `layout.Item`
 - StyleX-ish style objects agnostic to tk/ttk widgets with `style.define()`, `style.merge()`, and `style.component()`.
 - some control flow: `Show`, `For`, `Switch` / `Match`, `Index`, `Dynamic`
 - context: `create_context()`, `Provider`, `use_context()`
@@ -157,7 +158,7 @@ components can feel like Solid components instead of manually passing a
 ```python
 @component
 def panel(props):
-    return tk.VStack(
+    return layout.VStack(
         tk.Label(text=props.title),
         props.children(),
         padding=8,
@@ -174,7 +175,7 @@ children; the parent widget or layout helper decides where those children go:
 def rows(props):
     return For(props.items, lambda item: tk.Label(text=item), key=lambda item: item)
 
-tk.VStack(
+layout.VStack(
     tk.Label(text="Before"),
     rows(items=todos),
     tk.Label(text="After"),

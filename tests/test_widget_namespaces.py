@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from fakes import FakeStyle
 
+from solid_tk import layout
 from solid_tk import reactive
 from solid_tk import runtime
 from solid_tk import style
@@ -11,7 +12,7 @@ from solid_tk import ttk
 
 def test_tk_namespace_exposes_classic_widgets():
     mount = runtime.create_root(
-        lambda: tk.VStack(
+        lambda: layout.VStack(
             tk.Label(text="Classic"),
             tk.Button(text="OK"),
         ),
@@ -26,7 +27,7 @@ def test_tk_namespace_exposes_classic_widgets():
 
 def test_ttk_namespace_creates_themed_widgets():
     mount = runtime.create_root(
-        lambda: tk.VStack(
+        lambda: layout.VStack(
             ttk.Label(text="Themed", style="Title.TLabel"),
             ttk.Button(text="OK", style="Accent.TButton"),
             ttk.Separator(orient="horizontal"),
@@ -77,7 +78,7 @@ def test_tk_and_ttk_receive_the_same_style_differently():
     accent = style.define("accent", fg="green", padx=8)
 
     mount = runtime.create_root(
-        lambda: tk.VStack(
+        lambda: layout.VStack(
             tk.Label(text="Classic", style=accent),
             ttk.Label(text="Themed", style=accent),
         ),

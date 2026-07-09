@@ -4,7 +4,7 @@ from dataclasses import dataclass
 
 from solid_tk import runtime
 from solid_tk import stores
-from solid_tk import widgets
+from solid_tk import tk
 
 
 @dataclass(frozen=True)
@@ -142,7 +142,7 @@ def test_create_mutable_list_notifies_reactive_reads():
 
     def App():
         runtime.create_effect(lambda: seen.append(tuple(items)))
-        return widgets.Label(text="Mutable")
+        return tk.Label(text="Mutable")
 
     mount = runtime.create_root(
         App,
@@ -168,7 +168,7 @@ def test_create_mutable_wraps_nested_mapping_and_list_values():
         runtime.create_effect(
             lambda: seen.append((state["user"]["name"], tuple(state["todos"])))
         )
-        return widgets.Label(text="Mutable")
+        return tk.Label(text="Mutable")
 
     mount = runtime.create_root(App, title="Demo")
 
@@ -196,7 +196,7 @@ def test_create_mutable_wraps_attribute_objects():
 
     def App():
         runtime.create_effect(lambda: seen.append((user.name, tuple(user.todos))))
-        return widgets.Label(text="Mutable")
+        return tk.Label(text="Mutable")
 
     mount = runtime.create_root(App, title="Demo")
 

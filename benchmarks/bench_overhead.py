@@ -9,9 +9,11 @@ from types import SimpleNamespace
 from typing import Any
 
 from solid_tk import component
+from solid_tk import layout
+from solid_tk import nodes
 from solid_tk import reactive
 from solid_tk import runtime
-from solid_tk import widgets
+from solid_tk import tk
 
 
 class FakeStringVar:
@@ -95,7 +97,7 @@ class FakeTk(FakeWidget):
 
 
 def patch_fake_tk() -> None:
-    widgets.tk = SimpleNamespace(
+    fake_tk = SimpleNamespace(
         Button=FakeWidget,
         Checkbutton=FakeWidget,
         Entry=FakeWidget,
@@ -104,6 +106,9 @@ def patch_fake_tk() -> None:
         StringVar=FakeStringVar,
         Tk=FakeTk,
     )
+    tk.tk = fake_tk
+    layout.tk = fake_tk
+    nodes.tk = fake_tk
 
 
 def raw_static(count: int) -> FakeTk:
@@ -118,8 +123,8 @@ def raw_static(count: int) -> FakeTk:
 
 def solid_static(count: int) -> runtime.Mount:
     return runtime.create_root(
-        lambda: widgets.VStack(
-            *(widgets.Label(text=f"Item {index}") for index in range(count)),
+        lambda: layout.VStack(
+            *(tk.Label(text=f"Item {index}") for index in range(count)),
             padx=12,
             pady=12,
         ),
@@ -130,9 +135,9 @@ def solid_static(count: int) -> runtime.Mount:
 def solid_reactive(count: int) -> runtime.Mount:
     current, _set_current = reactive.create_signal("Item")
     return runtime.create_root(
-        lambda: widgets.VStack(
+        lambda: layout.VStack(
             *(
-                widgets.Label(text=lambda index=index: f"{current()} {index}")
+                tk.Label(text=lambda index=index: f"{current()} {index}")
                 for index in range(count)
             ),
             padx=12,
@@ -143,9 +148,9 @@ def solid_reactive(count: int) -> runtime.Mount:
 
 
 @component
-def LabelList(props: Any) -> widgets.WidgetNode:
-    return widgets.VStack(
-        *(widgets.Label(text=f"{props.prefix()} {index}") for index in range(props.count())),
+def LabelList(props: Any) -> tk.WidgetNode:
+    return layout.VStack(
+        *(tk.Label(text=f"{props.prefix()} {index}") for index in range(props.count())),
         padx=12,
         pady=12,
     )

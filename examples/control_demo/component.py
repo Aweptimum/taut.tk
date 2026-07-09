@@ -5,12 +5,12 @@ from solid_tk.control import Dynamic
 from solid_tk.control import Index
 from solid_tk.control import Match
 from solid_tk.control import Switch
+from solid_tk.layout import HStack
+from solid_tk.layout import VStack
 from solid_tk.reactive import create_memo
 from solid_tk.reactive import create_signal
-from solid_tk.widgets import Button
-from solid_tk.widgets import HStack
-from solid_tk.widgets import Label
-from solid_tk.widgets import VStack
+from solid_tk.tk import Button
+from solid_tk.tk import Label
 
 STATUSES = ("ready", "busy", "done")
 

@@ -4,7 +4,9 @@ Control-flow nodes are transparent to layout. They produce child nodes, and the
 parent widget decides how those children are packed, gridded, placed, or stacked.
 
 ```python
-tk.VStack(
+from solid_tk import layout
+
+layout.VStack(
     tk.Label(text="Before"),
     For(items, lambda item: tk.Label(text=item), key=lambda item: item),
     tk.Label(text="After"),
@@ -63,7 +65,7 @@ is provided, object identity is used.
 geometry:
 
 ```python
-tk.VStack(
+layout.VStack(
     For(items, lambda item: tk.Label(text=item), key=lambda item: item),
     gap=4,
 )
@@ -119,7 +121,7 @@ errors in its child subtree.
 ```python
 ErrorBoundary(
     lambda: RiskyPanel(),
-    fallback=lambda error, reset: tk.VStack(
+    fallback=lambda error, reset: layout.VStack(
         tk.Label(text=f"Problem: {error}"),
         tk.Button(text="Retry", on_click=reset),
     ),
@@ -141,7 +143,7 @@ Components can return transparent control-flow nodes directly:
 def Rows(props):
     return For(props.items, lambda item: tk.Label(text=item), key=lambda item: item)
 
-tk.VStack(
+layout.VStack(
     tk.Label(text="Before"),
     Rows(items=items),
     tk.Label(text="After"),

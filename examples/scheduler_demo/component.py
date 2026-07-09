@@ -5,17 +5,17 @@ import time
 from collections.abc import Callable
 
 from solid_tk import component
+from solid_tk.layout import HStack
+from solid_tk.layout import VStack
 from solid_tk.reactive import create_signal
 from solid_tk.runtime import after
 from solid_tk.runtime import defer
 from solid_tk.runtime import interval
 from solid_tk.runtime import on_mount
 from solid_tk.runtime import to_ui
-from solid_tk.widgets import Button
-from solid_tk.widgets import Frame
-from solid_tk.widgets import HStack
-from solid_tk.widgets import Label
-from solid_tk.widgets import VStack
+from solid_tk.tk import Button
+from solid_tk.tk import Frame
+from solid_tk.tk import Label
 
 
 @component

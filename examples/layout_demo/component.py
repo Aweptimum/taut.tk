@@ -2,27 +2,28 @@ from __future__ import annotations
 
 from examples.layout_demo import styles
 from solid_tk import component
+from solid_tk import layout
 from solid_tk import style
 from solid_tk import tk
 from solid_tk import ttk
 from solid_tk.control import For
 
-Page = style.component(tk.VStack, styles.page)
-PanelStack = style.component(tk.VStack, styles.panel)
+Page = style.component(layout.VStack, styles.page)
+PanelStack = style.component(layout.VStack, styles.panel)
 PanelTitle = style.component(tk.Label, styles.panel_title)
 TitleLabel = style.component(tk.Label, styles.title)
 SwatchLabel = style.component(tk.Label, styles.swatch)
 GrowLabel = style.component(tk.Label, styles.grow_label)
 GrowFrame = style.component(tk.Frame, styles.grow_frame)
-CenteredItem = style.component(tk.Item, styles.center_item)
-StartItem = style.component(tk.Item, styles.start_item)
-GrowItem = style.component(tk.Item, styles.grow_item)
-StartRow = style.component(tk.HStack, styles.start_row)
-LooseRow = style.component(tk.HStack, styles.loose_row)
-SampleRow = style.component(tk.HStack, styles.sample_row)
-GrowRow = style.component(tk.HStack, styles.grow_row)
-CenterFill = style.component(tk.HStack, styles.center_fill)
-ButtonRow = style.component(tk.HStack, styles.button_row)
+CenteredItem = style.component(layout.Item, styles.center_item)
+StartItem = style.component(layout.Item, styles.start_item)
+GrowItem = style.component(layout.Item, styles.grow_item)
+StartRow = style.component(layout.HStack, styles.start_row)
+LooseRow = style.component(layout.HStack, styles.loose_row)
+SampleRow = style.component(layout.HStack, styles.sample_row)
+GrowRow = style.component(layout.HStack, styles.grow_row)
+CenterFill = style.component(layout.HStack, styles.center_fill)
+ButtonRow = style.component(layout.HStack, styles.button_row)
 
 IMAGE_TILES = (
     {"id": "north", "title": "North ridge", "tone": "#bfdbfe"},
@@ -75,12 +76,12 @@ def padding_example():
     return panel(
         "padding is frame padx/pady sugar",
         SampleRow(
-            tk.VStack(
+            layout.VStack(
                 tk.Label(text="padding=8"),
                 swatch("same x/y", "#c7d2fe"),
                 **style.merge(styles.sample_box, styles.soft_blue),
             ),
-            tk.VStack(
+            layout.VStack(
                 tk.Label(text="padding=(18, 6)"),
                 swatch("wide x", "#fed7aa"),
                 **style.merge(
@@ -89,7 +90,7 @@ def padding_example():
                     styles.soft_orange,
                 ),
             ),
-            tk.VStack(
+            layout.VStack(
                 tk.Label(text="padding=8, padx=24"),
                 swatch("padx wins", "#a7f3d0"),
                 **style.merge(
@@ -106,6 +107,7 @@ def grow_label():
     return GrowFrame(
         CenterFill(
             GrowLabel(text="grow=True, fill='both'"),
+            pack={"fill": "both", "expand": True},
         ),
     )
 
@@ -129,10 +131,10 @@ def grow_example():
 
 
 def grid_tile(tile):
-    return tk.VStack(
+    return layout.VStack(
         swatch("", tile["tone"], width=18),
         tk.Label(text=tile["title"], style=styles.image_title),
-        tk.Label(text="placed by tk.Grid", style=styles.image_meta),
+        tk.Label(text="placed by layout.Grid", style=styles.image_meta),
         style=styles.image_tile,
     )
 
@@ -140,9 +142,10 @@ def grid_tile(tile):
 def grid_style_example():
     return panel(
         "For children with grid styles",
-        tk.Grid(
+        layout.Grid(
             For(IMAGE_TILES, grid_tile, key=lambda tile: tile["id"]),
             style=styles.image_grid,
+            pack={"fill": "x"},
         ),
     )
 
