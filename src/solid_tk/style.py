@@ -13,15 +13,28 @@ from typing import cast
 from typing import overload
 
 from .tk_props import ButtonProps
+from .tk_props import CanvasProps
 from .tk_props import CheckbuttonProps
 from .tk_props import EntryProps
 from .tk_props import FrameProps
 from .tk_props import GridItemProps
 from .tk_props import GridProps
+from .tk_props import LabelFrameProps
 from .tk_props import LabelProps
+from .tk_props import ListboxProps
+from .tk_props import MenubuttonProps
+from .tk_props import MenuProps
+from .tk_props import MessageProps
+from .tk_props import OptionMenuProps
+from .tk_props import PanedWindowProps
+from .tk_props import RadiobuttonProps
+from .tk_props import ScaleProps
+from .tk_props import ScrollbarProps
+from .tk_props import SpinboxProps
 from .tk_props import StackItemProps
 from .tk_props import StackProps
 from .tk_props import StyleProps
+from .tk_props import TextProps
 from .tk_props import TkProps
 
 TProps = TypeVar("TProps")
@@ -115,6 +128,58 @@ def entry(**props: Unpack[EntryProps]) -> Style[EntryProps]:
 
 
 def checkbutton(**props: Unpack[CheckbuttonProps]) -> Style[CheckbuttonProps]:
+    return Style(props)
+
+
+def radiobutton(**props: Unpack[RadiobuttonProps]) -> Style[RadiobuttonProps]:
+    return Style(props)
+
+
+def scale(**props: Unpack[ScaleProps]) -> Style[ScaleProps]:
+    return Style(props)
+
+
+def canvas(**props: Unpack[CanvasProps]) -> Style[CanvasProps]:
+    return Style(props)
+
+
+def label_frame(**props: Unpack[LabelFrameProps]) -> Style[LabelFrameProps]:
+    return Style(props)
+
+
+def listbox(**props: Unpack[ListboxProps]) -> Style[ListboxProps]:
+    return Style(props)
+
+
+def menu(**props: Unpack[MenuProps]) -> Style[MenuProps]:
+    return Style(props)
+
+
+def menubutton(**props: Unpack[MenubuttonProps]) -> Style[MenubuttonProps]:
+    return Style(props)
+
+
+def message(**props: Unpack[MessageProps]) -> Style[MessageProps]:
+    return Style(props)
+
+
+def option_menu(**props: Unpack[OptionMenuProps]) -> Style[OptionMenuProps]:
+    return Style(props)
+
+
+def paned_window(**props: Unpack[PanedWindowProps]) -> Style[PanedWindowProps]:
+    return Style(props)
+
+
+def scrollbar(**props: Unpack[ScrollbarProps]) -> Style[ScrollbarProps]:
+    return Style(props)
+
+
+def spinbox(**props: Unpack[SpinboxProps]) -> Style[SpinboxProps]:
+    return Style(props)
+
+
+def text(**props: Unpack[TextProps]) -> Style[TextProps]:
     return Style(props)
 
 

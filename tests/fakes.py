@@ -28,9 +28,21 @@ class FakeStringVar:
         self.traces.pop(trace_id, None)
 
 
+class FakeDoubleVar(FakeStringVar):
+    def __init__(self, master=None):
+        super().__init__(master)
+        self.value = 0.0
+
+
+class FakePhotoImage:
+    def __init__(self, **props):
+        self.props = dict(props)
+
+
 class FakeWidget:
-    def __init__(self, parent: Optional[FakeWidget] = None, **props):
+    def __init__(self, parent: Optional[FakeWidget] = None, *args, **props):
         self.parent = parent
+        self.args = args
         self.props = dict(props)
         self.children = []
         self.destroyed = False

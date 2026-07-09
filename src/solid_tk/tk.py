@@ -5,6 +5,7 @@ from collections.abc import Callable
 from typing import Any
 from typing import Unpack
 
+from .nodes import NumericValueWidgetNode
 from .nodes import ValueWidgetNode
 from .nodes import WidgetNode
 from .nodes import apply_style
@@ -19,11 +20,25 @@ from .runtime import set_primitive_child_factory
 from .runtime import use_owner
 from .scheduler import TkScheduler
 from .tk_props import ButtonProps
+from .tk_props import CanvasProps
 from .tk_props import CheckbuttonProps
 from .tk_props import EntryProps
 from .tk_props import FrameProps
+from .tk_props import LabelFrameProps
 from .tk_props import LabelProps
+from .tk_props import ListboxProps
+from .tk_props import MenubuttonProps
+from .tk_props import MenuProps
+from .tk_props import MessageProps
+from .tk_props import OptionMenuProps
+from .tk_props import PanedWindowProps
+from .tk_props import PhotoImageProps
 from .tk_props import PortalProps
+from .tk_props import RadiobuttonProps
+from .tk_props import ScaleProps
+from .tk_props import ScrollbarProps
+from .tk_props import SpinboxProps
+from .tk_props import TextProps
 from .tk_props import TkProps
 
 
@@ -162,6 +177,98 @@ def Checkbutton(*children: Any, **props: Unpack[CheckbuttonProps]) -> WidgetNode
     return WidgetNode(tk.Checkbutton, children=children, layout=layout, **props)
 
 
+def Radiobutton(*children: Any, **props: Unpack[RadiobuttonProps]) -> WidgetNode:
+    apply_style(props)
+    layout = consume_layout(props)
+    return WidgetNode(tk.Radiobutton, children=children, layout=layout, **props)
+
+
+def Scale(*children: Any, **props: Unpack[ScaleProps]) -> WidgetNode:
+    apply_style(props)
+    layout = consume_layout(props)
+    return NumericValueWidgetNode(tk.Scale, children=children, layout=layout, **props)
+
+
+def Canvas(*children: Any, **props: Unpack[CanvasProps]) -> WidgetNode:
+    apply_style(props)
+    layout = consume_layout(props)
+    return WidgetNode(tk.Canvas, children=children, layout=layout, **props)
+
+
+def LabelFrame(*children: Any, **props: Unpack[LabelFrameProps]) -> WidgetNode:
+    apply_style(props)
+    layout = consume_layout(props)
+    return WidgetNode(tk.LabelFrame, children=children, layout=layout, **props)
+
+
+def Listbox(*children: Any, **props: Unpack[ListboxProps]) -> WidgetNode:
+    apply_style(props)
+    layout = consume_layout(props)
+    return WidgetNode(tk.Listbox, children=children, layout=layout, **props)
+
+
+def Menu(*children: Any, **props: Unpack[MenuProps]) -> WidgetNode:
+    return WidgetNode(tk.Menu, children=children, layout={}, **props)
+
+
+def Menubutton(*children: Any, **props: Unpack[MenubuttonProps]) -> WidgetNode:
+    apply_style(props)
+    layout = consume_layout(props)
+    return WidgetNode(tk.Menubutton, children=children, layout=layout, **props)
+
+
+def Message(*children: Any, **props: Unpack[MessageProps]) -> WidgetNode:
+    apply_style(props)
+    layout = consume_layout(props)
+    return WidgetNode(tk.Message, children=children, layout=layout, **props)
+
+
+def OptionMenu(*children: Any, **props: Unpack[OptionMenuProps]) -> WidgetNode:
+    apply_style(props)
+    layout = consume_layout(props)
+    return WidgetNode(
+        option_menu_factory,
+        children=children,
+        layout=layout,
+        **props,
+    )
+
+
+def PanedWindow(*children: Any, **props: Unpack[PanedWindowProps]) -> WidgetNode:
+    apply_style(props)
+    layout = consume_layout(props)
+    return WidgetNode(tk.PanedWindow, children=children, layout=layout, **props)
+
+
+def Scrollbar(*children: Any, **props: Unpack[ScrollbarProps]) -> WidgetNode:
+    apply_style(props)
+    layout = consume_layout(props)
+    return WidgetNode(tk.Scrollbar, children=children, layout=layout, **props)
+
+
+def Spinbox(*children: Any, **props: Unpack[SpinboxProps]) -> WidgetNode:
+    apply_style(props)
+    layout = consume_layout(props)
+    return ValueWidgetNode(tk.Spinbox, children=children, layout=layout, **props)
+
+
+def Text(*children: Any, **props: Unpack[TextProps]) -> WidgetNode:
+    apply_style(props)
+    layout = consume_layout(props)
+    return WidgetNode(tk.Text, children=children, layout=layout, **props)
+
+
+def PhotoImage(**props: Unpack[PhotoImageProps]) -> Any:
+    return tk.PhotoImage(**props)
+
+
+def option_menu_factory(parent: Any | None, **props: Any) -> Any:
+    variable = props.pop("variable")
+    values = list(props.pop("values", ()))
+    value = props.pop("value", values[0] if values else None)
+    return tk.OptionMenu(parent, variable, value, *values, **props)
+
+
 def resolve_portal_child(child: Callable[[], Any] | Any) -> Any:
     while callable(child) and not (hasattr(child, "mount") and hasattr(child, "unmount")):
         child = child()
@@ -172,11 +279,25 @@ set_primitive_child_factory(lambda child: Label(text=str(child)))
 
 __all__ = [
     "Button",
+    "Canvas",
     "Checkbutton",
     "Entry",
     "Frame",
     "Fragment",
     "Label",
+    "LabelFrame",
+    "Listbox",
+    "Menu",
+    "Menubutton",
+    "Message",
+    "OptionMenu",
+    "PanedWindow",
+    "PhotoImage",
     "Portal",
+    "Radiobutton",
+    "Scale",
+    "Scrollbar",
+    "Spinbox",
+    "Text",
     "Tk",
 ]

@@ -5,6 +5,7 @@ from typing import Any
 from typing import Unpack
 
 from . import style as style_api
+from .nodes import NumericValueWidgetNode
 from .nodes import ValueWidgetNode
 from .nodes import WidgetNode
 from .nodes import consume_layout
@@ -13,9 +14,21 @@ from .tk_props import TtkCheckbuttonProps
 from .tk_props import TtkComboboxProps
 from .tk_props import TtkEntryProps
 from .tk_props import TtkFrameProps
+from .tk_props import TtkLabeledScaleProps
+from .tk_props import TtkLabelFrameProps
 from .tk_props import TtkLabelProps
+from .tk_props import TtkMenubuttonProps
+from .tk_props import TtkNotebookProps
+from .tk_props import TtkOptionMenuProps
+from .tk_props import TtkPanedWindowProps
 from .tk_props import TtkProgressbarProps
+from .tk_props import TtkRadiobuttonProps
+from .tk_props import TtkScaleProps
+from .tk_props import TtkScrollbarProps
 from .tk_props import TtkSeparatorProps
+from .tk_props import TtkSizegripProps
+from .tk_props import TtkSpinboxProps
+from .tk_props import TtkTreeviewProps
 
 LAYOUT_KEYS = {"pack", "grid", "place"}
 TTK_STYLE_NAMES: dict[str, str] = {
@@ -24,9 +37,21 @@ TTK_STYLE_NAMES: dict[str, str] = {
     "Combobox": "TCombobox",
     "Entry": "TEntry",
     "Frame": "TFrame",
+    "LabeledScale": "Horizontal.TScale",
+    "LabelFrame": "TLabelframe",
     "Label": "TLabel",
+    "Menubutton": "TMenubutton",
+    "Notebook": "TNotebook",
+    "OptionMenu": "TMenubutton",
+    "PanedWindow": "TPanedwindow",
     "Progressbar": "Horizontal.TProgressbar",
+    "Radiobutton": "TRadiobutton",
+    "Scale": "Horizontal.TScale",
+    "Scrollbar": "Vertical.TScrollbar",
     "Separator": "TSeparator",
+    "Sizegrip": "TSizegrip",
+    "Spinbox": "TSpinbox",
+    "Treeview": "Treeview",
 }
 TTK_STYLE_ALIASES = {
     "bg": "background",
@@ -66,6 +91,18 @@ def Checkbutton(*children: Any, **props: Unpack[TtkCheckbuttonProps]) -> WidgetN
     return WidgetNode(ttk.Checkbutton, children=children, layout=layout, **props)
 
 
+def Radiobutton(*children: Any, **props: Unpack[TtkRadiobuttonProps]) -> WidgetNode:
+    apply_style(props, widget="Radiobutton")
+    layout = consume_layout(props)
+    return WidgetNode(ttk.Radiobutton, children=children, layout=layout, **props)
+
+
+def Scale(*children: Any, **props: Unpack[TtkScaleProps]) -> WidgetNode:
+    apply_style(props, widget="Scale")
+    layout = consume_layout(props)
+    return NumericValueWidgetNode(ttk.Scale, children=children, layout=layout, **props)
+
+
 def Combobox(*children: Any, **props: Unpack[TtkComboboxProps]) -> WidgetNode:
     apply_style(props, widget="Combobox")
     layout = consume_layout(props)
@@ -82,6 +119,84 @@ def Progressbar(*children: Any, **props: Unpack[TtkProgressbarProps]) -> WidgetN
     apply_style(props, widget="Progressbar")
     layout = consume_layout(props)
     return WidgetNode(ttk.Progressbar, children=children, layout=layout, **props)
+
+
+def LabelFrame(*children: Any, **props: Unpack[TtkLabelFrameProps]) -> WidgetNode:
+    apply_style(props, widget="LabelFrame")
+    layout = consume_layout(props)
+    return WidgetNode(ttk.LabelFrame, children=children, layout=layout, **props)
+
+
+Labelframe = LabelFrame
+
+
+def LabeledScale(*children: Any, **props: Unpack[TtkLabeledScaleProps]) -> WidgetNode:
+    apply_style(props, widget="LabeledScale")
+    layout = consume_layout(props)
+    return WidgetNode(ttk.LabeledScale, children=children, layout=layout, **props)
+
+
+def Menubutton(*children: Any, **props: Unpack[TtkMenubuttonProps]) -> WidgetNode:
+    apply_style(props, widget="Menubutton")
+    layout = consume_layout(props)
+    return WidgetNode(ttk.Menubutton, children=children, layout=layout, **props)
+
+
+def Notebook(*children: Any, **props: Unpack[TtkNotebookProps]) -> WidgetNode:
+    apply_style(props, widget="Notebook")
+    layout = consume_layout(props)
+    return WidgetNode(ttk.Notebook, children=children, layout=layout, **props)
+
+
+def OptionMenu(*children: Any, **props: Unpack[TtkOptionMenuProps]) -> WidgetNode:
+    apply_style(props, widget="OptionMenu")
+    layout = consume_layout(props)
+    return WidgetNode(
+        option_menu_factory,
+        children=children,
+        layout=layout,
+        **props,
+    )
+
+
+def PanedWindow(*children: Any, **props: Unpack[TtkPanedWindowProps]) -> WidgetNode:
+    apply_style(props, widget="PanedWindow")
+    layout = consume_layout(props)
+    return WidgetNode(ttk.PanedWindow, children=children, layout=layout, **props)
+
+
+Panedwindow = PanedWindow
+
+
+def Scrollbar(*children: Any, **props: Unpack[TtkScrollbarProps]) -> WidgetNode:
+    apply_style(props, widget="Scrollbar")
+    layout = consume_layout(props)
+    return WidgetNode(ttk.Scrollbar, children=children, layout=layout, **props)
+
+
+def Sizegrip(*children: Any, **props: Unpack[TtkSizegripProps]) -> WidgetNode:
+    apply_style(props, widget="Sizegrip")
+    layout = consume_layout(props)
+    return WidgetNode(ttk.Sizegrip, children=children, layout=layout, **props)
+
+
+def Spinbox(*children: Any, **props: Unpack[TtkSpinboxProps]) -> WidgetNode:
+    apply_style(props, widget="Spinbox")
+    layout = consume_layout(props)
+    return ValueWidgetNode(ttk.Spinbox, children=children, layout=layout, **props)
+
+
+def Treeview(*children: Any, **props: Unpack[TtkTreeviewProps]) -> WidgetNode:
+    apply_style(props, widget="Treeview")
+    layout = consume_layout(props)
+    return WidgetNode(ttk.Treeview, children=children, layout=layout, **props)
+
+
+def option_menu_factory(parent: Any | None, **props: Any) -> Any:
+    variable = props.pop("variable")
+    values = list(props.pop("values", ()))
+    default = props.pop("default", values[0] if values else None)
+    return ttk.OptionMenu(parent, variable, default, *values, **props)
 
 
 def apply_style(props: Any, *, widget: str) -> None:
@@ -136,7 +251,21 @@ __all__ = [
     "Combobox",
     "Entry",
     "Frame",
+    "LabeledScale",
+    "LabelFrame",
+    "Labelframe",
     "Label",
+    "Menubutton",
+    "Notebook",
+    "OptionMenu",
+    "PanedWindow",
+    "Panedwindow",
     "Progressbar",
+    "Radiobutton",
+    "Scale",
+    "Scrollbar",
     "Separator",
+    "Sizegrip",
+    "Spinbox",
+    "Treeview",
 ]

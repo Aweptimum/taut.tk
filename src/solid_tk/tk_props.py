@@ -15,6 +15,7 @@ T = TypeVar("T")
 
 Reactive: TypeAlias = T | Accessor[T] | Callable[[], T]
 Command: TypeAlias = Callable[[], Any]
+ValueCommand: TypeAlias = Callable[[Any], Any]
 Side: TypeAlias = Literal["left", "right", "top", "bottom"]
 Anchor: TypeAlias = Literal[
     "n",
@@ -175,6 +176,209 @@ class CheckbuttonProps(ButtonProps, total=False):
     variable: Reactive[Any]
 
 
+class RadiobuttonProps(CheckbuttonProps, total=False):
+    tristatevalue: Reactive[Any]
+    value: Reactive[Any]
+
+
+class ScaleProps(BaseWidgetProps, total=False):
+    activebackground: Reactive[str]
+    bigincrement: Reactive[float]
+    command: ValueCommand
+    digits: Reactive[int]
+    font: Reactive[str | tuple[Any, ...]]
+    from_: Reactive[float]
+    label: Reactive[str]
+    length: Reactive[int]
+    orient: Reactive[Literal["horizontal", "vertical"]]
+    repeatdelay: Reactive[int]
+    repeatinterval: Reactive[int]
+    resolution: Reactive[float]
+    showvalue: Reactive[bool]
+    sliderlength: Reactive[int]
+    sliderrelief: Reactive[Relief]
+    state: Reactive[State]
+    tickinterval: Reactive[float]
+    to: Reactive[float]
+    troughcolor: Reactive[str]
+    value: Reactive[float]
+    variable: Reactive[Any]
+    on_input: Mutator[float]
+
+
+class CanvasProps(BaseWidgetProps, total=False):
+    closeenough: Reactive[float]
+    confine: Reactive[bool]
+    insertbackground: Reactive[str]
+    insertborderwidth: Reactive[int]
+    insertofftime: Reactive[int]
+    insertontime: Reactive[int]
+    insertwidth: Reactive[int]
+    offset: Reactive[str]
+    scrollregion: Reactive[tuple[int, int, int, int] | str]
+    selectbackground: Reactive[str]
+    selectborderwidth: Reactive[int]
+    selectforeground: Reactive[str]
+    state: Reactive[State]
+    xscrollcommand: Command
+    xscrollincrement: Reactive[int]
+    yscrollcommand: Command
+    yscrollincrement: Reactive[int]
+
+
+class LabelFrameProps(FrameProps, total=False):
+    font: Reactive[str | tuple[Any, ...]]
+    foreground: Reactive[str]
+    fg: Reactive[str]
+    labelanchor: Reactive[Anchor]
+    labelwidget: Reactive[Any]
+    text: Reactive[str]
+
+
+class ListboxProps(BaseWidgetProps, total=False):
+    activestyle: Reactive[Literal["dotbox", "none", "underline"]]
+    disabledforeground: Reactive[str]
+    exportselection: Reactive[bool]
+    font: Reactive[str | tuple[Any, ...]]
+    listvariable: Reactive[Any]
+    selectbackground: Reactive[str]
+    selectborderwidth: Reactive[int]
+    selectforeground: Reactive[str]
+    selectmode: Reactive[Literal["single", "browse", "multiple", "extended"]]
+    setgrid: Reactive[bool]
+    state: Reactive[State]
+    xscrollcommand: Callable[..., Any]
+    yscrollcommand: Callable[..., Any]
+
+
+class MenuProps(TypedDict, total=False):
+    activebackground: Reactive[str]
+    activeborderwidth: Reactive[int]
+    activeforeground: Reactive[str]
+    background: Reactive[str]
+    bg: Reactive[str]
+    borderwidth: Reactive[int]
+    bd: Reactive[int]
+    cursor: Reactive[str]
+    disabledforeground: Reactive[str]
+    font: Reactive[str | tuple[Any, ...]]
+    foreground: Reactive[str]
+    fg: Reactive[str]
+    postcommand: Command
+    relief: Reactive[Relief]
+    selectcolor: Reactive[str]
+    takefocus: Reactive[bool | str]
+    tearoff: Reactive[bool]
+    tearoffcommand: Callable[..., Any]
+    title: Reactive[str]
+    type: Reactive[Literal["menubar", "tearoff", "normal"]]
+
+
+class MenubuttonProps(ButtonProps, total=False):
+    direction: Reactive[Literal["above", "below", "left", "right", "flush"]]
+    indicatoron: Reactive[bool]
+    menu: Reactive[Any]
+
+
+class MessageProps(TextWidgetProps, total=False):
+    aspect: Reactive[int]
+
+
+class OptionMenuProps(BaseWidgetProps, total=False):
+    variable: Any
+    value: Any
+    values: tuple[Any, ...] | list[Any]
+    command: Callable[[Any], Any]
+
+
+class PanedWindowProps(BaseWidgetProps, total=False):
+    handlepad: Reactive[int]
+    handlesize: Reactive[int]
+    opaqueresize: Reactive[bool]
+    orient: Reactive[Literal["horizontal", "vertical"]]
+    proxybackground: Reactive[str]
+    proxyborderwidth: Reactive[int]
+    proxyrelief: Reactive[Relief]
+    sashcursor: Reactive[str]
+    sashpad: Reactive[int]
+    sashrelief: Reactive[Relief]
+    sashwidth: Reactive[int]
+    showhandle: Reactive[bool]
+
+
+class ScrollbarProps(BaseWidgetProps, total=False):
+    activebackground: Reactive[str]
+    activerelief: Reactive[Relief]
+    command: Callable[..., Any]
+    elementborderwidth: Reactive[int]
+    jump: Reactive[bool]
+    orient: Reactive[Literal["horizontal", "vertical"]]
+    repeatdelay: Reactive[int]
+    repeatinterval: Reactive[int]
+    troughcolor: Reactive[str]
+
+
+class SpinboxProps(EntryProps, total=False):
+    buttonbackground: Reactive[str]
+    buttoncursor: Reactive[str]
+    buttondownrelief: Reactive[Relief]
+    buttonuprelief: Reactive[Relief]
+    command: Command
+    disabledbackground: Reactive[str]
+    format: Reactive[str]
+    from_: Reactive[float]
+    increment: Reactive[float]
+    readonlybackground: Reactive[str]
+    to: Reactive[float]
+    values: Reactive[tuple[Any, ...] | list[Any]]
+    wrap: Reactive[bool]
+
+
+class TextProps(BaseWidgetProps, total=False):
+    autoseparators: Reactive[bool]
+    blockcursor: Reactive[bool]
+    endline: Reactive[int]
+    exportselection: Reactive[bool]
+    font: Reactive[str | tuple[Any, ...]]
+    inactiveselectbackground: Reactive[str]
+    insertbackground: Reactive[str]
+    insertborderwidth: Reactive[int]
+    insertofftime: Reactive[int]
+    insertontime: Reactive[int]
+    insertunfocussed: Reactive[str]
+    insertwidth: Reactive[int]
+    maxundo: Reactive[int]
+    padx: Reactive[int]
+    pady: Reactive[int]
+    selectbackground: Reactive[str]
+    selectborderwidth: Reactive[int]
+    selectforeground: Reactive[str]
+    setgrid: Reactive[bool]
+    spacing1: Reactive[int]
+    spacing2: Reactive[int]
+    spacing3: Reactive[int]
+    startline: Reactive[int]
+    state: Reactive[State]
+    tabs: Reactive[Any]
+    tabstyle: Reactive[Literal["tabular", "wordprocessor"]]
+    undo: Reactive[bool]
+    wrap: Reactive[Literal["char", "none", "word"]]
+    xscrollcommand: Callable[..., Any]
+    yscrollcommand: Callable[..., Any]
+
+
+class PhotoImageProps(TypedDict, total=False):
+    data: Any
+    file: str
+    format: str
+    gamma: float
+    height: int
+    master: Any
+    name: str
+    palette: Any
+    width: int
+
+
 class TtkBaseProps(LayoutProps, total=False):
     class_: Reactive[str]
     cursor: Reactive[str]
@@ -239,6 +443,22 @@ class TtkCheckbuttonProps(TtkButtonProps, total=False):
     variable: Reactive[Any]
 
 
+class TtkRadiobuttonProps(TtkCheckbuttonProps, total=False):
+    value: Reactive[Any]
+
+
+class TtkScaleProps(TtkBaseProps, total=False):
+    command: ValueCommand
+    from_: Reactive[float]
+    length: Reactive[int]
+    orient: Reactive[Literal["horizontal", "vertical"]]
+    state: Reactive[State | Literal["readonly"]]
+    to: Reactive[float]
+    value: Reactive[float]
+    variable: Reactive[Any]
+    on_input: Mutator[float]
+
+
 class TtkComboboxProps(TtkEntryProps, total=False):
     exportselection: Reactive[bool]
     height: Reactive[int]
@@ -258,6 +478,76 @@ class TtkProgressbarProps(TtkBaseProps, total=False):
     phase: Reactive[int]
     value: Reactive[float]
     variable: Reactive[Any]
+
+
+class TtkLabelFrameProps(TtkFrameProps, total=False):
+    labelanchor: Reactive[Anchor]
+    labelwidget: Reactive[Any]
+    text: Reactive[str]
+    underline: Reactive[int]
+
+
+class TtkLabeledScaleProps(TtkFrameProps, total=False):
+    compound: Reactive[str]
+    from_: Reactive[float]
+    to: Reactive[float]
+    variable: Reactive[Any]
+
+
+class TtkMenubuttonProps(TtkTextProps, total=False):
+    direction: Reactive[Literal["above", "below", "left", "right", "flush"]]
+    menu: Reactive[Any]
+    state: Reactive[State]
+
+
+class TtkNotebookProps(TtkBaseProps, total=False):
+    height: Reactive[int]
+    padding: Reactive[int | tuple[int, ...] | str]
+    width: Reactive[int]
+
+
+class TtkOptionMenuProps(TtkBaseProps, total=False):
+    variable: Any
+    default: Any
+    values: tuple[Any, ...] | list[Any]
+    command: Callable[[Any], Any]
+    direction: Reactive[Literal["above", "below", "left", "right", "flush"]]
+
+
+class TtkPanedWindowProps(TtkBaseProps, total=False):
+    height: Reactive[int]
+    orient: Reactive[Literal["horizontal", "vertical"]]
+    width: Reactive[int]
+
+
+class TtkScrollbarProps(TtkBaseProps, total=False):
+    command: Callable[..., Any]
+    orient: Reactive[Literal["horizontal", "vertical"]]
+
+
+class TtkSizegripProps(TtkBaseProps, total=False):
+    pass
+
+
+class TtkSpinboxProps(TtkEntryProps, total=False):
+    command: Command
+    format: Reactive[str]
+    from_: Reactive[float]
+    increment: Reactive[float]
+    to: Reactive[float]
+    values: Reactive[tuple[Any, ...] | list[Any]]
+    wrap: Reactive[bool]
+
+
+class TtkTreeviewProps(TtkBaseProps, total=False):
+    columns: Reactive[tuple[Any, ...] | list[Any] | str]
+    displaycolumns: Reactive[tuple[Any, ...] | list[Any] | str]
+    height: Reactive[int]
+    padding: Reactive[int | tuple[int, ...] | str]
+    selectmode: Reactive[Literal["extended", "browse", "none"]]
+    show: Reactive[tuple[str, ...] | list[str] | str]
+    xscrollcommand: Callable[..., Any]
+    yscrollcommand: Callable[..., Any]
 
 
 class TkProps(TypedDict, total=False):
@@ -337,8 +627,8 @@ class StyleProps(GridProps, StackProps, total=False):
     show: Reactive[str]
     validate: Reactive[str]
     validatecommand: Command
-    value: Reactive[str]
-    on_input: Mutator[str]
+    value: Reactive[Any]
+    on_input: Mutator[Any]
     xscrollcommand: Command
     indicatoron: Reactive[bool]
     offvalue: Reactive[Any]
@@ -346,9 +636,75 @@ class StyleProps(GridProps, StackProps, total=False):
     selectcolor: Reactive[str]
     selectimage: Reactive[Any]
     variable: Reactive[Any]
+    bigincrement: Reactive[float]
+    digits: Reactive[int]
+    from_: Reactive[float]
+    label: Reactive[str]
+    resolution: Reactive[float]
+    showvalue: Reactive[bool]
+    sliderlength: Reactive[int]
+    sliderrelief: Reactive[Relief]
+    tickinterval: Reactive[float]
+    to: Reactive[float]
+    troughcolor: Reactive[str]
+    closeenough: Reactive[float]
+    confine: Reactive[bool]
+    offset: Reactive[str]
+    scrollregion: Reactive[tuple[int, int, int, int] | str]
+    xscrollincrement: Reactive[int]
+    yscrollcommand: Command
+    yscrollincrement: Reactive[int]
     length: Reactive[int]
     maximum: Reactive[float]
     mode: Reactive[Literal["determinate", "indeterminate"]]
     orient: Reactive[Literal["horizontal", "vertical"]]
     phase: Reactive[int]
     values: Reactive[tuple[Any, ...] | list[Any]]
+    activestyle: Reactive[Literal["dotbox", "none", "underline"]]
+    activerelief: Reactive[Relief]
+    aspect: Reactive[int]
+    autoseparators: Reactive[bool]
+    blockcursor: Reactive[bool]
+    buttonbackground: Reactive[str]
+    buttoncursor: Reactive[str]
+    buttondownrelief: Reactive[Relief]
+    buttonuprelief: Reactive[Relief]
+    direction: Reactive[Literal["above", "below", "left", "right", "flush"]]
+    displaycolumns: Reactive[tuple[Any, ...] | list[Any] | str]
+    elementborderwidth: Reactive[int]
+    endline: Reactive[int]
+    handlepad: Reactive[int]
+    handlesize: Reactive[int]
+    inactiveselectbackground: Reactive[str]
+    increment: Reactive[float]
+    insertunfocussed: Reactive[str]
+    jump: Reactive[bool]
+    labelanchor: Reactive[Anchor]
+    labelwidget: Reactive[Any]
+    listvariable: Reactive[Any]
+    maxundo: Reactive[int]
+    menu: Reactive[Any]
+    opaqueresize: Reactive[bool]
+    postcommand: Command
+    proxybackground: Reactive[str]
+    proxyborderwidth: Reactive[int]
+    proxyrelief: Reactive[Relief]
+    sashcursor: Reactive[str]
+    sashpad: Reactive[int]
+    sashrelief: Reactive[Relief]
+    sashwidth: Reactive[int]
+    selectmode: Reactive[str]
+    setgrid: Reactive[bool]
+    showhandle: Reactive[bool]
+    spacing1: Reactive[int]
+    spacing2: Reactive[int]
+    spacing3: Reactive[int]
+    startline: Reactive[int]
+    tabs: Reactive[Any]
+    tabstyle: Reactive[Literal["tabular", "wordprocessor"]]
+    tearoff: Reactive[bool]
+    title: Reactive[str]
+    tristatevalue: Reactive[Any]
+    type: Reactive[Literal["menubar", "tearoff", "normal"]]
+    undo: Reactive[bool]
+    wrap: Reactive[Any]

@@ -22,6 +22,20 @@ tk.Label
 tk.Button
 tk.Entry
 tk.Checkbutton
+tk.Scale
+tk.Canvas
+tk.LabelFrame
+tk.Listbox
+tk.Menu
+tk.Menubutton
+tk.Message
+tk.OptionMenu
+tk.PanedWindow
+tk.PhotoImage
+tk.Radiobutton
+tk.Scrollbar
+tk.Spinbox
+tk.Text
 tk.Portal
 tk.Fragment
 ```
@@ -53,9 +67,23 @@ ttk.Label
 ttk.Button
 ttk.Entry
 ttk.Checkbutton
+ttk.Scale
 ttk.Combobox
+ttk.LabelFrame
+ttk.Labelframe
+ttk.LabeledScale
+ttk.Menubutton
+ttk.Notebook
+ttk.OptionMenu
+ttk.PanedWindow
+ttk.Panedwindow
 ttk.Separator
 ttk.Progressbar
+ttk.Radiobutton
+ttk.Scrollbar
+ttk.Sizegrip
+ttk.Spinbox
+ttk.Treeview
 ```
 
 ttk widgets support ttk styling through `style=...`; see [Styles](style.md).
@@ -131,6 +159,25 @@ string value.
 
 Do not pass both `value` and `textvariable` to the same entry. `value` owns the
 generated variable.
+
+`tk.Scale` and `ttk.Scale` also support `value` and `on_input` for numeric
+values. Their `value` prop owns a generated Tk variable, so do not pass both
+`value` and `variable` to the same scale.
+
+## Images and Canvas
+
+Use `tk.PhotoImage(...)` to create a Tkinter `PhotoImage`, then pass it to
+widget `image=` props or Canvas item methods. Keep a Python reference to the
+image for as long as Tk needs to display it.
+
+`tk.Canvas` is exposed as a regular widget node. It accepts Canvas
+configuration props and can contain child widgets, but drawing items are still
+created through Tk's Canvas methods on the mounted widget.
+
+Menu entries, notebook tabs, paned-window panes, tree rows, and other
+widget-specific child/item APIs are exposed through the mounted Tk widget's
+standard methods. The namespace wrappers create and configure the widgets; they
+do not replace those Tk item APIs with declarative child helpers yet.
 
 ## Layout Props
 

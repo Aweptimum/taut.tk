@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import tkinter as tk
+from collections.abc import Callable
 from collections.abc import Iterable
 from typing import Any
 
@@ -22,7 +23,7 @@ class WidgetNode(MountedNode):
 
     def __init__(
         self,
-        widget_type: type[Any],
+        widget_type: type[Any] | Callable[..., Any],
         *,
         children: Iterable[Any] = (),
         layout: dict[str, Any] | None = None,
@@ -166,6 +167,43 @@ class ValueWidgetNode(WidgetNode):
         self.owner.effect(sync_from_signal)
 
 
+class NumericValueWidgetNode(WidgetNode):
+    """Base for numeric input widgets."""
+
+    skipped_props = {"value", "on_input"}
+
+    def prepare_ctor_props(self, parent: Any | None, props: dict[str, Any]) -> None:
+        if "value" not in self.props:
+            return
+        if "variable" in self.props:
+            raise ValueError("value and variable cannot be used together")
+
+        variable_type = getattr(tk, "DoubleVar", tk.StringVar)
+        variable = variable_type(master=parent)
+        props["variable"] = variable
+        accessor = self.props.prop_accessor("value")
+        mutate = self.props.raw("on_input") if "on_input" in self.props else None
+        syncing = False
+
+        def sync_from_signal() -> None:
+            nonlocal syncing
+            value = accessor()
+            if variable.get() != value:
+                syncing = True
+                try:
+                    variable.set(value)
+                finally:
+                    syncing = False
+
+        def sync_to_signal(*_: Any) -> None:
+            if mutate is not None and not syncing:
+                mutate(variable.get())
+
+        trace_id = variable.trace_add("write", sync_to_signal)
+        self.owner.cleanup(lambda: variable.trace_remove("write", trace_id))
+        self.owner.effect(sync_from_signal)
+
+
 def event_name(name: str) -> str:
     if name.startswith("on_"):
         return "command" if name == "on_click" else name[3:]
@@ -202,6 +240,7 @@ def forget_layout(widget: Any) -> None:
 
 
 __all__ = [
+    "NumericValueWidgetNode",
     "ValueWidgetNode",
     "WidgetNode",
     "apply_style",
