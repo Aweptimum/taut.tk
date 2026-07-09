@@ -12,8 +12,12 @@ from .context import Context
 from .context import Provider
 from .context import create_context
 from .context import use_context
+from .control import Dynamic
 from .control import For
+from .control import Index
+from .control import Match
 from .control import Show
+from .control import Switch
 from .props import NodeProps
 from .props import Props
 from .reactive import Accessor
@@ -50,12 +54,15 @@ __all__ = [
     "Accessor",
     "Component",
     "Computed",
+    "Dynamic",
     "Effect",
     "Entry",
     "For",
     "Frame",
     "HStack",
+    "Index",
     "Label",
+    "Match",
     "Mount",
     "Node",
     "NodeProps",
@@ -68,6 +75,7 @@ __all__ = [
     "StoreSetter",
     "Setter",
     "SignalLike",
+    "Switch",
     "Tk",
     "Updater",
     "VStack",

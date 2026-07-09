@@ -1,8 +1,12 @@
 from __future__ import annotations
 
 from collections.abc import Callable
+from dataclasses import dataclass
 from typing import Any
 
+from reaktiv import Signal
+
+from .reactive import is_signal
 from .reactive import read
 from .reactive import to_accessor
 from .runtime import MountedNode
@@ -26,7 +30,7 @@ class ShowNode(MountedNode):
         self.active_key: bool | None = None
 
     def mount(self, parent: Any | None) -> Any:
-        import tkinter as tk
+        from .widgets import tk
 
         self.widget = tk.Frame(parent)
         self.widget.pack(fill="both", expand=True)
@@ -73,7 +77,7 @@ class ForNode(MountedNode):
         self.order: list[Any] = []
 
     def mount(self, parent: Any | None) -> Any:
-        import tkinter as tk
+        from .widgets import tk
 
         self.widget = tk.Frame(parent)
         self.widget.pack(fill="both", expand=True)
@@ -118,6 +122,162 @@ class ForNode(MountedNode):
         super().unmount()
 
 
+@dataclass
+class MatchCase:
+    when: Any
+    children: Callable[[], Any] | Any
+
+
+class SwitchNode(MountedNode):
+    def __init__(
+        self,
+        cases: tuple[MatchCase, ...],
+        *,
+        fallback: Callable[[], Any] | Any | None = None,
+    ) -> None:
+        super().__init__()
+        self.cases = [(to_accessor(case.when), case.children) for case in cases]
+        self.fallback = fallback
+        self.active: Node | None = None
+        self.active_key: Any = object()
+
+    def mount(self, parent: Any | None) -> Any:
+        from .widgets import tk
+
+        self.widget = tk.Frame(parent)
+        self.widget.pack(fill="both", expand=True)
+        self.owner.effect(self.update)
+        return self.widget
+
+    def update(self) -> None:
+        if self.widget is None:
+            return
+
+        next_key: int | None = None
+        source = self.fallback
+        for index, (when, children) in enumerate(self.cases):
+            if bool(when()):
+                next_key = index
+                source = children
+                break
+
+        if next_key == self.active_key:
+            return
+
+        if self.active is not None:
+            self.active.unmount()
+            self.active = None
+
+        self.active_key = next_key
+        if source is None:
+            return
+
+        child = source() if callable(source) else source
+        self.active = normalize_child(child)
+        self.active.mount(self.widget)
+
+    def unmount(self) -> None:
+        if self.active is not None:
+            self.active.unmount()
+            self.active = None
+        super().unmount()
+
+
+class IndexNode(MountedNode):
+    def __init__(self, each: Any, render: Callable[[Any, int], Any]) -> None:
+        super().__init__()
+        self.each = to_accessor(each)
+        self.render = render
+        self.items: list[Signal[Any]] = []
+        self.instances: list[Node] = []
+
+    def mount(self, parent: Any | None) -> Any:
+        from .widgets import tk
+
+        self.widget = tk.Frame(parent)
+        self.widget.pack(fill="both", expand=True)
+        self.owner.effect(self.update)
+        return self.widget
+
+    def update(self) -> None:
+        if self.widget is None:
+            return
+
+        items = list(read(self.each))
+        for index in range(len(items), len(self.instances)):
+            self.instances[index].unmount()
+
+        self.instances = self.instances[: len(items)]
+        self.items = self.items[: len(items)]
+
+        for index, item in enumerate(items):
+            if index < len(self.items):
+                self.items[index].set(item)
+                continue
+
+            signal = Signal(item)
+            self.items.append(signal)
+            node = normalize_child(self.render(signal, index))
+            self.instances.append(node)
+            node.mount(self.widget)
+
+        self.repack()
+
+    def repack(self) -> None:
+        for node in self.instances:
+            if node.widget is not None:
+                node.widget.pack_forget()
+                node.widget.pack(side="top", fill="x", anchor="w")
+
+    def unmount(self) -> None:
+        for node in reversed(self.instances):
+            node.unmount()
+        self.instances.clear()
+        self.items.clear()
+        super().unmount()
+
+
+class DynamicNode(MountedNode):
+    def __init__(self, component: Any, **props: Any) -> None:
+        super().__init__()
+        self.component = component
+        self.component_accessor = component if is_signal(component) else None
+        self.props = props
+        self.active: Node | None = None
+        self.active_key: Any = object()
+
+    def mount(self, parent: Any | None) -> Any:
+        from .widgets import tk
+
+        self.widget = tk.Frame(parent)
+        self.widget.pack(fill="both", expand=True)
+        self.owner.effect(self.update)
+        return self.widget
+
+    def update(self) -> None:
+        if self.widget is None:
+            return
+
+        component = self.component_accessor() if self.component_accessor else self.component
+        if component is self.active_key:
+            return
+
+        if self.active is not None:
+            self.active.unmount()
+            self.active = None
+
+        self.active_key = component
+        child = component(**self.props) if callable(component) else component
+        self.active = normalize_child(child)
+        self.active.mount(self.widget)
+
+    def unmount(self) -> None:
+        if self.active is not None:
+            self.active.unmount()
+            self.active = None
+        super().unmount()
+
+
 def Show(
     when: Any,
     children: Callable[[], Any] | Any,
@@ -134,3 +294,22 @@ def For(
     key: Callable[[Any], Any] | None = None,
 ) -> ForNode:
     return ForNode(each, render, key=key)
+
+
+def Match(when: Any, children: Callable[[], Any] | Any) -> MatchCase:
+    return MatchCase(when, children)
+
+
+def Switch(
+    *cases: MatchCase,
+    fallback: Callable[[], Any] | Any | None = None,
+) -> SwitchNode:
+    return SwitchNode(cases, fallback=fallback)
+
+
+def Index(each: Any, render: Callable[[Any, int], Any]) -> IndexNode:
+    return IndexNode(each, render)
+
+
+def Dynamic(component: Any, **props: Any) -> DynamicNode:
+    return DynamicNode(component, **props)

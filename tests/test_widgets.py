@@ -15,9 +15,13 @@ from reaktiv import Signal
 from solid_tk import Accessor
 from solid_tk import Button
 from solid_tk import Component
+from solid_tk import Dynamic
 from solid_tk import Entry
+from solid_tk import Index
 from solid_tk import Label
+from solid_tk import Match
 from solid_tk import Provider
+from solid_tk import Switch
 from solid_tk import VStack
 from solid_tk import component
 from solid_tk import create_context
@@ -213,6 +217,115 @@ def test_create_memo_derives_reactive_values():
     count.set(3)
 
     assert label.props["text"] == "Double: 6"
+
+
+def test_switch_renders_first_matching_case_and_fallback():
+    mode = Signal("a")
+
+    mount = create_root(
+        lambda: Switch(
+            Match(lambda: mode() == "a", lambda: Label(text="A")),
+            Match(lambda: mode() == "b", lambda: Label(text="B")),
+            fallback=lambda: Label(text="fallback"),
+        ),
+        title="Demo",
+    )
+    switch = mount.node.children[0]
+
+    assert switch.active.widget.props["text"] == "A"
+
+    mode.set("b")
+
+    assert switch.active.widget.props["text"] == "B"
+
+    mode.set("c")
+
+    assert switch.active.widget.props["text"] == "fallback"
+
+
+def test_switch_renders_initial_fallback_when_no_case_matches():
+    mode = Signal("idle")
+
+    mount = create_root(
+        lambda: Switch(
+            Match(lambda: mode() == "ready", lambda: Label(text="Ready")),
+            fallback=lambda: Label(text="Idle"),
+        ),
+        title="Demo",
+    )
+    switch = mount.node.children[0]
+
+    assert switch.active.widget.props["text"] == "Idle"
+
+
+def test_index_reuses_nodes_by_index_and_updates_item_accessors():
+    items = Signal(["a", "b"])
+
+    mount = create_root(
+        lambda: Index(items, lambda item, index: Label(text=lambda: f"{index}:{item()}")),
+        title="Demo",
+    )
+    index_node = mount.node.children[0]
+    first = index_node.instances[0]
+
+    assert first.widget.props["text"] == "0:a"
+    assert index_node.instances[1].widget.props["text"] == "1:b"
+
+    items.set(["x", "y", "z"])
+
+    assert index_node.instances[0] is first
+    assert first.widget.props["text"] == "0:x"
+    assert index_node.instances[1].widget.props["text"] == "1:y"
+    assert index_node.instances[2].widget.props["text"] == "2:z"
+
+    stale = index_node.instances[2]
+    items.set(["q"])
+
+    assert index_node.instances == [first]
+    assert first.widget.props["text"] == "0:q"
+    assert stale.widget is None
+
+
+def test_dynamic_switches_component_factories():
+    selected = Signal(None)
+
+    @component
+    def Red(props):
+        return Label(text="red")
+
+    @component
+    def Blue(props):
+        return Label(text="blue")
+
+    selected.set(Red)
+    mount = create_root(lambda: Dynamic(selected), title="Demo")
+    dynamic = mount.node.children[0]
+
+    assert dynamic.active.widget.props["text"] == "red"
+
+    selected.set(Blue)
+
+    assert dynamic.active.widget.props["text"] == "blue"
+
+
+def test_dynamic_forwards_reactive_props_to_selected_component():
+    selected = Signal(None)
+    item = Signal("first")
+    selected_item = create_memo(lambda: item())
+
+    @component
+    def Detail(props):
+        return Label(text=lambda: f"Detail: {props.item()}")
+
+    selected.set(Detail)
+    mount = create_root(lambda: Dynamic(selected, item=selected_item), title="Demo")
+    dynamic = mount.node.children[0]
+
+    assert dynamic.active.widget.props["text"] == "Detail: first"
+
+    item.set("second")
+
+    assert dynamic.active.widget.props["text"] == "Detail: second"
 
 
 def test_function_component_lifecycle_helpers_are_owned():

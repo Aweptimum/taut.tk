@@ -102,8 +102,26 @@ Label(text=self.props.name)
 - `Props`, where every attribute is a `Signal`
 - widgets: `Tk`, `Frame`, `Label`, `Button`, `Entry`, `Checkbutton`
 - some layout helpers: `VStack`, `HStack`
-- some control flow: `Show`, `For`
+- some control flow: `Show`, `For`, `Switch` / `Match`, `Index`, `Dynamic`
 - `create_root()` and explicit disposal through the returned `Mount`
+
+```python
+Switch(
+    Match(lambda: status() == "ready", lambda: Label(text="Ready")),
+    Match(lambda: status() == "busy", lambda: Label(text="Working")),
+    fallback=lambda: Label(text="Idle"),
+)
+
+Index(items, lambda item, index: Label(text=lambda: f"{index}: {item()}"))
+Dynamic(selected_component, title="Hello")
+```
+
+See `examples/control_demo` for a runnable version:
+
+```sh
+python -m examples.control_demo
+```
+```
 
 This is not a full Tkinter framework yet; more goodies to implement!
 
