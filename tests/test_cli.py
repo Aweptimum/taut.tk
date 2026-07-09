@@ -1,7 +1,13 @@
 from __future__ import annotations
 
 from pathlib import Path
-from types import SimpleNamespace
+
+from watchdog.events import DirCreatedEvent
+from watchdog.events import DirMovedEvent
+from watchdog.events import FileCreatedEvent
+from watchdog.events import FileDeletedEvent
+from watchdog.events import FileModifiedEvent
+from watchdog.events import FileMovedEvent
 
 from solid_tk.cli import stubs
 from solid_tk.cli import watch
@@ -114,6 +120,50 @@ def test_main_preserves_mutator_prop_types(monkeypatch, tmp_path):
         "    count: int | reactive.Accessor[int],\n"
         "    set_count: reactive.Mutator[int],\n"
         ") -> runtime.Node: ...\n"
+    )
+
+
+def test_main_writes_unannotated_component_as_no_prop_component(monkeypatch, tmp_path):
+    source = tmp_path / "examples" / "layout_demo" / "component.py"
+    source.parent.mkdir(parents=True)
+    source.write_text(
+        "\n".join(
+            [
+                "from solid_tk import component",
+                "from examples.layout_demo import styles",
+                "",
+                "@component",
+                "def layout_demo(props):",
+                "    ...",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    monkeypatch.chdir(tmp_path)
+
+    stubs.main([tmp_path / "examples"], out_dir=tmp_path / "typings")
+
+    assert (
+        tmp_path / "typings" / "examples" / "layout_demo" / "component.pyi"
+    ).read_text(encoding="utf-8") == (
+        "from __future__ import annotations\n"
+        "\n"
+        "from typing import Any\n"
+        "from solid_tk import runtime\n"
+        "\n"
+        "styles: Any\n"
+        "\n"
+        "def layout_demo() -> runtime.Node: ...\n"
+    )
+    assert (
+        tmp_path / "typings" / "examples" / "layout_demo" / "__init__.pyi"
+    ).read_text(encoding="utf-8") == (
+        "from __future__ import annotations\n"
+        "\n"
+        "from typing import Any\n"
+        "\n"
+        "styles: Any\n"
     )
 
 
@@ -268,10 +318,7 @@ def test_watch_created_file_regenerates_all(monkeypatch, tmp_path):
 
     handler = watch.StubWatchHandler()
     handler.on_created(
-        SimpleNamespace(
-            src_path=str(tmp_path / "new.py"),
-            is_directory=False,
-        )
+        FileCreatedEvent(str(tmp_path / "new.py"))
     )
 
     assert generated_paths == [tmp_path]
@@ -314,10 +361,7 @@ def test_watch_modified_init_file_with_component_reexports_regenerates_all(
 
     handler = watch.StubWatchHandler()
     handler.on_modified(
-        SimpleNamespace(
-            src_path=str(source_init),
-            is_directory=False,
-        )
+        FileModifiedEvent(str(source_init))
     )
 
     assert generated_paths == [tmp_path]
@@ -337,10 +381,7 @@ def test_watch_modified_plain_init_file_is_ignored(monkeypatch, tmp_path):
 
     handler = watch.StubWatchHandler()
     handler.on_modified(
-        SimpleNamespace(
-            src_path=str(source_init),
-            is_directory=False,
-        )
+        FileModifiedEvent(str(source_init))
     )
 
     assert generated_paths == []
@@ -365,11 +406,7 @@ def test_watch_moved_file_removes_old_stub_and_regenerates_all(monkeypatch, tmp_
 
     handler = watch.StubWatchHandler()
     handler.on_moved(
-        SimpleNamespace(
-            src_path=str(source),
-            dest_path=str(destination),
-            is_directory=False,
-        )
+        FileMovedEvent(str(source), str(destination))
     )
 
     assert removed_paths == [source]
@@ -397,11 +434,7 @@ def test_watch_moved_file_regenerates_all_when_destination_is_python(
 
     handler = watch.StubWatchHandler()
     handler.on_moved(
-        SimpleNamespace(
-            src_path=str(source),
-            dest_path=str(destination),
-            is_directory=False,
-        )
+        FileMovedEvent(str(source), str(destination))
     )
 
     assert removed_paths == [source]
@@ -452,11 +485,7 @@ def test_watch_moved_init_file_removes_old_stub_and_regenerates_all(
 
     handler = watch.StubWatchHandler()
     handler.on_moved(
-        SimpleNamespace(
-            src_path=str(source),
-            dest_path=str(destination),
-            is_directory=False,
-        )
+        FileMovedEvent(str(source), str(destination))
     )
 
     assert removed_paths == [source]
@@ -478,11 +507,7 @@ def test_watch_moved_plain_init_file_is_ignored(monkeypatch, tmp_path):
 
     handler = watch.StubWatchHandler()
     handler.on_moved(
-        SimpleNamespace(
-            src_path=str(source),
-            dest_path=str(destination),
-            is_directory=False,
-        )
+        FileMovedEvent(str(source), str(destination))
     )
 
     assert generated_paths == []
@@ -520,11 +545,7 @@ def test_watch_moved_init_file_uses_existing_stub_reexports(
 
     handler = watch.StubWatchHandler()
     handler.on_moved(
-        SimpleNamespace(
-            src_path=str(source),
-            dest_path=str(destination),
-            is_directory=False,
-        )
+        FileMovedEvent(str(source), str(destination))
     )
 
     assert removed_paths == [source]
@@ -549,10 +570,7 @@ def test_watch_deleted_event_removes_old_stub_and_regenerates_all(monkeypatch, t
 
     handler = watch.StubWatchHandler()
     handler.on_deleted(
-        SimpleNamespace(
-            src_path=str(source),
-            is_directory=False,
-        )
+        FileDeletedEvent(str(source))
     )
 
     assert removed_paths == [source]
@@ -580,11 +598,7 @@ def test_watch_moved_directory_removes_old_stubs_and_regenerates_all(
 
     handler = watch.StubWatchHandler()
     handler.on_moved(
-        SimpleNamespace(
-            src_path=str(source),
-            dest_path=str(destination),
-            is_directory=True,
-        )
+        DirMovedEvent(str(source), str(destination))
     )
 
     assert removed_paths == [source]
@@ -602,10 +616,7 @@ def test_watch_created_directory_regenerates_all(monkeypatch, tmp_path):
 
     handler = watch.StubWatchHandler()
     handler.on_created(
-        SimpleNamespace(
-            src_path=str(tmp_path / "new"),
-            is_directory=True,
-        )
+        DirCreatedEvent(str(tmp_path / "new"))
     )
 
     assert generated_paths == [tmp_path]

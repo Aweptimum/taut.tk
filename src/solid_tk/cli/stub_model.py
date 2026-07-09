@@ -17,6 +17,13 @@ class ComponentStub:
     fields: list[PropField]
 
 
+@dataclass
+class ImportStub:
+    module: str
+    name: str
+    export_name: str
+
+
 def collect_protocols(module: ast.Module) -> dict[str, list[PropField]]:
     protocols: dict[str, list[PropField]] = {}
     for node in module.body:
@@ -51,9 +58,27 @@ def collect_components(
         else:
             continue
 
-        if protocol_name in protocols:
+        if protocol_name is None:
+            components.append(ComponentStub(node.name, []))
+        elif protocol_name in protocols:
             components.append(ComponentStub(node.name, protocols[protocol_name]))
     return components
+
+
+def collect_public_imports(module: ast.Module) -> list[ImportStub]:
+    imports: list[ImportStub] = []
+    for node in module.body:
+        if not isinstance(node, ast.ImportFrom) or node.module is None:
+            continue
+        if node.module in {"__future__", "typing"} or node.module.startswith("solid_tk"):
+            continue
+        module_name = "." * node.level + node.module
+        for alias in node.names:
+            export_name = alias.asname or alias.name
+            if export_name.startswith("_"):
+                continue
+            imports.append(ImportStub(module_name, alias.name, export_name))
+    return imports
 
 
 def render_component(component: ComponentStub) -> list[str]:
