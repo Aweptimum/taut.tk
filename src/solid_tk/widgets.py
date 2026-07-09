@@ -44,7 +44,7 @@ class WidgetNode(MountedNode):
         for name in self.props.names(skip=skipped_props):
             tk_name = event_name(name)
             if self.props.is_binding(name, event=is_event_prop(name)):
-                reactive_props[tk_name] = self.props.binding(name)
+                reactive_props[tk_name] = self.props.widget_binding(name)
             elif is_event_prop(name):
                 ctor_props[tk_name] = self.props.read(name)
             else:

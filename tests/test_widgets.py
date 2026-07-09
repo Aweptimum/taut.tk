@@ -165,6 +165,26 @@ def test_function_component_keeps_local_reactive_state_alive():
     assert label.props["text"] == "Count: 1"
 
 
+def test_widget_binding_unwraps_forwarded_callable_prop_value():
+    count = Signal(0)
+
+    @component
+    def ForwardedLabel(props):
+        return Label(text=props.text)
+
+    mount = create_root(
+        lambda: ForwardedLabel(text=lambda: f"Count: {count()}"),
+        title="Demo",
+    )
+    label = mount.widget.children[0]
+
+    assert label.props["text"] == "Count: 0"
+
+    count.set(1)
+
+    assert label.props["text"] == "Count: 1"
+
+
 def test_function_component_props_can_be_typed_with_protocol():
     class CounterProps(Protocol):
         title: Accessor[str]

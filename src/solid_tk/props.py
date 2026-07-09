@@ -65,12 +65,32 @@ class NodeProps:
         return is_signal(value) or callable(value)
 
     def binding(self, name: str) -> Accessor[Any]:
+        """Return an accessor for the prop's reactive value.
+
+        Existing signals are preserved, callable values become ``Computed``
+        bindings, and plain values use their stored signal wrapper.
+        """
         value = self._values[name]
         if is_signal(value):
             return value
         if callable(value):
             return Computed(value)
         return self._signals[name]
+
+    def widget_binding(self, name: str) -> Accessor[Any]:
+        """Return an accessor for the concrete value a widget should receive.
+
+        Component props can wrap callable values, such as ``text=lambda: ...``.
+        This keeps the binding reactive but unwraps that forwarded callable so
+        Tk receives its result instead of the function object.
+        """
+        binding = self.binding(name)
+
+        def read_widget_value() -> Any:
+            value = binding()
+            return value() if callable(value) else value
+
+        return Computed(read_widget_value)
 
 
 class Props(NodeProps):
