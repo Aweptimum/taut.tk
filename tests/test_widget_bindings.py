@@ -41,6 +41,31 @@ def test_entry_value_writes_user_changes_back_to_signal():
     assert value() == "typed"
 
 
+def test_scale_on_input_can_use_owner_scoped_scheduler():
+    rendered = []
+    value, set_value = reactive.create_signal(0.0)
+
+    def handle_input(next_value):
+        set_value(next_value)
+        runtime.after(80, lambda: rendered.append(next_value))
+
+    mount = runtime.create_root(
+        lambda: tk.Scale(
+            value=value,
+            on_input=handle_input,  # pyright: ignore[reportArgumentType]
+        ),
+        title="Demo",
+    )
+    scale = mount.widget.children[0]
+    variable = scale.props["variable"]
+
+    variable.set(12.0)
+    scale.run_next_after()
+
+    assert value() == 12.0
+    assert rendered == [12.0]
+
+
 def test_entry_value_conflicts_with_textvariable():
     value, _set_value = reactive.create_signal("hello")
 
@@ -135,6 +160,24 @@ def test_button_on_click_uses_native_command_activation():
     assert events == ["clicked"]
 
 
+def test_button_on_click_can_use_owner_scoped_scheduler():
+    events = []
+
+    mount = runtime.create_root(
+        lambda: tk.Button(
+            text="Save",
+            on_click=lambda: runtime.after(10, lambda: events.append("saved")),
+        ),
+        title="Demo",
+    )
+    button = mount.widget.children[0]
+
+    button.props["command"]()
+    button.run_next_after()
+
+    assert events == ["saved"]
+
+
 def test_widget_on_click_binds_mouse_event():
     events = []
     event = object()
@@ -149,6 +192,23 @@ def test_widget_on_click_binds_mouse_event():
     frame.run_binding("<Button-1>", bind_id, event)
 
     assert events == [event]
+
+
+def test_bound_widget_event_can_use_owner_scoped_scheduler():
+    events = []
+
+    mount = runtime.create_root(
+        lambda: tk.Frame(
+            on_click=lambda: runtime.after(10, lambda: events.append("clicked"))
+        ),
+        title="Demo",
+    )
+    frame = mount.widget.children[0]
+
+    frame.run_binding("<Button-1>")
+    frame.run_next_after()
+
+    assert events == ["clicked"]
 
 
 def test_widget_on_auxclick_binds_middle_mouse_event_and_unbinds_on_dispose():
