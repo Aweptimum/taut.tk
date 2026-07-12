@@ -12,6 +12,7 @@ from .runtime import MountedNode
 from .runtime import Node
 from .runtime import flatten_child_nodes
 from .runtime import mount_fragment_children
+from .runtime import use_owner
 from .scheduler import TkScheduler
 from .tk_props import LayoutProps
 
@@ -61,13 +62,14 @@ class WidgetNode(MountedNode):
         skipped_props = self.skipped_props | INTERNAL_KEYS | LAYOUT_KEYS
         for name in self.props.names(skip=skipped_props):
             if name in self.command_event_props:
-                ctor_props[self.command_event_props[name]] = self.props.read(name)
+                callback = self.props.read(name)
+                ctor_props[self.command_event_props[name]] = self.owned_callback(callback)
             elif name in EVENT_BINDINGS:
                 event_props[EVENT_BINDINGS[name]] = self.props.read(name)
             elif self.props.is_binding(name, event=is_command_prop(name)):
                 reactive_props[name] = self.props.widget_prop_accessor(name)
             elif is_command_prop(name):
-                ctor_props[name] = self.props.read(name)
+                ctor_props[name] = self.owned_callback(self.props.read(name))
             else:
                 ctor_props[name] = self.props.read(name)
 
@@ -89,6 +91,15 @@ class WidgetNode(MountedNode):
 
     def prepare_ctor_props(self, parent: Any | None, props: dict[str, Any]) -> None:
         pass
+
+    def owned_callback(self, callback: Callable[..., Any]) -> Callable[..., Any]:
+        """Restore this node's owner while a Tk callback is running."""
+
+        def run(*args: Any, **kwargs: Any) -> Any:
+            with use_owner(self.owner):
+                return callback(*args, **kwargs)
+
+        return run
 
     def apply_layout(self, *, reset: bool = False) -> None:
         if self.widget is None:
@@ -124,7 +135,7 @@ class WidgetNode(MountedNode):
         if not callable(bind):
             return
         for sequence, callback in props.items():
-            bind_id = bind(sequence, event_callback(callback))
+            bind_id = bind(sequence, self.owned_callback(event_callback(callback)))
             if bind_id is None:
                 continue
 
@@ -195,6 +206,8 @@ class ValueWidgetNode(WidgetNode):
         props["textvariable"] = variable
         accessor = self.props.prop_accessor("value")
         mutate = self.props.raw("on_input") if "on_input" in self.props else None
+        if mutate is not None:
+            mutate = self.owned_callback(mutate)
         syncing = False
 
         def sync_from_signal() -> None:
@@ -233,6 +246,8 @@ class NumericValueWidgetNode(WidgetNode):
         props["variable"] = variable
         accessor = self.props.prop_accessor("value")
         mutate = self.props.raw("on_input") if "on_input" in self.props else None
+        if mutate is not None:
+            mutate = self.owned_callback(mutate)
         syncing = False
 
         def sync_from_signal() -> None:
@@ -305,4 +320,3 @@ __all__ = [
     "consume_layout",
     "forget_layout",
 ]
-
