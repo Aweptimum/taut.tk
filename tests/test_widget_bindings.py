@@ -76,6 +76,26 @@ def test_entry_value_conflicts_with_textvariable():
         )
 
 
+def test_tk_command_options_are_owned_callbacks_not_reactive_bindings():
+    events = []
+
+    def handle_scroll(first, last):
+        runtime.after(10, lambda: events.append((first, last)))
+
+    mount = runtime.create_root(
+        lambda: tk.Entry(xscrollcommand=handle_scroll),
+        title="Demo",
+    )
+    entry = mount.widget.children[0]
+
+    assert events == []
+
+    entry.props["xscrollcommand"]("0.0", "1.0")
+    entry.run_next_after()
+
+    assert events == [("0.0", "1.0")]
+
+
 def test_create_root_disposes_mounted_app_node():
     value, _set_value = reactive.create_signal("hello")
     mount = runtime.create_root(lambda: layout.VStack(tk.Entry(value=value)), title="Demo")

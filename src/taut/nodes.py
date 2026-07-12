@@ -282,7 +282,7 @@ def event_callback(callback: Callable[..., Any]) -> Callable[[Any], Any]:
 
 
 def is_command_prop(name: str) -> bool:
-    return name == "command"
+    return name.endswith("command")
 
 
 def apply_style(props: Any) -> None:
