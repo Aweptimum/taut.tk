@@ -52,7 +52,7 @@ def test_scale_on_input_can_use_owner_scoped_scheduler():
     mount = runtime.create_root(
         lambda: tk.Scale(
             value=value,
-            on_input=handle_input,  # pyright: ignore[reportArgumentType]
+            on_input=handle_input,
         ),
         title="Demo",
     )

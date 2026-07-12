@@ -9,14 +9,23 @@ from typing import TypedDict
 from typing import TypeVar
 
 from .reactive import Accessor
-from .reactive import Mutator
 
 T = TypeVar("T")
 
 Reactive: TypeAlias = T | Accessor[T] | Callable[[], T]
 Command: TypeAlias = Callable[[], Any]
+
+# A Tk callback whose positional arguments depend on the widget option and its
+# configuration, such as scroll or validation commands.
 EventCommand: TypeAlias = Callable[..., Any]
+
+# A Tk callback that receives one widget-provided value whose concrete type is
+# determined by the underlying Tk command.
 ValueCommand: TypeAlias = Callable[[Any], Any]
+
+# A Taut-managed input callback that receives the widget's new typed value.
+InputCommand: TypeAlias = Callable[[T], Any]
+
 Side: TypeAlias = Literal["left", "right", "top", "bottom"]
 Anchor: TypeAlias = Literal[
     "n",
@@ -165,7 +174,7 @@ class EntryProps(BaseWidgetProps, total=False):
     insertofftime: Reactive[int]
     insertontime: Reactive[int]
     insertwidth: Reactive[int]
-    invalidcommand: Command
+    invalidcommand: EventCommand
     justify: Reactive[Justify]
     readonlybackground: Reactive[str]
     selectbackground: Reactive[str]
@@ -175,10 +184,10 @@ class EntryProps(BaseWidgetProps, total=False):
     state: Reactive[State | Literal["readonly"]]
     textvariable: Reactive[Any]
     validate: Reactive[str]
-    validatecommand: Command
+    validatecommand: EventCommand
     value: Reactive[str]
-    on_input: Mutator[str]
-    xscrollcommand: Command
+    on_input: InputCommand[str]
+    xscrollcommand: EventCommand
 
 
 class CheckbuttonProps(ButtonProps, total=False):
@@ -217,7 +226,7 @@ class ScaleProps(BaseWidgetProps, total=False):
     troughcolor: Reactive[str]
     value: Reactive[float]
     variable: Reactive[Any]
-    on_input: Mutator[float]
+    on_input: InputCommand[float]
 
 
 class CanvasProps(BaseWidgetProps, total=False):
@@ -234,9 +243,9 @@ class CanvasProps(BaseWidgetProps, total=False):
     selectborderwidth: Reactive[int]
     selectforeground: Reactive[str]
     state: Reactive[State]
-    xscrollcommand: Command
+    xscrollcommand: EventCommand
     xscrollincrement: Reactive[int]
-    yscrollcommand: Command
+    yscrollcommand: EventCommand
     yscrollincrement: Reactive[int]
 
 
@@ -261,8 +270,8 @@ class ListboxProps(BaseWidgetProps, total=False):
     selectmode: Reactive[Literal["single", "browse", "multiple", "extended"]]
     setgrid: Reactive[bool]
     state: Reactive[State]
-    xscrollcommand: Callable[..., Any]
-    yscrollcommand: Callable[..., Any]
+    xscrollcommand: EventCommand
+    yscrollcommand: EventCommand
 
 
 class MenuProps(TypedDict, total=False):
@@ -283,7 +292,7 @@ class MenuProps(TypedDict, total=False):
     selectcolor: Reactive[str]
     takefocus: Reactive[bool | str]
     tearoff: Reactive[bool]
-    tearoffcommand: Callable[..., Any]
+    tearoffcommand: EventCommand
     title: Reactive[str]
     type: Reactive[Literal["menubar", "tearoff", "normal"]]
 
@@ -302,7 +311,7 @@ class OptionMenuProps(BaseWidgetProps, total=False):
     variable: Any
     value: Any
     values: tuple[Any, ...] | list[Any]
-    command: Callable[[Any], Any]
+    command: ValueCommand
 
 
 class PanedWindowProps(BaseWidgetProps, total=False):
@@ -323,7 +332,7 @@ class PanedWindowProps(BaseWidgetProps, total=False):
 class ScrollbarProps(BaseWidgetProps, total=False):
     activebackground: Reactive[str]
     activerelief: Reactive[Relief]
-    command: Callable[..., Any]
+    command: EventCommand
     elementborderwidth: Reactive[int]
     jump: Reactive[bool]
     orient: Reactive[Literal["horizontal", "vertical"]]
@@ -377,8 +386,8 @@ class TextProps(BaseWidgetProps, total=False):
     tabstyle: Reactive[Literal["tabular", "wordprocessor"]]
     undo: Reactive[bool]
     wrap: Reactive[Literal["char", "none", "word"]]
-    xscrollcommand: Callable[..., Any]
-    yscrollcommand: Callable[..., Any]
+    xscrollcommand: EventCommand
+    yscrollcommand: EventCommand
 
 
 class PhotoImageProps(TypedDict, total=False):
@@ -451,17 +460,17 @@ class TtkButtonProps(TtkTextProps, total=False):
 class TtkEntryProps(TtkBaseProps, total=False):
     exportselection: Reactive[bool]
     font: Reactive[str | tuple[Any, ...]]
-    invalidcommand: Command
+    invalidcommand: EventCommand
     justify: Reactive[Justify]
     show: Reactive[str]
     state: Reactive[State | Literal["readonly"]]
     textvariable: Reactive[Any]
     validate: Reactive[str]
-    validatecommand: Command
+    validatecommand: EventCommand
     value: Reactive[str]
-    on_input: Mutator[str]
+    on_input: InputCommand[str]
     width: Reactive[int]
-    xscrollcommand: Command
+    xscrollcommand: EventCommand
 
 
 class TtkCheckbuttonProps(TtkButtonProps, total=False):
@@ -483,7 +492,7 @@ class TtkScaleProps(TtkBaseProps, total=False):
     to: Reactive[float]
     value: Reactive[float]
     variable: Reactive[Any]
-    on_input: Mutator[float]
+    on_input: InputCommand[float]
 
 
 class TtkComboboxProps(TtkEntryProps, total=False):
@@ -537,7 +546,7 @@ class TtkOptionMenuProps(TtkBaseProps, total=False):
     variable: Any
     default: Any
     values: tuple[Any, ...] | list[Any]
-    command: Callable[[Any], Any]
+    command: ValueCommand
     direction: Reactive[Literal["above", "below", "left", "right", "flush"]]
 
 
@@ -548,7 +557,7 @@ class TtkPanedWindowProps(TtkBaseProps, total=False):
 
 
 class TtkScrollbarProps(TtkBaseProps, total=False):
-    command: Callable[..., Any]
+    command: EventCommand
     orient: Reactive[Literal["horizontal", "vertical"]]
 
 
@@ -573,8 +582,8 @@ class TtkTreeviewProps(TtkBaseProps, total=False):
     padding: Reactive[int | tuple[int, ...] | str]
     selectmode: Reactive[Literal["extended", "browse", "none"]]
     show: Reactive[tuple[str, ...] | list[str] | str]
-    xscrollcommand: Callable[..., Any]
-    yscrollcommand: Callable[..., Any]
+    xscrollcommand: EventCommand
+    yscrollcommand: EventCommand
 
 
 class TkProps(TypedDict, total=False):
@@ -645,16 +654,16 @@ class StyleProps(GridProps, StackProps, total=False):
     insertofftime: Reactive[int]
     insertontime: Reactive[int]
     insertwidth: Reactive[int]
-    invalidcommand: Command
+    invalidcommand: EventCommand
     readonlybackground: Reactive[str]
     selectbackground: Reactive[str]
     selectborderwidth: Reactive[int]
     selectforeground: Reactive[str]
     show: Reactive[str]
     validate: Reactive[str]
-    validatecommand: Command
+    validatecommand: EventCommand
     value: Reactive[Any]
-    xscrollcommand: Command
+    xscrollcommand: EventCommand
     indicatoron: Reactive[bool]
     offvalue: Reactive[Any]
     onvalue: Reactive[Any]
@@ -677,7 +686,7 @@ class StyleProps(GridProps, StackProps, total=False):
     offset: Reactive[str]
     scrollregion: Reactive[tuple[int, int, int, int] | str]
     xscrollincrement: Reactive[int]
-    yscrollcommand: Command
+    yscrollcommand: EventCommand
     yscrollincrement: Reactive[int]
     length: Reactive[int]
     maximum: Reactive[float]
