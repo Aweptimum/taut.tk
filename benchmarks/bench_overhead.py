@@ -50,6 +50,7 @@ class FakeWidget:
         self.after_callbacks: dict[str, tuple[int, Callable[[], Any]]] = {}
         self.after_cancelled: list[str] = []
         self.next_after_id = 0
+        self.protocols: dict[str, Callable[[], Any]] = {}
         if parent is not None:
             parent.children.append(self)
 
@@ -75,6 +76,9 @@ class FakeWidget:
 
     def quit(self) -> None:
         self.quit_called = True
+
+    def protocol(self, name: str, callback: Callable[[], Any]) -> None:
+        self.protocols[name] = callback
 
     def after(self, ms: int, callback: Callable[[], Any]) -> str:
         self.next_after_id += 1
