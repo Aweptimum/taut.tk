@@ -97,12 +97,25 @@ class Owner:
         return effect
 
     def handle_error(self, error: Exception) -> None:
-        owner: Owner | None = self
-        while owner is not None:
-            if owner.error_handler is not None:
-                owner.error_handler(error)
+        error_owner: Owner | None = self
+        handler_owner: Owner | None = self
+        while handler_owner is not None:
+            if handler_owner.error_handler is None:
+                handler_owner = handler_owner.parent
+                continue
+
+            try:
+                # The first handler runs where the error occurred. If a handler
+                # itself fails, forwarding below rebinds the new error above
+                # that failed boundary.
+                assert error_owner is not None
+                with use_owner(error_owner):
+                    handler_owner.error_handler(error)
                 return
-            owner = owner.parent
+            except Exception as next_error:
+                error = next_error
+                error_owner = handler_owner.parent
+                handler_owner = handler_owner.parent
         raise error
 
     def cleanup(self, fn: Callable[[], None]) -> None:

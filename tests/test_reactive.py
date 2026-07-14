@@ -3,6 +3,7 @@ from __future__ import annotations
 from reaktiv import Effect
 
 from taut import reactive
+from taut import runtime
 
 
 def test_create_signal_sets_values_and_updates_from_current_value():
@@ -96,3 +97,37 @@ def test_untrack_reads_without_subscribing_effect():
     assert events == [("a", 0), ("b", 1)]
 
     effect.dispose()
+
+
+def test_error_handler_runs_under_owner_where_error_occurred():
+    owners = []
+    boundary = runtime.Owner(
+        error_handler=lambda error: owners.append(runtime.get_current_owner())
+    )
+    source = runtime.Owner(parent=boundary)
+
+    source.handle_error(ValueError("boom"))
+
+    assert owners == [source]
+
+
+def test_error_thrown_by_handler_is_forwarded_under_parent_owner():
+    events = []
+
+    def outer_handler(error):
+        events.append((str(error), runtime.get_current_owner()))
+
+    def inner_handler(error):
+        events.append((str(error), runtime.get_current_owner()))
+        raise RuntimeError("handler failed")
+
+    outer = runtime.Owner(error_handler=outer_handler)
+    inner = runtime.Owner(parent=outer, error_handler=inner_handler)
+    source = runtime.Owner(parent=inner)
+
+    source.handle_error(ValueError("original"))
+
+    assert events == [
+        ("original", source),
+        ("handler failed", outer),
+    ]
