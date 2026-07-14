@@ -69,7 +69,10 @@ class WidgetNode(MountedNode):
             elif self.props.is_binding(name, event=is_command_prop(name)):
                 reactive_props[name] = self.props.widget_prop_accessor(name)
             elif is_command_prop(name):
-                ctor_props[name] = self.owned_callback(self.props.read(name))
+                command = self.props.read(name)
+                ctor_props[name] = (
+                    self.owned_callback(command) if callable(command) else command
+                )
             else:
                 ctor_props[name] = self.props.read(name)
 

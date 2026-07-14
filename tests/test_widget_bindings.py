@@ -96,6 +96,21 @@ def test_tk_command_options_are_owned_callbacks_not_reactive_bindings():
     assert events == [("0.0", "1.0")]
 
 
+def test_registered_tcl_command_values_are_passed_through():
+    registered = ("registered-command", "%P")
+
+    mount = runtime.create_root(
+        lambda: tk.Entry(
+            validate="key",
+            validatecommand=registered,  # pyright: ignore[reportArgumentType]
+        ),
+        title="Demo",
+    )
+    entry = mount.widget.children[0]
+
+    assert entry.props["validatecommand"] is registered
+
+
 def test_create_root_disposes_mounted_app_node():
     value, _set_value = reactive.create_signal("hello")
     mount = runtime.create_root(lambda: layout.VStack(tk.Entry(value=value)), title="Demo")
