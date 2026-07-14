@@ -47,6 +47,37 @@ def test_create_selector_accepts_custom_equality():
     assert is_selected(2) is True
 
 
+def test_memo_runs_under_owner_where_it_was_created():
+    source, set_source = reactive.create_signal(0)
+    owner = runtime.Owner()
+    owners = []
+
+    with runtime.use_owner(owner):
+        memo = reactive.create_memo(
+            lambda: (source(), owners.append(runtime.get_current_owner()))[0]
+        )
+
+    assert memo() == 0
+
+    set_source(1)
+
+    assert memo() == 1
+    assert owners == [owner, owner]
+
+
+def test_memo_keeps_creation_owner_when_read_under_another_owner():
+    creation_owner = runtime.Owner()
+    reading_owner = runtime.Owner()
+
+    with runtime.use_owner(creation_owner):
+        memo = reactive.create_memo(runtime.get_current_owner)
+
+    with runtime.use_owner(reading_owner):
+        observed_owner = memo()
+
+    assert observed_owner is creation_owner
+
+
 def test_on_tracks_only_explicit_source():
     source, set_source = reactive.create_signal("a")
     incidental, set_incidental = reactive.create_signal(0)

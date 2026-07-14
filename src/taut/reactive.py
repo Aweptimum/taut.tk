@@ -57,7 +57,21 @@ def create_signal[T](initial: T) -> tuple[Accessor[T], Mutator[T]]:
 
 
 def create_memo[T](fn: Callable[[], T]) -> Accessor[T]:
-    computed = Computed(fn)
+    # Import lazily because runtime depends on stores, which depends on this
+    # module. Memo evaluation happens after module initialization is complete.
+    from .runtime import get_current_owner
+    from .runtime import use_owner
+
+    owner = get_current_owner()
+    if owner is None:
+        computed = Computed(fn)
+    else:
+
+        def run() -> T:
+            with use_owner(owner):
+                return fn()
+
+        computed = Computed(run)
     return Accessor(computed)
 
 
