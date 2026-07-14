@@ -59,6 +59,29 @@ def test_portal_close_runs_callback_and_destroys_toplevel():
     assert portal.widget is None
 
 
+def test_portal_close_callback_runs_with_portal_owner():
+    callbacks = []
+
+    def handle_close():
+        callbacks.append(runtime.get_current_owner())
+        runtime.after(10, lambda: None)
+
+    mount = runtime.create_root(
+        lambda: tk.Portal(
+            lambda: tk.Label(text="Dialog"),
+            on_close=handle_close,
+        ),
+        title="Demo",
+    )
+    portal = cast(Any, mount.node).children[0]
+    toplevel = portal.widget
+
+    toplevel.protocols["WM_DELETE_WINDOW"]()
+
+    assert callbacks == [portal.owner]
+    assert toplevel.after_cancelled == ["after-1"]
+
+
 def test_portal_close_is_idempotent():
     events = []
     mount = runtime.create_root(

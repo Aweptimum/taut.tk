@@ -118,7 +118,8 @@ class PortalNode(MountedNode):
         if self.widget is None and self.child is None:
             return
         if self.on_close is not None:
-            self.on_close()
+            with use_owner(self.owner):
+                self.on_close()
         if self.widget is not None or self.child is not None:
             self.unmount()
 
