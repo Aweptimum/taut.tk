@@ -6,6 +6,8 @@ from time import sleep
 from typing import Optional
 from typing import cast
 
+import pytest
+
 from taut import component
 from taut import reactive
 from taut import resource
@@ -259,6 +261,31 @@ def test_resource_mutate_updates_value_without_fetching():
     assert res.loading() is False
     assert res.state() == "ready"
 
+def test_resource_fetch_overrides_mutate():
+    release_fetch = Event()
+    resources = []
+
+    def fetcher(source, info):
+        release_fetch.wait()
+        return 1
+
+    @component
+    def App(props):
+        res, (mutate, _refetch) = resource.create_resource(fetcher)
+        resources.append(res)
+        mutate(2)
+        return tk.Label(text=lambda: str(res()))
+
+    mount = runtime.create_root(App, title="Demo")
+    res = resources[0]
+
+    assert res() == 2
+
+    release_fetch.set()
+    wait_for_ui_callback(mount.widget)
+    run_pending_ui(mount.widget)
+
+    assert res() == 1
 
 def test_resource_ignores_stale_results():
     pending = []
