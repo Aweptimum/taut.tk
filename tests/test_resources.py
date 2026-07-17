@@ -157,6 +157,42 @@ def test_resource_does_not_fetch_for_disabled_source_until_enabled():
     assert res.state() == "ready"
 
 
+@pytest.mark.parametrize("disabled", [None, False])
+def test_resource_ignores_in_flight_result_when_source_is_disabled(disabled):
+    done = Event()
+    resources = []
+    source, set_source = reactive.create_signal(cast(str | bool | None, "ready"))
+
+    def fetcher(source, info):
+        done.wait(1)
+        return f"value:{source}"
+
+    @component
+    def App(props):
+        res, _actions = resource.create_resource(fetcher, None, source)
+        resources.append(res)
+        return tk.Label(text="App")
+
+    mount = runtime.create_root(App, title="Demo")
+    res = resources[0]
+
+    assert res.loading() is True
+    assert res.state() == "pending"
+
+    set_source(disabled)
+
+    assert res.loading() is False
+    assert res.state() == "unresolved"
+
+    done.set()
+    wait_for_ui_callback(mount.widget)
+    run_pending_ui(mount.widget)
+
+    assert res() is None
+    assert res.loading() is False
+    assert res.state() == "unresolved"
+
+
 def test_resource_refetch_passes_custom_refetch_info_and_refreshing_state():
     calls = []
     resources = []
