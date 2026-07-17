@@ -142,6 +142,9 @@ class Resource(Generic[S, T, R]):
     def _run(self, *, refetching: R | bool | None) -> None:
         src = self._source()
         if src is False or src is None:
+            # The worker thread cannot be stopped, so advance the request ID to
+            # make any in-flight completion stale now that the source is disabled.
+            self._request_id += 1
             self._loading[1](False)
             if self._latest[0]() is None:
                 self._state[1]("unresolved")
