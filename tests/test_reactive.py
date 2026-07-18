@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+from typing import Any
+from typing import cast
+
 from reaktiv import Effect
 
 from taut import reactive
@@ -76,6 +79,73 @@ def test_memo_keeps_creation_owner_when_read_under_another_owner():
         observed_owner = memo()
 
     assert observed_owner is creation_owner
+
+
+def test_map_array_reuses_values_and_updates_index_accessors():
+    first = object()
+    second = object()
+    source, set_source = reactive.create_signal(cast(Any, [first, second]))
+    owner = runtime.Owner()
+    created = []
+
+    def mapper(item, index):
+        value = {"item": item, "index": index}
+        created.append(value)
+        return value
+
+    with runtime.use_owner(owner):
+        mapped = reactive.map_array(source, mapper)
+
+    initial = mapped()
+
+    assert [value["item"] for value in initial] == [first, second]
+    assert [value["index"]() for value in initial] == [0, 1]
+
+    set_source([second, first])
+    reordered = mapped()
+
+    assert reordered == [initial[1], initial[0]]
+    assert [value["index"]() for value in reordered] == [0, 1]
+    assert created == initial
+
+    owner.dispose()
+
+
+def test_map_array_disposes_removed_values_and_owns_fallback():
+    first = object()
+    second = object()
+    source, set_source = reactive.create_signal(cast(Any, [first, second]))
+    owner = runtime.Owner()
+    cleanups = []
+
+    def mapper(item):
+        runtime.on_cleanup(lambda: cleanups.append(item))
+        return item
+
+    def fallback():
+        runtime.on_cleanup(lambda: cleanups.append("fallback"))
+        return "empty"
+
+    with runtime.use_owner(owner):
+        mapped = reactive.map_array(source, mapper, fallback=fallback)
+
+    assert mapped() == [first, second]
+
+    set_source([second])
+    assert mapped() == [second]
+    assert cleanups == [first]
+
+    set_source(False)
+    assert mapped() == ["empty"]
+    assert cleanups == [first, second]
+
+    set_source([first])
+    assert mapped() == [first]
+    assert cleanups == [first, second, "fallback"]
+
+    owner.dispose()
+
+    assert cleanups == [first, second, "fallback", first]
 
 
 def test_on_tracks_only_explicit_source():
