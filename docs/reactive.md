@@ -97,6 +97,35 @@ Memos are accessors:
 Label(text=full_name)
 ```
 
+## `map_array`
+
+`map_array(source, map_fn, fallback=None)` reactively maps a source list and
+returns an accessor containing the mapped values:
+
+```python
+rows = map_array(
+    todos,
+    lambda todo, index: {
+        "todo": todo,
+        "position": index,
+    },
+    fallback=lambda: {"empty": True},
+)
+
+current_rows = rows()
+```
+
+Mapped values are cached by item identity. Objects are matched by reference;
+built-in primitive values are matched by value. Retained values move rather
+than being recreated, and their index accessors update to the new positions.
+Duplicate occurrences are supported.
+
+Each mapped value has its own cleanup scope, which is disposed when that item
+leaves the source. The mapping callback itself is untracked, so reactive reads
+inside it do not become dependencies of the list mapping. Empty, `None`, and
+`False` sources produce the optional fallback value.
+
+
 ## `create_effect`
 
 Create an owned effect with `create_effect(fn)`. The effect runs immediately,
