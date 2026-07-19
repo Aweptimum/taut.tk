@@ -188,7 +188,6 @@ def test_function_component_can_return_control_fragment_into_parent_layout():
         return control.For(
             items,
             lambda item: tk.Label(text=item),
-            key=lambda item: item,
         )
 
     mount = runtime.create_root(
@@ -256,7 +255,6 @@ def test_control_returning_component_cleans_up_when_show_removes_it():
         return control.For(
             items,
             lambda item: tk.Label(text=item),
-            key=lambda item: item,
         )
 
     mount = runtime.create_root(
@@ -287,7 +285,6 @@ def test_control_returning_component_cleans_up_when_dynamic_replaces_it():
         return control.For(
             items,
             lambda item: tk.Label(text=item),
-            key=lambda item: item,
         )
 
     @component

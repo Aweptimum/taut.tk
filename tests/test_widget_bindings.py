@@ -321,7 +321,7 @@ def test_native_layout_keeps_pack_order_in_sync_with_visible_children():
 
     mount = runtime.create_root(
         lambda: tk.Frame(
-            control.For(items, render, key=lambda item: item),
+            control.For(items, render),
         ),
         title="Demo",
     )
@@ -358,7 +358,7 @@ def test_stack_layout_reorders_retained_children_and_recomputes_gap():
 
     mount = runtime.create_root(
         lambda: layout.VStack(
-            control.For(items, render, key=lambda item: item),
+            control.For(items, render),
             gap=4,
         ),
         title="Demo",
@@ -446,7 +446,7 @@ def test_grid_tiles_for_children_by_visible_order():
 
     mount = runtime.create_root(
         lambda: layout.Grid(
-            control.For(items, lambda item: tk.Label(text=item), key=lambda item: item),
+            control.For(items, lambda item: tk.Label(text=item)),
             columns=2,
             gap=4,
             sticky="ew",
