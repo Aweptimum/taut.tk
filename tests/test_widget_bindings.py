@@ -310,6 +310,68 @@ def test_vstack_defaults_match_existing_layout():
     assert second.pack_kwargs == first.pack_kwargs
 
 
+def test_native_layout_keeps_pack_order_in_sync_with_visible_children():
+    items, set_items = reactive.create_signal(["a", "b"])
+    rendered = {}
+
+    def render(item):
+        node = tk.Label(text=item)
+        rendered[item] = node
+        return node
+
+    mount = runtime.create_root(
+        lambda: tk.Frame(
+            control.For(items, render, key=lambda item: item),
+        ),
+        title="Demo",
+    )
+    frame = mount.widget.children[0]
+
+    assert frame.packed_children == [rendered["a"].widget, rendered["b"].widget]
+
+    set_items(["b", "a"])
+    assert frame.packed_children == [rendered["b"].widget, rendered["a"].widget]
+
+    set_items(["new", "b", "middle", "a"])
+    assert frame.packed_children == [
+        rendered["new"].widget,
+        rendered["b"].widget,
+        rendered["middle"].widget,
+        rendered["a"].widget,
+    ]
+
+    set_items(["middle", "a"])
+    assert frame.packed_children == [
+        rendered["middle"].widget,
+        rendered["a"].widget,
+    ]
+
+
+def test_stack_layout_reorders_retained_children_and_recomputes_gap():
+    items, set_items = reactive.create_signal(["a", "b", "c"])
+    rendered = {}
+
+    def render(item):
+        node = tk.Label(text=item)
+        rendered[item] = node
+        return node
+
+    mount = runtime.create_root(
+        lambda: layout.VStack(
+            control.For(items, render, key=lambda item: item),
+            gap=4,
+        ),
+        title="Demo",
+    )
+    stack = mount.widget.children[0]
+
+    set_items(["c", "a"])
+
+    assert stack.packed_children == [rendered["c"].widget, rendered["a"].widget]
+    assert rendered["c"].widget.pack_kwargs["pady"] == (0, 4)
+    assert "pady" not in rendered["a"].widget.pack_kwargs
+
+
 def test_stack_padding_gap_and_alignment_are_applied():
     mount = runtime.create_root(
         lambda: layout.VStack(

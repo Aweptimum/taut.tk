@@ -56,6 +56,7 @@ class FakeWidget:
         self.next_bind_id = 0
         self.column_weights = {}
         self.row_weights = {}
+        self.packed_children = []
         if parent is not None:
             parent.children.append(self)
 
@@ -64,6 +65,10 @@ class FakeWidget:
 
     def pack(self, **kwargs):
         self.pack_kwargs = kwargs
+        if self.parent is not None:
+            if self in self.parent.packed_children:
+                self.parent.packed_children.remove(self)
+            self.parent.packed_children.append(self)
 
     def grid(self, **kwargs):
         self.grid_kwargs = kwargs
@@ -78,11 +83,13 @@ class FakeWidget:
         self.row_weights[index] = kwargs
 
     def pack_forget(self):
-        pass
+        if self.parent is not None and self in self.parent.packed_children:
+            self.parent.packed_children.remove(self)
 
     def destroy(self):
         self.destroy_count += 1
         self.destroyed = True
+        self.pack_forget()
 
     def title(self, value):
         self.props["title"] = value

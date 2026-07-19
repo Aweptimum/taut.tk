@@ -2,9 +2,11 @@ from __future__ import annotations
 
 import tkinter as tk
 from collections.abc import Mapping
+from collections.abc import Sequence
 from typing import Any
 from typing import Unpack
 
+from .child_layout import same_nodes
 from .nodes import WidgetNode
 from .nodes import apply_style
 from .nodes import consume_layout
@@ -40,30 +42,92 @@ def VStack(*children: Any, **props: Unpack[StackProps]) -> WidgetNode:
     apply_style(props)
     stack = consume_stack(props, axis="vertical")
     layout = consume_layout(props)
-    node = WidgetNode(tk.Frame, children=children, layout=layout, **props)
-    setattr(node, "_stack", stack)
-    apply_stack_layout(list(node.children), stack)
-    return node
+    return WidgetNode(
+        tk.Frame,
+        children=children,
+        layout=layout,
+        children_layout=StackLayout(stack),
+        **props,
+    )
 
 
 def HStack(*children: Any, **props: Unpack[StackProps]) -> WidgetNode:
     apply_style(props)
     stack = consume_stack(props, axis="horizontal")
     layout = consume_layout(props)
-    node = WidgetNode(tk.Frame, children=children, layout=layout, **props)
-    setattr(node, "_stack", stack)
-    apply_stack_layout(list(node.children), stack)
-    return node
+    return WidgetNode(
+        tk.Frame,
+        children=children,
+        layout=layout,
+        children_layout=StackLayout(stack),
+        **props,
+    )
 
 
 def Grid(*children: Any, **props: Unpack[GridProps]) -> WidgetNode:
     apply_style(props)
     grid = consume_grid(props)
     layout = consume_layout(props)
-    node = WidgetNode(tk.Frame, children=children, layout=layout, **props)
-    setattr(node, "_grid", grid)
-    apply_grid_layout(list(node.children), grid)
-    return node
+    return WidgetNode(
+        tk.Frame,
+        children=children,
+        layout=layout,
+        children_layout=GridLayout(grid),
+        **props,
+    )
+
+
+class StackLayout:
+    def __init__(self, options: dict[str, Any]) -> None:
+        self.options = options
+        self.child_options: dict[WidgetNode, dict[str, Any]] = {}
+
+    def prepare(self, parent: Any, children: Sequence[Any]) -> None:
+        stack_children = [
+            child
+            for child in children
+            if isinstance(child, WidgetNode)
+            and "grid" not in child.layout
+            and "place" not in child.layout
+        ]
+        self.child_options = {
+            child: self.child_options.get(child, dict(child.layout.get("pack", {})))
+            for child in stack_children
+        }
+        apply_stack_layout(stack_children, self.options, self.child_options)
+
+    def reconcile(
+        self,
+        parent: Any,
+        previous: Sequence[Any],
+        current: Sequence[Any],
+    ) -> None:
+        if same_nodes(previous, current):
+            return
+        for child in current:
+            if isinstance(child, WidgetNode) and "pack" in child.layout:
+                child.apply_layout(reset=True)
+
+
+class GridLayout:
+    def __init__(self, options: dict[str, Any]) -> None:
+        self.options = options
+
+    def prepare(self, parent: Any, children: Sequence[Any]) -> None:
+        apply_grid_container_layout(parent, self.options)
+        apply_grid_layout(children, self.options)
+
+    def reconcile(
+        self,
+        parent: Any,
+        previous: Sequence[Any],
+        current: Sequence[Any],
+    ) -> None:
+        if same_nodes(previous, current):
+            return
+        for child in current:
+            if isinstance(child, WidgetNode) and "grid" in child.layout:
+                child.apply_layout(reset=True)
 
 
 def consume_stack(props: Any, *, axis: str) -> dict[str, Any]:
@@ -104,22 +168,21 @@ def resolve_padding(padding: Padding) -> tuple[int, int]:
     return padding, padding
 
 
-def apply_stack_layout(children: list[Any], stack: dict[str, Any]) -> None:
+def apply_stack_layout(
+    children: Sequence[WidgetNode],
+    stack: dict[str, Any],
+    child_options: Mapping[WidgetNode, dict[str, Any]],
+) -> None:
     last_index = len(children) - 1
     for index, child in enumerate(children):
-        if not isinstance(child, WidgetNode):
-            continue
-        if "grid" in child.layout or "place" in child.layout:
-            continue
-
         item = stack_item_layout(child)
         pack = stack_pack_options(stack, item, last=index == last_index)
-        pack.update(child.layout.get("pack", {}))
+        pack.update(child_options.get(child, {}))
         pack.update(item.get("pack", {}))
         child.layout = {"pack": pack}
 
 
-def apply_grid_layout(children: list[Any], grid: dict[str, Any]) -> None:
+def apply_grid_layout(children: Sequence[Any], grid: dict[str, Any]) -> None:
     columns = max(1, grid["columns"])
     gap = grid["gap"]
     for index, child in enumerate(children):

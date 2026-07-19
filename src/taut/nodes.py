@@ -7,6 +7,8 @@ from inspect import signature
 from typing import Any
 
 from . import style as style_api
+from .child_layout import ChildLayout
+from .child_layout import NativeLayout
 from .props import NodeProps
 from .runtime import MountedNode
 from .runtime import Node
@@ -46,12 +48,16 @@ class WidgetNode(MountedNode):
         *,
         children: Iterable[Any] = (),
         layout: dict[str, Any] | None = None,
+        children_layout: ChildLayout | None = None,
         **props: Any,
     ) -> None:
         super().__init__(children)
         self.widget_type = widget_type
         self.props = NodeProps(props)
         self.layout = layout if layout is not None else {"pack": {}}
+        self.children_layout = (
+            children_layout if children_layout is not None else NativeLayout()
+        )
         self.mounted_children: list[Node] = []
 
     def mount(self, parent: Any | None) -> Any:
@@ -158,35 +164,21 @@ class WidgetNode(MountedNode):
         if self.widget is None:
             return
 
-        from .layout import apply_grid_layout
-        from .layout import apply_stack_layout
-
         mount_fragment_children(self.widget, self.children)
 
         visible = flatten_child_nodes(self.children)
         visible_set = set(visible)
+        previous = self.mounted_children
         for child in reversed(self.mounted_children):
             if child not in visible_set:
                 child.unmount()
 
-        stack = getattr(self, "_stack", None)
-        grid = getattr(self, "_grid", None)
-        if stack is not None:
-            apply_stack_layout(visible, stack)
-        elif grid is not None:
-            from .layout import apply_grid_container_layout
-
-            apply_grid_container_layout(self.widget, grid)
-            apply_grid_layout(visible, grid)
-
+        self.children_layout.prepare(self.widget, visible)
         for child in visible:
             if child.widget is None:
                 child.mount(self.widget)
-            elif (stack is not None or grid is not None) and isinstance(
-                child, WidgetNode
-            ):
-                child.apply_layout(reset=True)
 
+        self.children_layout.reconcile(self.widget, previous, visible)
         self.mounted_children = visible
 
 
