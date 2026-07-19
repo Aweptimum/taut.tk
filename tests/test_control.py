@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from dataclasses import dataclass
 from typing import Any
 from typing import cast
 
@@ -116,7 +117,6 @@ def test_for_mounts_repeated_children_as_fragment():
             control.For(
                 items,
                 lambda item: tk.Label(text=item),
-                key=lambda item: item,
             ),
             tk.Label(text="After"),
         ),
@@ -132,6 +132,257 @@ def test_for_mounts_repeated_children_as_fragment():
         "b",
         "After",
     ]
+
+
+def test_for_reuses_object_items_and_updates_index_accessors_when_reordered():
+    first = object()
+    second = object()
+    items, set_items = reactive.create_signal([first, second])
+    rendered = {}
+
+    def render(item, index):
+        node = tk.Label(text=lambda: str(index()))
+        rendered[item] = node
+        return node
+
+    mount = runtime.create_root(
+        lambda: layout.VStack(control.For(items, render)), title="Demo"
+    )
+    first_node = rendered[first]
+    second_node = rendered[second]
+
+    assert first_node.widget.props["text"] == "0"
+    assert second_node.widget.props["text"] == "1"
+
+    set_items([second, first])
+
+    assert rendered == {first: first_node, second: second_node}
+    assert first_node.widget.props["text"] == "1"
+    assert second_node.widget.props["text"] == "0"
+
+    mount.dispose()
+
+
+def test_for_reorders_retained_widgets_using_plain_pack_layout():
+    first = object()
+    second = object()
+    items, set_items = reactive.create_signal([first, second])
+    rendered = {}
+
+    def render(item):
+        node = tk.Label(text="row")
+        rendered[item] = node
+        return node
+
+    mount = runtime.create_root(lambda: control.For(items, render), title="Demo")
+
+    # Assert packed_children order
+    first_widget = rendered[first].widget
+    second_widget = rendered[second].widget
+
+    assert mount.widget.packed_children == [first_widget, second_widget]
+
+    # Update order, check again
+    set_items([second, first])
+
+    assert mount.widget.packed_children == [second_widget, first_widget]
+    assert rendered[first].widget is first_widget
+    assert rendered[second].widget is second_widget
+
+    mount.dispose()
+
+
+def test_for_recreates_equal_but_distinct_objects():
+    @dataclass
+    class Item:
+        name: str
+
+    first = Item("same")
+    replacement = Item("same")
+    items, set_items = reactive.create_signal([first])
+    rendered = []
+
+    def render(item):
+        node = tk.Label(text=item.name)
+        rendered.append(node)
+        return node
+
+    mount = runtime.create_root(lambda: control.For(items, render), title="Demo")
+    first_node = rendered[0]
+
+    assert first == replacement
+    assert first is not replacement
+
+    set_items([replacement])
+
+    assert len(rendered) == 2
+    assert rendered[1] is not first_node
+    assert first_node.widget is None
+
+    mount.dispose()
+
+
+def test_for_reuses_equal_primitive_values():
+    first = "".join(["same", " value"])
+    replacement = "same value"
+    items, set_items = reactive.create_signal([first])
+    rendered = []
+
+    def render(item):
+        node = tk.Label(text=item)
+        rendered.append(node)
+        return node
+
+    mount = runtime.create_root(lambda: control.For(items, render), title="Demo")
+    first_node = rendered[0]
+
+    assert first == replacement
+    assert first is not replacement
+
+    set_items([replacement])
+
+    assert rendered == [first_node]
+    assert first_node.widget is not None
+
+    mount.dispose()
+
+
+def test_for_does_not_match_boolean_and_numeric_values():
+    items, set_items = reactive.create_signal(cast(list[Any], [True]))
+    rendered = []
+
+    def render(item):
+        node = tk.Label(text=str(item))
+        rendered.append(node)
+        return node
+
+    mount = runtime.create_root(lambda: control.For(items, render), title="Demo")
+    boolean_node = rendered[0]
+
+    set_items([1])
+
+    assert len(rendered) == 2
+    assert boolean_node.widget is None
+
+    mount.dispose()
+
+
+def test_for_supports_duplicate_item_occurrences():
+    items, set_items = reactive.create_signal(["same", "same"])
+    rendered = []
+
+    def render(item):
+        node = tk.Label(text=item)
+        rendered.append(node)
+        return node
+
+    mount = runtime.create_root(
+        lambda: layout.VStack(control.For(items, render)), title="Demo"
+    )
+    first_node, second_node = rendered
+
+    set_items(["same"])
+
+    assert first_node.widget is not None
+    assert second_node.widget is None
+
+    set_items(["same", "same"])
+
+    assert len(rendered) == 3
+    assert first_node.widget is not None
+    assert rendered[2].widget is not None
+
+    mount.dispose()
+
+
+def test_for_disposes_only_the_removed_item_scope():
+    first = object()
+    second = object()
+    items, set_items = reactive.create_signal([first, second])
+    cleanups = []
+
+    def render(item):
+        runtime.on_cleanup(lambda: cleanups.append(item))
+        return tk.Label(text="row")
+
+    mount = runtime.create_root(lambda: control.For(items, render), title="Demo")
+
+    set_items([second])
+
+    assert cleanups == [first]
+
+    mount.dispose()
+
+    assert cleanups == [first, second]
+
+
+@pytest.mark.parametrize("empty", [[], None, False])
+def test_for_renders_fallback_for_empty_or_falsy_sources(empty):
+    items, set_items = reactive.create_signal(cast(Any, ["row"]))
+    cleanups = []
+
+    def fallback():
+        runtime.on_cleanup(lambda: cleanups.append("fallback"))
+        return tk.Label(text="Empty")
+
+    mount = runtime.create_root(
+        lambda: control.For(items, lambda item: tk.Label(text=item), fallback=fallback),
+        title="Demo",
+    )
+    for_node = cast(Any, mount.node).children[0]
+
+    set_items(empty)
+
+    fallback_node = for_node.active[0].rendered
+    assert fallback_node.widget.props["text"] == "Empty"
+
+    set_items(["next"])
+
+    assert fallback_node.widget is None
+    assert cleanups == ["fallback"]
+
+    mount.dispose()
+
+
+def test_for_runs_fallback_mount_and_cleanup_in_its_own_scope():
+    items, set_items = reactive.create_signal(cast(Any, []))
+    events = []
+
+    def fallback():
+        runtime.on_mount(lambda: events.append("mount"))
+        runtime.on_cleanup(lambda: events.append("cleanup"))
+        return tk.Label(text="Empty")
+
+    mount = runtime.create_root(
+        lambda: control.For(items, lambda item: tk.Label(text=item), fallback=fallback),
+        title="Demo",
+    )
+
+    assert events == ["mount"]
+
+    set_items(["row"])
+
+    assert events == ["mount", "cleanup"]
+
+    mount.dispose()
+
+
+def test_for_does_not_track_reactive_reads_in_renderer():
+    items = reactive.create_signal(["row"])[0]
+    incidental, set_incidental = reactive.create_signal("first")
+    renders = []
+
+    def render(item):
+        renders.append((item, incidental()))
+        return tk.Label(text=item)
+
+    mount = runtime.create_root(lambda: control.For(items, render), title="Demo")
+
+    set_incidental("second")
+
+    assert renders == [("row", "first")]
+
+    mount.dispose()
 
 
 def test_dynamic_switches_component_factories():

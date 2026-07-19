@@ -7,10 +7,12 @@ from inspect import signature
 from typing import Any
 from typing import cast
 
+from . import reactive as reactive_api
 from .reactive import Accessor
 from .reactive import Mutator
 from .reactive import create_signal
 from .reactive import is_signal
+from .reactive import map_array
 from .reactive import read
 from .reactive import to_accessor
 from .runtime import MountedNode
@@ -74,20 +76,49 @@ class ShowNode(MountedNode):
         self.widget = None
 
 
+class _ScopedNode(MountedNode):
+    """Transparent node that owns one mapped row or fallback."""
+
+    def __init__(self, rendered: Node, *, owner: Owner) -> None:
+        super().__init__(owner=owner)
+        self.rendered = rendered
+        self.fragment_children = MutableList([rendered], wrap=False)
+        self.disposed = False
+
+    def mount(self, parent: Any | None) -> Any:
+        self.widget = parent
+        self.owner.run_mounts()
+        return parent
+
+    def unmount(self) -> None:
+        if self.disposed:
+            return
+        self.disposed = True
+        self.owner.dispose()
+        self.rendered.unmount()
+        self.fragment_children.replace([])
+        self.widget = None
+
+
 class ForNode(MountedNode):
     def __init__(
         self,
         each: Any,
-        render: Callable[[Any], Any],
+        render: Callable[..., Any],
         *,
-        key: Callable[[Any], Any] | None = None,
+        fallback: Callable[[], Any] | Any | None = None,
     ) -> None:
         super().__init__()
         self.each = to_accessor(each)
         self.render = render
-        self.key = key if key is not None else id
-        self.instances: dict[Any, Node] = {}
-        self.order: list[Any] = []
+        self.fallback = fallback
+        with use_owner(self.owner):
+            self.mapped = map_array(
+                self.each,
+                self.map_item,
+                fallback=self.map_fallback if fallback is not None else None,
+            )
+        self.active: list[_ScopedNode] = []
         self.fragment_children = MutableList[Node](wrap=False)
 
     def mount(self, parent: Any | None) -> Any:
@@ -100,30 +131,25 @@ class ForNode(MountedNode):
     def update(self) -> None:
         if self.widget is None:
             return
-        items = list(read(self.each))
-        next_keys = [self.key(item) for item in items]
-        next_key_set = set(next_keys)
+        self.active = self.mapped()
+        self.fragment_children.replace(self.active)
 
-        for stale in [key for key in self.order if key not in next_key_set]:
-            node = self.instances.pop(stale)
-            node.unmount()
+    def map_item(self, item: Any, index: Accessor[int]) -> _ScopedNode:
+        owner = get_current_owner()
+        assert owner is not None
+        rendered = normalize_child(reactive_api._call_map_fn(self.render, item, index))
+        return _ScopedNode(rendered, owner=owner)
 
-        next_instances: dict[Any, Node] = {}
-        for item, key in zip(items, next_keys, strict=True):
-            node = self.instances.get(key)
-            if node is None:
-                node = normalize_child(self.render(item))
-            next_instances[key] = node
-
-        self.instances = next_instances
-        self.order = next_keys
-        self.fragment_children.replace([self.instances[key] for key in self.order])
+    def map_fallback(self) -> _ScopedNode:
+        owner = get_current_owner()
+        assert owner is not None
+        child = self.fallback() if callable(self.fallback) else self.fallback
+        return _ScopedNode(normalize_child(child), owner=owner)
 
     def unmount(self) -> None:
-        for key in reversed(self.order):
-            self.instances[key].unmount()
-        self.instances.clear()
-        self.order.clear()
+        for node in reversed(self.active):
+            node.unmount()
+        self.active.clear()
         self.fragment_children.replace([])
         self.owner.dispose()
         self.widget = None
@@ -456,11 +482,11 @@ def Show(
 
 def For(
     each: Any,
-    render: Callable[[Any], Any],
+    render: Callable[..., Any],
     *,
-    key: Callable[[Any], Any] | None = None,
+    fallback: Callable[[], Any] | Any | None = None,
 ) -> ForNode:
-    return ForNode(each, render, key=key)
+    return ForNode(each, render, fallback=fallback)
 
 
 def Match(when: Any, children: Callable[[], Any] | Any) -> MatchCase:
