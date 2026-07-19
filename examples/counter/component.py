@@ -39,7 +39,7 @@ class Counter(Component[CounterProps]):
                 lambda: Label(text="Even"),
                 fallback=lambda: Label(text="Odd"),
             ),
-            For(self.todos, lambda item: Label(text=item), key=lambda item: item),
+            For(self.todos, lambda item: Label(text=item)),
             HStack(
                 Button(
                     text="-",
@@ -65,7 +65,7 @@ def counter(props: CounterProps):
             lambda: Label(text="Even"),
             fallback=lambda: Label(text="Odd"),
         ),
-        For(todos, lambda item: Label(text=item), key=lambda item: item),
+        For(todos, lambda item: Label(text=item)),
         HStack(Button(text="-", on_click=lambda: set_todos(lambda todos: todos[:-1]))),
         padx=12,
         pady=12,

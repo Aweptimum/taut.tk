@@ -253,7 +253,7 @@ children. It works well with transparent control flow:
 
 ```python
 layout.Grid(
-    For(images, lambda image: ImageTile(image), key=lambda image: image["id"]),
+    For(images, lambda image: ImageTile(image)),
     columns=2,
     column_weights=(1, 1),
     gap=6,
@@ -296,7 +296,7 @@ nodes to the parent:
 ```python
 layout.VStack(
     tk.Label(text="Before"),
-    For(items, lambda item: tk.Label(text=item), key=lambda item: item),
+    For(items, lambda item: tk.Label(text=item)),
     tk.Label(text="After"),
 )
 ```

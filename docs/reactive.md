@@ -24,6 +24,7 @@ from taut.reactive import create_signal
 from taut.reactive import is_accessor
 from taut.reactive import is_mutator
 from taut.reactive import is_signal
+from taut.reactive import map_array
 from taut.reactive import on
 from taut.reactive import read
 from taut.reactive import to_accessor
@@ -125,6 +126,8 @@ leaves the source. The mapping callback itself is untracked, so reactive reads
 inside it do not become dependencies of the list mapping. Empty, `None`, and
 `False` sources produce the optional fallback value.
 
+`For` uses `map_array` internally and adapts its mapped values into transparent
+mountable nodes.
 
 ## `create_effect`
 
