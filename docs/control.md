@@ -8,7 +8,7 @@ from taut import layout
 
 layout.VStack(
     tk.Label(text="Before"),
-    For(items, lambda item: tk.Label(text=item), key=lambda item: item),
+    For(items, lambda item: tk.Label(text=item)),
     tk.Label(text="After"),
 )
 ```
@@ -48,28 +48,48 @@ can be nodes or callables that return nodes.
 
 ## `For`
 
-`For(each, render, key=None)` renders a keyed list.
+`For(each, render, fallback=None)` renders a list by item identity.
+
+```python
+For(
+    todos,
+    lambda todo, index: tk.Label(
+        text=lambda: f"{index() + 1}. {todo['title']}"
+    ),
+)
+```
+
+Rows are retained when the same item remains in the list. Objects are matched by
+reference identity; primitive strings, bytes, numbers, booleans, and `None` are
+matched by value. Equal but distinct dataclass or dictionary instances are
+therefore different rows. Duplicate occurrences are supported.
+
+The optional index argument is an accessor that updates when a retained item
+moves. The item itself is not an accessor; use `Index` when values should update
+while rows remain stable by position.
+
+Pass `fallback` to render content while the source is empty, `None`, or `False`:
 
 ```python
 For(
     todos,
     lambda todo: tk.Label(text=todo["title"]),
-    key=lambda todo: todo["id"],
+    fallback=lambda: tk.Label(text="No todos"),
 )
 ```
-
-Use a stable `key` when items can be inserted, removed, or reordered. If no key
-is provided, object identity is used.
 
 `For` returns children only. Put it inside a parent layout helper to control
 geometry:
 
 ```python
 layout.VStack(
-    For(items, lambda item: tk.Label(text=item), key=lambda item: item),
+    For(items, lambda item: tk.Label(text=item)),
     gap=4,
 )
 ```
+
+`For` uses the public `taut.reactive.map_array` utility for identity matching,
+index accessors, fallback ownership, and per-item cleanup.
 
 ## `Index`
 
@@ -141,7 +161,7 @@ Components can return transparent control-flow nodes directly:
 ```python
 @component
 def Rows(props):
-    return For(props.items, lambda item: tk.Label(text=item), key=lambda item: item)
+    return For(props.items, lambda item: tk.Label(text=item))
 
 layout.VStack(
     tk.Label(text="Before"),

@@ -37,7 +37,7 @@ def counter(props: CounterProps):
             lambda: tk.Label(text="Even"),
             fallback=lambda: tk.Label(text="Odd"),
         ),
-        For(todos, lambda item: tk.Label(text=item), key=lambda item: item),
+        For(todos, lambda item: tk.Label(text=item)),
         layout.HStack(
             tk.Button(text="-", on_click=lambda: set_todos(lambda items: items[:-1])),
             gap=6,
@@ -68,6 +68,7 @@ I keep reaching for it every time I want a small UI at work and I keep getting b
 - layout namespace: `layout.VStack`, `layout.HStack`, `layout.Grid`, `layout.Item`, `layout.GridItem`
 - StyleX-ish style objects agnostic to tk/ttk widgets with `style.define()`, `style.merge()`, and `style.component()`.
 - some control flow: `Show`, `For`, `Switch` / `Match`, `Index`, `Dynamic`
+- identity-preserving list mapping with `reactive.map_array()`
 - context: `create_context()`, `Provider`, `use_context()`
 - stores: `create_store()` for immutable updates and `create_mutable()` for
   Solid-style mutable object state
@@ -175,7 +176,7 @@ children; the parent widget or layout helper decides where those children go:
 ```python
 @component
 def rows(props):
-    return For(props.items, lambda item: tk.Label(text=item), key=lambda item: item)
+    return For(props.items, lambda item: tk.Label(text=item))
 
 layout.VStack(
     tk.Label(text="Before"),

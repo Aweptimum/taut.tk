@@ -63,7 +63,7 @@ image_grid = style.define("image_grid", columns=2, gap=6, sticky="nsew")
 wide_cell = style.grid_item(columnspan=2, sticky="ew")
 
 layout.Grid(
-    For(images, lambda image: ImageTile(image), key=lambda image: image["id"]),
+    For(images, lambda image: ImageTile(image)),
     layout.GridItem(Footer(), style=wide_cell),
     style=image_grid,
 )
